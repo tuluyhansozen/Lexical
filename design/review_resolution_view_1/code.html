@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Review Resolution View</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4e735c",
+                        "background-light": "#f7f7f7",
+                        "background-dark": "#171b19",
+                        "midnight": "#2F2F2F",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom fill for active icons if needed */
+        .icon-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-midnight dark:text-white font-display antialiased h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex items-center justify-between px-6 pt-12 pb-4 bg-background-light dark:bg-background-dark z-10 shrink-0">
+<h2 class="text-midnight dark:text-gray-100 text-lg font-bold leading-tight tracking-[-0.015em] flex-1">
+            Card 12/50
+        </h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex items-center justify-center rounded-full h-10 w-10 text-midnight dark:text-gray-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[24px]">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area (Card Face) -->
+<main class="flex-1 flex flex-col items-center justify-center px-6 relative w-full max-w-2xl mx-auto overflow-y-auto">
+<!-- HeadlineText -->
+<div class="w-full text-center space-y-6">
+<h1 class="text-midnight dark:text-white text-[28px] md:text-[32px] font-normal leading-tight px-2">
+                The diplomat's <span class="text-primary font-bold">reticence</span> regarding the negotiations frustrated the press.
+            </h1>
+<!-- MetaText / Definition -->
+<div class="flex flex-col items-center gap-2">
+<div class="h-px w-16 bg-gray-200 dark:bg-gray-800 mb-2"></div>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-relaxed">
+                    /ˈredəˌsəns/ • noun
+                </p>
+<p class="text-gray-600 dark:text-gray-300 text-base font-normal leading-relaxed max-w-sm">
+                    The quality of being reserved; uncommunicative in speech.
+                </p>
+</div>
+</div>
+</main>
+<!-- Thumb Zone Controls -->
+<div class="w-full shrink-0 bg-background-light dark:bg-background-dark pb-6 pt-4 px-6">
+<!-- ReactionBar -->
+<div class="flex justify-between items-start max-w-md mx-auto gap-2">
+<!-- Again -->
+<button class="group flex flex-col items-center gap-2 flex-1">
+<div class="h-14 w-14 rounded-full border border-gray-300 dark:border-gray-700 bg-transparent flex items-center justify-center text-gray-500 dark:text-gray-400 group-active:bg-gray-100 dark:group-active:bg-white/5 transition-all">
+<span class="material-symbols-outlined text-[26px]">replay</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-gray-600 dark:text-gray-400 text-[13px] font-semibold">Again</span>
+<span class="text-gray-400 dark:text-gray-600 text-[10px] font-medium">&lt;1m</span>
+</div>
+</button>
+<!-- Hard -->
+<button class="group flex flex-col items-center gap-2 flex-1">
+<div class="h-14 w-14 rounded-full border border-gray-300 dark:border-gray-700 bg-transparent flex items-center justify-center text-gray-500 dark:text-gray-400 group-active:bg-gray-100 dark:group-active:bg-white/5 transition-all">
+<span class="material-symbols-outlined text-[26px]">error</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-gray-600 dark:text-gray-400 text-[13px] font-semibold">Hard</span>
+<span class="text-gray-400 dark:text-gray-600 text-[10px] font-medium">2d</span>
+</div>
+</button>
+<!-- Good (Primary) -->
+<button class="group flex flex-col items-center gap-2 flex-1 -mt-2">
+<div class="h-16 w-16 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center text-white group-active:bg-primary/90 group-active:scale-95 transition-all transform">
+<span class="material-symbols-outlined text-[32px]">check_circle</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-primary dark:text-primary text-[13px] font-bold">Good</span>
+<span class="text-primary/70 dark:text-primary/70 text-[10px] font-medium">4d</span>
+</div>
+</button>
+<!-- Easy -->
+<button class="group flex flex-col items-center gap-2 flex-1">
+<div class="h-14 w-14 rounded-full border border-gray-300 dark:border-gray-700 bg-transparent flex items-center justify-center text-gray-500 dark:text-gray-400 group-active:bg-gray-100 dark:group-active:bg-white/5 transition-all">
+<span class="material-symbols-outlined text-[26px]">sentiment_satisfied</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-gray-600 dark:text-gray-400 text-[13px] font-semibold">Easy</span>
+<span class="text-gray-400 dark:text-gray-600 text-[10px] font-medium">7d</span>
+</div>
+</button>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="shrink-0 border-t border-gray-200 dark:border-gray-800 bg-background-light dark:bg-background-dark pb-6 pt-2 px-6">
+<div class="flex justify-between items-center max-w-lg mx-auto">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">home</span>
+<span class="text-[10px] font-medium tracking-wide">Home</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
+<div class="bg-primary/10 dark:bg-primary/20 px-4 py-1 rounded-full flex flex-col items-center">
+<span class="material-symbols-outlined text-[24px] icon-filled">style</span>
+</div>
+<span class="text-[10px] font-bold tracking-wide">Review</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">bar_chart</span>
+<span class="text-[10px] font-medium tracking-wide">Stats</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">settings</span>
+<span class="text-[10px] font-medium tracking-wide">Settings</span>
+</a>
+</div>
+</nav>
+</body></html>

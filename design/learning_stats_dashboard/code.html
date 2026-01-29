@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Learning Statistics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4F735C",
+                        "primary-dark": "#3A5543",
+                        "background-light": "#F2EDE7",
+                        "background-dark": "#171b19",
+                        "cloud": "#F2EDE7",
+                        "forest": "#4F735C",
+                        "forest-light": "#72927e",
+                        "forest-lighter": "#9DB7A6",
+                        "forest-faint": "#CADAD1",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hide for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-gray-900 dark:text-gray-100 flex flex-col min-h-screen max-w-md mx-auto shadow-2xl overflow-hidden relative border-x border-gray-200 dark:border-gray-800">
+<!-- Top App Bar -->
+<header class="flex items-center justify-between p-4 pb-2 bg-background-light dark:bg-background-dark sticky top-0 z-10">
+<button class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-primary dark:text-primary-light">arrow_back_ios_new</span>
+</button>
+<h2 class="text-[#131614] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] text-center">Learning Statistics</h2>
+<button class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-primary dark:text-primary-light">calendar_today</span>
+</button>
+</header>
+<!-- Main Content Scroll Area -->
+<main class="flex-1 overflow-y-auto no-scrollbar pb-24 px-4 pt-2">
+<!-- Chips / Date Range -->
+<div class="flex gap-2 py-2 overflow-x-auto no-scrollbar mb-4">
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary text-white px-4 shadow-sm transition-transform active:scale-95">
+<p class="text-sm font-medium leading-normal">Last 30 Days</p>
+</button>
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-gray-800 border border-primary/20 text-primary dark:text-primary-light px-4 transition-transform active:scale-95">
+<p class="text-sm font-medium leading-normal">Last 90 Days</p>
+</button>
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-gray-800 border border-primary/20 text-primary dark:text-primary-light px-4 transition-transform active:scale-95">
+<p class="text-sm font-medium leading-normal">This Year</p>
+</button>
+</div>
+<!-- Stats Row -->
+<div class="grid grid-cols-3 gap-3 mb-6">
+<div class="flex flex-col gap-1 rounded-xl p-3 bg-white dark:bg-gray-800 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-white dark:border-gray-700">
+<p class="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider">Acquired</p>
+<p class="text-primary dark:text-white text-xl font-bold leading-tight">1,240</p>
+<p class="text-[10px] text-primary/80 dark:text-primary-light/80 font-medium">+12 today</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl p-3 bg-white dark:bg-gray-800 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-white dark:border-gray-700">
+<p class="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider">Retention</p>
+<p class="text-primary dark:text-white text-xl font-bold leading-tight">85%</p>
+<p class="text-[10px] text-green-600 font-medium">Stable</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl p-3 bg-white dark:bg-gray-800 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-white dark:border-gray-700">
+<p class="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider">Streak</p>
+<p class="text-primary dark:text-white text-xl font-bold leading-tight">12</p>
+<p class="text-[10px] text-orange-500 font-medium">Keep it up!</p>
+</div>
+</div>
+<!-- Forgetting Curve Chart -->
+<div class="flex flex-col gap-2 mb-6 bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] border border-white dark:border-gray-700">
+<div class="flex justify-between items-end mb-2">
+<div>
+<p class="text-gray-900 dark:text-white text-lg font-bold leading-normal">Forgetting Curve</p>
+<p class="text-gray-500 dark:text-gray-400 text-xs font-normal">Projected memory decay without review</p>
+</div>
+<div class="flex items-center gap-1 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded text-xs font-medium text-green-700 dark:text-green-300">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>High</span>
+</div>
+</div>
+<div class="relative w-full h-48 py-2">
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700"></div>
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700"></div>
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700"></div>
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700"></div>
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700"></div>
+</div>
+<!-- Chart SVG -->
+<svg class="relative z-10 w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 300 150">
+<defs>
+<lineargradient id="curveGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#4F735C" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#4F735C" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Area under curve -->
+<path d="M0 20 Q 40 25, 80 50 T 160 85 T 300 110 V 150 H 0 Z" fill="url(#curveGradient)"></path>
+<!-- The Curve Line -->
+<path d="M0 20 Q 40 25, 80 50 T 160 85 T 300 110" fill="none" stroke="#4F735C" stroke-linecap="round" stroke-width="3" vector-effect="non-scaling-stroke"></path>
+<!-- Data Points -->
+<circle cx="0" cy="20" fill="#F2EDE7" r="4" stroke="#4F735C" stroke-width="2"></circle>
+<circle cx="80" cy="50" fill="#F2EDE7" r="4" stroke="#4F735C" stroke-width="2"></circle>
+<circle cx="160" cy="85" fill="#F2EDE7" r="4" stroke="#4F735C" stroke-width="2"></circle>
+<circle cx="300" cy="110" fill="#F2EDE7" r="4" stroke="#4F735C" stroke-width="2"></circle>
+</svg>
+</div>
+<div class="flex justify-between px-1 mt-1">
+<p class="text-gray-400 dark:text-gray-500 text-[10px] font-medium uppercase">Now</p>
+<p class="text-gray-400 dark:text-gray-500 text-[10px] font-medium uppercase">2d</p>
+<p class="text-gray-400 dark:text-gray-500 text-[10px] font-medium uppercase">6d</p>
+<p class="text-gray-400 dark:text-gray-500 text-[10px] font-medium uppercase">30d</p>
+</div>
+</div>
+<!-- Activity Heatmap -->
+<div class="flex flex-col gap-4 mb-6 bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] border border-white dark:border-gray-700">
+<div class="flex flex-col">
+<p class="text-gray-900 dark:text-white text-lg font-bold leading-tight">Activity Heatmap</p>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal">342 contributions in the last year</p>
+</div>
+<!-- Heatmap Grid -->
+<!-- Simulating a GitHub style grid for mobile width -->
+<div class="flex gap-1 overflow-x-auto pb-2 no-scrollbar">
+<!-- We'll generate 14 columns for ~3 months view on mobile -->
+<div class="grid grid-rows-7 gap-1">
+<!-- Week Labels (implicit) -->
+</div>
+<!-- Column 1 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+</div>
+<!-- Column 2 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+</div>
+<!-- Column 3 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+</div>
+<!-- Column 4 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+</div>
+<!-- Column 5 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+</div>
+<!-- Column 6 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+</div>
+<!-- Column 7 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+</div>
+<!-- Column 8 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+</div>
+<!-- Column 9 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+</div>
+<!-- Column 10 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+</div>
+<!-- Column 11 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+</div>
+<!-- Column 12 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/20"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+</div>
+<!-- Column 13 -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/80"></div>
+</div>
+<!-- Column 14 (Current Week) -->
+<div class="grid grid-rows-7 gap-1 min-w-[14px]">
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/60"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-forest/40 border-2 border-primary/50 relative after:content-[''] after:absolute after:-top-0.5 after:-right-0.5 after:h-1.5 after:w-1.5 after:bg-red-400 after:rounded-full"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700/50 border border-dashed border-gray-300 dark:border-gray-600"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700/50 border border-dashed border-gray-300 dark:border-gray-600"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700/50 border border-dashed border-gray-300 dark:border-gray-600"></div>
+<div class="h-3.5 w-3.5 rounded-sm bg-gray-100 dark:bg-gray-700/50 border border-dashed border-gray-300 dark:border-gray-600"></div>
+</div>
+</div>
+<!-- Heatmap Legend -->
+<div class="flex items-center justify-end gap-2 text-xs text-gray-400">
+<span>Less</span>
+<div class="flex gap-1">
+<div class="h-3 w-3 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
+<div class="h-3 w-3 rounded-sm bg-forest/20"></div>
+<div class="h-3 w-3 rounded-sm bg-forest/40"></div>
+<div class="h-3 w-3 rounded-sm bg-forest/60"></div>
+<div class="h-3 w-3 rounded-sm bg-forest"></div>
+</div>
+<span>More</span>
+</div>
+</div>
+<!-- Recent Achievement Card -->
+<div class="flex items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] border border-white dark:border-gray-700 mb-6">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-forest/10 text-primary">
+<span class="material-symbols-outlined">emoji_events</span>
+</div>
+<div class="flex-1">
+<p class="text-gray-900 dark:text-white text-base font-bold leading-tight">Weekly Champion</p>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal">Top 5% of learners this week</p>
+</div>
+<button class="p-2 text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<div class="h-8"></div> <!-- Spacer for scrolling -->
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="sticky bottom-0 z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
+<div class="flex justify-around items-center h-16 px-2">
+<a class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[26px]">school</span>
+<span class="text-[10px] font-medium">Learn</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[26px]">style</span>
+<span class="text-[10px] font-medium">Deck</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 w-16 text-primary" href="#">
+<div class="bg-primary/10 rounded-full px-4 py-1 flex flex-col items-center">
+<span class="material-symbols-outlined text-[26px] fill-current">monitoring</span>
+<span class="text-[10px] font-bold">Stats</span>
+</div>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[26px]">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

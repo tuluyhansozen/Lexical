@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Word Capture Sheet</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#4e7366", // Forest Green approx
+              "primary-dark": "#3a574d",
+              "background-light": "#f7f7f7",
+              "background-dark": "#171b1a",
+              "sheet-light": "#F2EDE7", // Cloud color requested
+              "sheet-dark": "#1F2221", // Darker variant for dark mode
+              "text-dark": "#131615", // Charcoal
+            },
+            fontFamily: {
+              "display": ["Lexend", "sans-serif"],
+              "rounded": ["SF Pro Rounded", "system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"], // Rounded stack for Lemma
+            },
+            borderRadius: {
+              "DEFAULT": "0.5rem",
+              "lg": "1rem",
+              "xl": "1.5rem",
+              "custom-btn": "12px", // 12px radius requested
+              "full": "9999px"
+            },
+            boxShadow: {
+              'sheet': '0 -8px 30px rgba(0,0,0,0.12)',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar hiding for cleaner look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-dark dark:text-slate-100 antialiased overflow-hidden h-screen w-screen flex justify-center items-center">
+<!-- Device Frame Simulation -->
+<div class="relative h-full w-full max-w-[430px] bg-white dark:bg-background-dark shadow-2xl overflow-hidden flex flex-col group/design-root">
+<!-- Background: Immersive Reader (Blurred/Dimmed Content) -->
+<div class="flex-1 overflow-y-auto p-6 pt-12 text-lg leading-relaxed text-gray-800 dark:text-gray-300 opacity-30 select-none pointer-events-none filter blur-[1.5px] bg-[#f9fafa]">
+<div class="w-12 h-12 rounded-full bg-gray-200 mb-6 flex items-center justify-center text-gray-400 font-bold text-xl">A</div>
+<h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white leading-tight">The Power of Accidental Discovery</h1>
+<p class="mb-5 font-serif">
+                History is replete with tales of scientists and explorers stumbling upon ground-breaking discoveries while searching for something entirely different. This phenomenon, often described as <span class="bg-primary/20 text-primary font-bold px-1 rounded">serendipity</span>, plays a crucial role in the advancement of human knowledge.
+            </p>
+<div class="w-full aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg mb-6 bg-cover bg-center shadow-inner" data-alt="Abstract blurry image of books and light suggesting study environment" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBv5RPtnH4ymtfGtYHWbZzINt0p7fWM0ZzM6ub3DBwShp2M_7UrKVwBUTq5q9pR_gL8b8024endZEmbfZsT7pqNZ_cGWS_0_5Mu7Sh1hvDylD5KBr32hdx_jyLLuzSKPXp4qKqxOXdahogGfuKyvQJTdHYaWicgRM1tbo72pP4ab_9yeeLgBrFNrr0Tsxk4rja3-ts1e-sFOdSe_TMh2cn9F4lG-dD8z3XrS2RotLohrlGV1ghRjj9kOxpYy55PQl9eDVDEn9G4Xj8C');"></div>
+<p class="mb-5 font-serif">
+                Consider Alexander Fleming, who returned from a holiday to find a petri dish colonized by mold. Instead of discarding it, he examined the anomaly and discovered penicillin.
+            </p>
+<p class="font-serif">
+                 This moment wasn't just luck; it was prepared observation meeting an unexpected event. In literature and daily life, we encounter similar moments.
+            </p>
+</div>
+<!-- Dim Overlay -->
+<div class="absolute inset-0 bg-black/25 backdrop-blur-[2px] z-10"></div>
+<!-- Bottom Sheet Component -->
+<!-- Simulating medium detent position -->
+<div class="absolute bottom-0 left-0 w-full z-20 flex flex-col h-[70vh]">
+<!-- Sheet Card -->
+<div class="flex-1 bg-sheet-light dark:bg-sheet-dark rounded-t-[24px] shadow-sheet flex flex-col relative overflow-hidden">
+<!-- Drag Handle -->
+<div class="w-full flex justify-center pt-3 pb-1 shrink-0 z-30 bg-sheet-light dark:bg-sheet-dark">
+<div class="w-[36px] h-[5px] rounded-full bg-[#d8dedc] dark:bg-gray-600"></div>
+</div>
+<!-- Scrollable Sheet Content -->
+<div class="flex-1 overflow-y-auto no-scrollbar px-6 pt-4 pb-28">
+<!-- Header Section -->
+<div class="flex flex-col gap-3 mb-6">
+<!-- Badge -->
+<div class="flex">
+<div class="inline-flex h-7 items-center justify-center px-3 rounded-full bg-primary text-white shadow-sm">
+<span class="text-xs font-bold uppercase tracking-wider">Common</span>
+</div>
+</div>
+<!-- Word Lemma & Audio -->
+<div class="flex items-center justify-between">
+<h2 class="text-[#131615] dark:text-white font-rounded font-bold text-[34px] leading-tight tracking-tight">
+                                Serendipity
+                            </h2>
+<button class="flex items-center justify-center w-11 h-11 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[26px]">volume_up</span>
+</button>
+</div>
+<!-- Phonetic Transcription -->
+<div class="text-[#6a7c76] dark:text-gray-400 font-mono text-lg tracking-wide -mt-1">
+                            /ˌsɛrənˈdɪpɪti/
+                        </div>
+</div>
+<!-- Divider -->
+<div class="h-px w-full bg-[#d8dedc]/60 dark:bg-gray-700 mb-6"></div>
+<!-- Content Section -->
+<div class="flex flex-col gap-6">
+<!-- Definition -->
+<div class="flex flex-col gap-1.5">
+<div class="text-primary font-medium italic text-sm">noun</div>
+<p class="text-[#131615] dark:text-gray-100 text-[18px] leading-relaxed font-normal">
+                                The occurrence and development of events by chance in a happy or beneficial way.
+                            </p>
+</div>
+<!-- Context Box -->
+<div class="flex flex-col gap-3 bg-white/60 dark:bg-white/5 p-5 rounded-xl border border-white/50 dark:border-white/5 shadow-sm">
+<div class="flex items-center gap-2 text-[#6a7c76] dark:text-gray-400 text-xs font-bold uppercase tracking-wider opacity-80">
+<span class="material-symbols-outlined text-[16px]">format_quote</span>
+                                Context
+                            </div>
+<p class="text-[#131615] dark:text-gray-200 text-[16px] italic leading-relaxed font-light">
+                                "The discovery of penicillin was a stroke of <strong class="text-primary font-semibold not-italic">serendipity</strong>."
+                            </p>
+</div>
+<!-- Meta Info Grid (Extra info for visual density) -->
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-white/40 dark:bg-white/5 p-3 rounded-lg border border-transparent dark:border-white/5">
+<span class="text-xs text-[#6a7c76] dark:text-gray-500 uppercase font-bold tracking-wider block mb-1">Synonyms</span>
+<span class="text-sm font-medium text-[#131615] dark:text-gray-200">Chance, Fluke</span>
+</div>
+<div class="bg-white/40 dark:bg-white/5 p-3 rounded-lg border border-transparent dark:border-white/5">
+<span class="text-xs text-[#6a7c76] dark:text-gray-500 uppercase font-bold tracking-wider block mb-1">Antonyms</span>
+<span class="text-sm font-medium text-[#131615] dark:text-gray-200">Misfortune</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Footer -->
+<div class="absolute bottom-0 left-0 w-full px-6 pb-10 pt-6 bg-gradient-to-t from-sheet-light via-sheet-light to-transparent dark:from-sheet-dark dark:via-sheet-dark z-40">
+<button class="w-full h-[48px] flex items-center justify-center gap-2.5 bg-primary hover:bg-primary-dark active:scale-[0.98] text-white font-bold text-[16px] rounded-custom-btn shadow-lg shadow-primary/25 transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]">library_add</span>
+                        Add to Deck
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

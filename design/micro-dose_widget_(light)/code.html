@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Micro-Dose Widget (Light)</title>
+<!-- CRITICAL: Exact link string from prompt -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Design Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4e735c",
+                        "background-light": "#f7f7f7",
+                        "background-dark": "#171b19",
+                        "widget-cloud": "#F2EDE7",
+                        "widget-forest": "#4e735c",
+                    },
+                    fontFamily: {
+                        "display": ["Newsreader", "serif"],
+                        "sans": ["Inter", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "2xl": "2rem", "3xl": "2.25rem", "full": "9999px" },
+                    boxShadow: {
+                        'widget': '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Newsreader', serif;
+        }
+        .font-sans {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar hide for cleaner widget look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex flex-col items-center justify-center p-8 transition-colors duration-300">
+<!-- Design Presentation Container -->
+<div class="w-full max-w-5xl flex flex-col items-center gap-12">
+<!-- Header -->
+<div class="text-center space-y-2">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary mb-2">
+<span class="material-symbols-outlined text-sm">widgets</span>
+<span class="text-xs font-bold tracking-wider uppercase font-sans">iOS 17 Widget Kit</span>
+</div>
+<h1 class="text-4xl font-display font-medium text-gray-900 dark:text-white">Micro-Dose</h1>
+<p class="text-gray-500 dark:text-gray-400 font-sans text-sm">Variant 1: Light Mode • Medium (2x2)</p>
+</div>
+<!-- Widget Showcase Area -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+<!-- Primary State: Active -->
+<div class="flex flex-col gap-4 items-center">
+<div class="relative w-[360px] h-[169px] bg-widget-cloud rounded-3xl shadow-widget p-5 flex flex-col justify-between overflow-hidden group/widget transform transition-all hover:scale-[1.02] duration-300 ring-1 ring-black/5">
+<!-- Top Bar: Context -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 opacity-70">
+<span class="material-symbols-outlined text-[18px] text-widget-forest">school</span>
+<span class="text-widget-forest text-[10px] font-bold tracking-[0.08em] uppercase font-sans pt-0.5">Vocab Builder</span>
+</div>
+<div class="w-6 h-6 rounded-full bg-white/50 flex items-center justify-center backdrop-blur-sm">
+<span class="material-symbols-outlined text-[14px] text-widget-forest">more_horiz</span>
+</div>
+</div>
+<!-- Center: Cloze Sentence -->
+<div class="flex-1 flex items-center justify-start pr-4 py-2">
+<p class="font-display text-[#1c1c1e] text-[21px] leading-snug font-medium">
+                            The distinct aroma of petrichor filled the air after the summer <span class="inline-block min-w-[3ch] border-b-2 border-dotted border-widget-forest/40 text-transparent select-none bg-widget-forest/5 px-1 rounded-sm mx-1 h-[1em] align-middle">____</span>.
+                        </p>
+</div>
+<!-- Bottom: Interaction -->
+<div class="flex justify-between items-end">
+<!-- Progress / Streak Indicator -->
+<div class="flex flex-col gap-0.5 opacity-50 mb-1">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-[#1c1c1e] fill-1">local_fire_department</span>
+<span class="text-[11px] font-bold text-[#1c1c1e] font-sans">12 Day Streak</span>
+</div>
+</div>
+<!-- Reveal Button -->
+<button class="flex items-center justify-center gap-1.5 bg-widget-forest hover:bg-[#3f5d4a] text-white px-4 h-[36px] rounded-lg shadow-sm shadow-primary/20 transition-all active:scale-95">
+<span class="text-xs font-bold tracking-wide font-sans">Reveal</span>
+</button>
+</div>
+</div>
+<span class="text-xs text-gray-400 font-sans tracking-wide">STATE: ACTIVE</span>
+</div>
+<!-- Secondary State: Empty / Caught Up -->
+<div class="flex flex-col gap-4 items-center opacity-80 hover:opacity-100 transition-opacity">
+<div class="relative w-[360px] h-[169px] bg-widget-cloud rounded-3xl shadow-widget p-6 flex flex-col items-center justify-center text-center gap-3 overflow-hidden ring-1 ring-black/5">
+<!-- Success Icon -->
+<div class="w-12 h-12 rounded-full bg-widget-forest/10 flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-widget-forest text-[28px]">check_circle</span>
+</div>
+<div class="space-y-1">
+<p class="font-display text-[#1c1c1e] text-xl font-bold">All caught up!</p>
+<p class="text-widget-forest/70 text-[13px] font-sans leading-relaxed max-w-[220px] mx-auto">
+                            Great job. Your daily micro-dose is complete.
+                        </p>
+</div>
+<!-- Progress Dots -->
+<div class="absolute bottom-5 flex gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-widget-forest"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-widget-forest/30"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-widget-forest/30"></div>
+</div>
+</div>
+<span class="text-xs text-gray-400 font-sans tracking-wide">STATE: COMPLETED</span>
+</div>
+</div>
+<!-- Color Palette Reference (For Developer Handoff) -->
+<div class="w-full max-w-2xl mt-8 pt-8 border-t border-gray-200 dark:border-gray-800">
+<div class="flex gap-8 justify-center">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-widget-cloud shadow-sm border border-black/5"></div>
+<div class="flex flex-col">
+<span class="text-xs font-bold font-sans dark:text-gray-300">Cloud</span>
+<span class="text-[10px] text-gray-400 font-mono">#F2EDE7</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-widget-forest shadow-sm"></div>
+<div class="flex flex-col">
+<span class="text-xs font-bold font-sans dark:text-gray-300">Forest</span>
+<span class="text-[10px] text-gray-400 font-mono">#4E735C</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

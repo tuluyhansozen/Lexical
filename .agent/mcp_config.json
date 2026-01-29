@@ -1,0 +1,21 @@
+{
+    "mcpServers": {
+        "ios-simulator": {
+            "command": "uvx",
+            "args": [
+                "ios-simulator-mcp"
+            ],
+            "env": {
+                "IOS_SIMULATOR_MCP_FILTERED_TOOLS": "launch_app,ui_tap,ui_type,ui_describe_all,screenshot,get_simulator_state,boot_simulator,shutdown_simulator,list_devices"
+            }
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/Users/tuluyhan/projects/Lexical"
+            ]
+        }
+    }
+}

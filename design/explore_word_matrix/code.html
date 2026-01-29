@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Explore Word Matrix - Lexical Acquisition System</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4e735c", // Forest
+                        "background-light": "#F2EDE7", // Cloud
+                        "background-dark": "#171b19",
+                        "leaf": "#2F2F2F", // Midnight
+                        "cloud": "#F2EDE7",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        body {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-leaf dark:text-cloud h-screen flex flex-col overflow-hidden">
+<!-- Top App Bar -->
+<header class="flex items-center justify-between px-6 py-4 bg-background-light dark:bg-background-dark shrink-0 z-10">
+<div class="w-12">
+<!-- Left placeholder or back button if needed, kept empty for balance as per minimalist design -->
+</div>
+<h1 class="text-xl font-bold tracking-tight text-center flex-1 text-leaf dark:text-white">Word Matrix</h1>
+<div class="flex w-12 items-center justify-end">
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-white/50 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 transition-colors">
+<span class="material-symbols-outlined text-leaf dark:text-white" style="font-size: 24px;">search</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area: Graph Visualization -->
+<main class="flex-1 relative w-full h-full overflow-hidden cursor-move touch-none bg-background-light dark:bg-background-dark">
+<!-- Dot Grid Pattern Background -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#2F2F2F 1px, transparent 1px); background-size: 24px 24px;">
+</div>
+<!-- Graph Container (Simulated Visualization) -->
+<div class="absolute inset-0 w-full h-full flex items-center justify-center">
+<!-- SVG Connectors Layer -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+<!-- Lines from Root (Center) to Leaves -->
+<!-- Coordinates are relative percentages based on container size for responsiveness -->
+<line stroke="#b0baba" stroke-width="1.5" x1="50%" x2="20%" y1="45%" y2="25%"></line>
+<line stroke="#b0baba" stroke-width="1.5" x1="50%" x2="80%" y1="45%" y2="28%"></line>
+<line stroke="#b0baba" stroke-width="1.5" x1="50%" x2="85%" y1="45%" y2="60%"></line>
+<line stroke="#b0baba" stroke-width="1.5" x1="50%" x2="15%" y1="45%" y2="65%"></line>
+<line stroke="#b0baba" stroke-width="1.5" x1="50%" x2="45%" y1="45%" y2="75%"></line>
+</svg>
+<!-- Nodes Layer -->
+<!-- Leaf Node: Transitory (Top Left) -->
+<button class="absolute top-[25%] left-[20%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110">
+<div class="w-14 h-14 rounded-full bg-leaf dark:bg-gray-700 flex items-center justify-center shadow-lg border-2 border-transparent hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-cloud text-xl">schedule</span>
+</div>
+<span class="mt-2 text-sm font-medium text-leaf dark:text-gray-300 bg-background-light/80 dark:bg-background-dark/80 px-2 py-0.5 rounded-md backdrop-blur-sm">Transitory</span>
+</button>
+<!-- Leaf Node: Fleeting (Top Right) -->
+<button class="absolute top-[28%] left-[80%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110">
+<div class="w-12 h-12 rounded-full bg-leaf dark:bg-gray-700 flex items-center justify-center shadow-lg border-2 border-transparent hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-cloud text-lg">wind_power</span>
+</div>
+<span class="mt-2 text-sm font-medium text-leaf dark:text-gray-300 bg-background-light/80 dark:bg-background-dark/80 px-2 py-0.5 rounded-md backdrop-blur-sm">Fleeting</span>
+</button>
+<!-- Leaf Node: Short-lived (Bottom Left) -->
+<button class="absolute top-[65%] left-[15%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110">
+<div class="w-12 h-12 rounded-full bg-leaf dark:bg-gray-700 flex items-center justify-center shadow-lg border-2 border-transparent hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-cloud text-lg">hourglass_bottom</span>
+</div>
+<span class="mt-2 text-sm font-medium text-leaf dark:text-gray-300 bg-background-light/80 dark:bg-background-dark/80 px-2 py-0.5 rounded-md backdrop-blur-sm">Short-lived</span>
+</button>
+<!-- Leaf Node: Momentary (Bottom Right) -->
+<button class="absolute top-[60%] left-[85%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group transition-transform hover:scale-110">
+<div class="w-10 h-10 rounded-full bg-leaf dark:bg-gray-700 flex items-center justify-center shadow-lg border-2 border-transparent hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-cloud text-base">bolt</span>
+</div>
+<span class="mt-2 text-sm font-medium text-leaf dark:text-gray-300 bg-background-light/80 dark:bg-background-dark/80 px-2 py-0.5 rounded-md backdrop-blur-sm">Momentary</span>
+</button>
+<!-- Leaf Node: Evanescent (Selected - Bottom Center) -->
+<button class="absolute top-[75%] left-[45%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group z-20 scale-110">
+<div class="w-16 h-16 rounded-full bg-leaf dark:bg-gray-600 flex items-center justify-center shadow-[0_0_15px_rgba(78,115,92,0.4)] ring-4 ring-primary ring-opacity-30 border-2 border-primary transition-all">
+<span class="material-symbols-outlined text-cloud text-2xl">blur_on</span>
+</div>
+<!-- Label is hidden here because the card below explains it, or we can keep it for clarity -->
+<span class="mt-2 text-sm font-bold text-primary dark:text-primary bg-background-light/90 dark:bg-background-dark/90 px-2 py-0.5 rounded-md backdrop-blur-sm shadow-sm">Evanescent</span>
+</button>
+<!-- Root Node: Ephemeral (Center) -->
+<button class="absolute top-[45%] left-[50%] -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center justify-center group">
+<div class="w-24 h-24 rounded-full bg-primary flex items-center justify-center shadow-2xl hover:shadow-[0_10px_25px_-5px_rgba(78,115,92,0.5)] transition-all duration-300">
+<div class="text-center">
+<span class="block text-white font-bold text-sm tracking-wide">ROOT</span>
+<span class="block text-white font-display font-semibold text-xs opacity-80">Origin</span>
+</div>
+</div>
+<div class="absolute -bottom-8 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md border border-gray-100 dark:border-gray-700">
+<span class="text-leaf dark:text-white font-bold text-lg">Ephemeral</span>
+</div>
+</button>
+</div>
+<!-- Floating Map Controls -->
+<div class="absolute top-4 right-4 flex flex-col gap-2 z-20">
+<button aria-label="Zoom In" class="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-gray-800 shadow-md text-leaf dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button aria-label="Zoom Out" class="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-gray-800 shadow-md text-leaf dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button aria-label="Recenter" class="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-gray-800 shadow-md text-leaf dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors mt-2">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+<!-- Selected Node Context Card (Overlay) -->
+<div class="absolute bottom-4 left-4 right-4 z-30 animate-fade-in-up">
+<div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 dark:border-gray-700 flex gap-4 items-start">
+<div class="w-16 h-16 rounded-lg bg-gray-100 dark:bg-gray-700 shrink-0 bg-cover bg-center" data-alt="Abstract blurry aesthetic image representing evanescence" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDamCOiG4gom9U_kIpFSMp61Ngb-2fprBdU8UMo6xPek5M4qKKtuTTO_N1ETwUxSwMMwRi2Yv9ftfpeV5IoEhEhElEuXkxB1XjkhGv_yN5hEDDWT-fmtLo4LRJJcLfFZzzE6wu6OUHjfO5Ke9jGd5MhN0ET-VqqCphYWcGqmjPZFHkX8_lq1tgmTWLGx_l4JiQhNvxvWjIqsZX5a73ghFchr6t1oAuT-ly1aLTtMtko9gHjt7LFFGEItduJAs6vUZqZPnx5659km7rj');">
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-lg font-bold text-leaf dark:text-white leading-tight">Evanescent</h3>
+<span class="text-primary text-xs font-semibold uppercase tracking-wider">Adjective</span>
+</div>
+<button class="text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">volume_up</span>
+</button>
+</div>
+<p class="text-gray-600 dark:text-gray-300 text-sm mt-1 leading-snug">Soon passing out of sight, memory, or existence; quickly fading or disappearing.</p>
+</div>
+<button class="self-center p-2 -mr-2 text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="shrink-0 border-t border-[#ecefed] dark:border-gray-800 bg-background-light dark:bg-background-dark px-4 pb-6 pt-2 z-40">
+<div class="flex items-end justify-between max-w-md mx-auto">
+<!-- Learn Tab -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-gray-400 hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:-translate-y-0.5 transition-transform" style="font-size: 24px;">school</span>
+<span class="text-[10px] font-medium tracking-wide">Learn</span>
+</a>
+<!-- Explore Tab (Active) -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-primary relative" href="#">
+<div class="absolute -top-10 bg-primary/10 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="material-symbols-outlined fill-current" style="font-size: 24px; font-variation-settings: 'FILL' 1;">travel_explore</span>
+<span class="text-[10px] font-bold tracking-wide">Explore</span>
+<div class="absolute -bottom-6 w-1 h-1 rounded-full bg-primary"></div>
+</a>
+<!-- Profile Tab -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-gray-400 hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:-translate-y-0.5 transition-transform" style="font-size: 24px;">person</span>
+<span class="text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</div>
+</nav>
+<!-- Animation Keyframes override -->
+<style>
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.4s ease-out forwards;
+        }
+    </style>
+</body></html>
