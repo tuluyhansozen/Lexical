@@ -1,4 +1,5 @@
 import SwiftUI
+import LexicalCore
 
 struct ArticleCardView: View {
     let article: Article

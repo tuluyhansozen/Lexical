@@ -1,10 +1,12 @@
 import SwiftUI
 
 /// Animated Mesh Gradient Background
-struct LiquidBackground: View {
+public struct LiquidBackground: View {
     @State private var animate = false
     
-    var body: some View {
+    public init() {}
+    
+    public var body: some View {
         ZStack {
             Color("Background") // Fallback
             

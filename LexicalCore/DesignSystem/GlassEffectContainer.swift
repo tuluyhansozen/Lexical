@@ -2,16 +2,16 @@ import SwiftUI
 import UIKit
 
 /// A container that applies a blur effect to its background using UIVisualEffectView
-struct GlassEffectContainer<Content: View>: View {
+public struct GlassEffectContainer<Content: View>: View {
     private let material: UIBlurEffect.Style
     private let content: Content
     
-    init(material: UIBlurEffect.Style = .systemUltraThinMaterial, @ViewBuilder content: () -> Content) {
+    public init(material: UIBlurEffect.Style = .systemUltraThinMaterial, @ViewBuilder content: () -> Content) {
         self.material = material
         self.content = content()
     }
     
-    var body: some View {
+    public var body: some View {
         ZStack {
             GlassEffectView(material: material)
             content

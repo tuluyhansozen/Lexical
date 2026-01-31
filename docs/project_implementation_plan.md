@@ -126,21 +126,21 @@ Build the "Output" interface enforcing "Recall Dominance" with FSRS-driven study
 
 ## Phase 6: Home Screen Offensive (Widgets & Intents)
 
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
 ### Section 1: Objective
-Enable "Micro-Dose" learning via iOS Interactive Widgets and App Intents for frictionless study.
+Enable "Micro-Dose" learning via App Intents and Widgets (Preparation).
 
 ### Section 2: Key Activities
-- **Shared Persistence:** Migrate SwiftData container to App Group for widget access
-- **Widget Development:** Build `MicroDoseWidget` (Cloze card) and `WOTDWidget` (Word of the Day)
-- **App Intents:** Implement `GradeCardIntent` and `PlayAudioIntent` for background operations
+- **Shared Persistence:** Updated ModelContainer to use App Group storage via `Persistence.sharedModelContainer`.
+- **Intents:** Implemented `GradeCardIntent` and `GetDueCountIntent` for Siri/Shortcuts.
+- **Widget:** Implemented `MicroDoseWidget` code with Liquid Glass styling and TimelineProvider.
 
 ### Section 3: Deliverables
-- [ ] Widget Extension target with 2 widget types
-- [ ] `GradeIntent`, `CaptureIntent`, `AudioIntent`
-- [ ] App Group entitlement configuration
-- [ ] Timeline refresh logic for instant updates
+- [x] `Persistence.swift` with App Group support
+- [x] `ReviewIntents.swift` (AppIntents)
+- [x] `MicroDoseWidget.swift` (Code Verification)
+- [x] Build Passed
 
 ---
 

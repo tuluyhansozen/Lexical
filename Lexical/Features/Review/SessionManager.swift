@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import LexicalCore
 
 /// Manages the active review session queue and Brain Boost logic
 @MainActor

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import LexicalCore
 
 /// Main reading view with vocabulary highlighting and capture
 struct ReaderView: View {

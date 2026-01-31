@@ -3,62 +3,64 @@ import SwiftData
 
 /// Represents a vocabulary word being learned with FSRS parameters
 @Model
-final class VocabularyItem {
+public final class VocabularyItem {
     /// The lemma (dictionary form) of the word
-    @Attribute(.unique) var lemma: String
+    @Attribute(.unique) public var lemma: String
     
     /// The original form as captured
-    var originalWord: String
+    public var originalWord: String
     
     /// The context sentence where the word was captured
-    var contextSentence: String
+    public var contextSentence: String
     
     /// User-added definition (optional)
-    var definition: String?
+    public var definition: String?
     
     // MARK: - FSRS Parameters
     
     /// Memory stability (higher = more stable memory)
-    var stability: Double
+    public var stability: Double
     
     /// Item difficulty (0-1, higher = harder)
-    var difficulty: Double
+    public var difficulty: Double
     
     /// Current retrievability (probability of recall)
-    var retrievability: Double
+    public var retrievability: Double
     
     /// Next scheduled review date
-    var nextReviewDate: Date?
+    public var nextReviewDate: Date?
     
     /// Number of times this item has been reviewed
-    var reviewCount: Int
+    public var reviewCount: Int
     
     /// Date when the word was first captured
-    var createdAt: Date
+    public var createdAt: Date
     
     /// Date of last review
-    var lastReviewedAt: Date?
+    public var lastReviewedAt: Date?
     
     // MARK: - Relationships
     
     /// Review history for this item
     @Relationship(deleteRule: .cascade, inverse: \ReviewLog.vocabularyItem)
-    var reviewLogs: [ReviewLog]
+    public var reviewLogs: [ReviewLog]
     
     /// Root word connections for morphology matrix
     @Relationship
-    var morphologicalRoot: MorphologicalRoot?
+    public var root: MorphologicalRoot?
     
-    init(
+    public init(
         lemma: String,
         originalWord: String? = nil,
         contextSentence: String = "",
-        definition: String? = nil
+        definition: String? = nil,
+        root: MorphologicalRoot? = nil
     ) {
         self.lemma = lemma.lowercased()
         self.originalWord = originalWord ?? lemma
         self.contextSentence = contextSentence
         self.definition = definition
+        self.root = root // Fixed property name
         
         // FSRS initial values
         self.stability = 0.0
@@ -69,11 +71,10 @@ final class VocabularyItem {
         self.createdAt = Date()
         self.lastReviewedAt = nil
         self.reviewLogs = []
-        self.morphologicalRoot = nil
     }
     
     /// Learning state based on FSRS parameters
-    var learningState: LearningState {
+    public var learningState: LearningState {
         if stability > 90.0 {
             return .mastered
         } else if reviewCount > 0 {
@@ -84,7 +85,7 @@ final class VocabularyItem {
     }
     
     /// Whether the item is due for review
-    var isDue: Bool {
+    public var isDue: Bool {
         guard let nextReview = nextReviewDate else {
             return reviewCount == 0 // New cards are always "due"
         }
@@ -93,7 +94,7 @@ final class VocabularyItem {
 }
 
 /// Learning state for UI display
-enum LearningState: String, Codable {
+public enum LearningState: String, Codable {
     case new       // Never reviewed
     case learning  // In active learning
     case mastered  // High stability, well-known

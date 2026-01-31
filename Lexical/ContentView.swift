@@ -1,4 +1,5 @@
 import SwiftUI
+import LexicalCore
 
 struct ContentView: View {
     @State private var selectedTab: Int = 0
@@ -53,9 +54,7 @@ struct ContentView: View {
                 StatsView()
                     .tag(3)
                 
-                Text("Settings Placeholder")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.adaptiveBackground)
+                WidgetPreviewScreen()
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never)) // We build our own custom tab bar logic if needed, or use standard

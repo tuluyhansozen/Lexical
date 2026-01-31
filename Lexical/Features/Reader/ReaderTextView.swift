@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import LexicalCore
 
 /// Represents a highlight to apply at a specific text range
 struct TokenHighlight: Sendable {

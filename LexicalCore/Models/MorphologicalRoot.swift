@@ -3,7 +3,7 @@ import SwiftData
 
 /// Represents an etymological root for the morphology matrix
 @Model
-final class MorphologicalRoot {
+public final class MorphologicalRoot {
     /// The root string (e.g., "spect", "chron")
     @Attribute(.unique) var root: String
     
@@ -20,7 +20,7 @@ final class MorphologicalRoot {
     @Relationship
     var vocabularyItems: [VocabularyItem]
     
-    init(root: String, meaning: String, origin: String = "Latin", exampleWords: [String] = []) {
+    public init(root: String, meaning: String, origin: String = "Latin", exampleWords: [String] = []) {
         self.root = root.lowercased()
         self.meaning = meaning
         self.origin = origin

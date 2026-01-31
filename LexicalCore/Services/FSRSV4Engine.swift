@@ -2,8 +2,10 @@ import Foundation
 
 /// FSRS v4.5 Scheduler Implementation
 /// Handles the math for memory stability and next interval calculation.
-actor FSRSV4Engine {
+public actor FSRSV4Engine {
     
+    public init() {}
+
     // FSRS Constants (Default parameters for optimized performance)
     private let w: [Double] = [
         0.40255, 1.18385, 3.173, 15.69105, 
@@ -13,14 +15,14 @@ actor FSRSV4Engine {
         2.7068
     ]
     
-    struct FSRSState: Sendable {
-        let stability: Double
-        let difficulty: Double
-        let retrievability: Double
+    public struct FSRSState: Sendable {
+        public let stability: Double
+        public let difficulty: Double
+        public let retrievability: Double
     }
     
     /// Calculate the next state based on current parameters and grade
-    func nextState(
+    public func nextState(
         currentStability: Double,
         currentDifficulty: Double,
         recalled: Bool,
@@ -96,7 +98,7 @@ actor FSRSV4Engine {
     }
     
     /// Calculate days until retrievability drops to target r
-    func nextInterval(stability: Double, requestRetention: Double = 0.9) -> Double {
+    public func nextInterval(stability: Double, requestRetention: Double = 0.9) -> Double {
         // I = S/19 * (1/r - 1) doesn't match w-params often.
         // Standard formula: I = S * 9 * (1/r - 1)
         return stability * 9 * (1 / requestRetention - 1)

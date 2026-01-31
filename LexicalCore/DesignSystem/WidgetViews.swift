@@ -1,11 +1,28 @@
 import SwiftUI
+import WidgetKit
 
-// These views are designed to be used within a WidgetExtension
-// but are placed here for the project structure.
+// Moved MicroDoseEntry here to share between Widget and App Preview
+public struct MicroDoseEntry: Equatable, TimelineEntry {
+    public let date: Date
+    public let word: String
+    public let definition: String
+    public let learnedCount: Int
+    public let totalGoal: Int
+    
+    public init(date: Date, word: String, definition: String, learnedCount: Int, totalGoal: Int) {
+        self.date = date
+        self.word = word
+        self.definition = definition
+        self.learnedCount = learnedCount
+        self.totalGoal = totalGoal
+    }
+}
 
-struct WordOfDayWidgetView: View {
+public struct WordOfDayWidgetView: View {
+    public init() {}
+    
     // Small Widget Layout
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Image(systemName: "sun.max.fill")
@@ -40,9 +57,15 @@ struct WordOfDayWidgetView: View {
     }
 }
 
-struct MicroDoseWidgetView: View {
+public struct MicroDoseWidgetView: View {
+    public var entry: MicroDoseEntry
+    
+    public init(entry: MicroDoseEntry) {
+        self.entry = entry
+    }
+
     // Medium Widget Layout
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 0) {
             // Left: Progress
             VStack(alignment: .leading) {
@@ -53,7 +76,7 @@ struct MicroDoseWidgetView: View {
                 
                 Spacer()
                 
-                Text("3/5")
+                Text("\(entry.learnedCount)/\(entry.totalGoal)")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundStyle(Color.sonPrimary)
@@ -80,12 +103,12 @@ struct MicroDoseWidgetView: View {
                 
                 Spacer()
                 
-                Text("Ineffable")
+                Text(entry.word)
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundStyle(Color.adaptiveText)
                 
-                Text("Too great to be expressed in words.")
+                Text(entry.definition)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -94,21 +117,5 @@ struct MicroDoseWidgetView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.adaptiveSurface)
         }
-    }
-}
-
-struct WidgetPreviews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: 20) {
-            WordOfDayWidgetView()
-                .frame(width: 155, height: 155)
-                .cornerRadius(22)
-            
-            MicroDoseWidgetView()
-                .frame(width: 329, height: 155)
-                .cornerRadius(22)
-        }
-        .padding()
-        .background(Color.gray.opacity(0.2))
     }
 }

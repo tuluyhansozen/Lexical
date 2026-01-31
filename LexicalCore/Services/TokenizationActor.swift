@@ -2,14 +2,21 @@ import Foundation
 import NaturalLanguage
 
 /// Background actor for tokenizing text and extracting lemmas
-actor TokenizationActor {
+public actor TokenizationActor {
     
     /// Represents a tokenized word with its lemma and range
-    struct TokenizedWord: Sendable {
-        let originalWord: String
-        let lemma: String
-        let range: Range<String.Index>
-        let sentenceRange: Range<String.Index>?
+    public struct TokenizedWord: Sendable {
+        public let originalWord: String
+        public let lemma: String
+        public let range: Range<String.Index>
+        public let sentenceRange: Range<String.Index>?
+        
+        public init(originalWord: String, lemma: String, range: Range<String.Index>, sentenceRange: Range<String.Index>?) {
+            self.originalWord = originalWord
+            self.lemma = lemma
+            self.range = range
+            self.sentenceRange = sentenceRange
+        }
     }
     
     private let tokenizer = NLTokenizer(unit: .word)
@@ -30,14 +37,14 @@ actor TokenizationActor {
         "during", "before", "after", "above", "below", "between", "under", "again"
     ]
     
-    init() {
+    public init() {
         self.tagger = NLTagger(tagSchemes: [.lemma, .lexicalClass])
     }
     
     /// Tokenize text and extract lemmas
     /// - Parameter text: The input text to tokenize
     /// - Returns: Array of TokenizedWord with lemmas and ranges
-    func tokenize(_ text: String) async -> [TokenizedWord] {
+    public func tokenize(_ text: String) async -> [TokenizedWord] {
         var results: [TokenizedWord] = []
         
         tokenizer.string = text
@@ -91,7 +98,7 @@ actor TokenizationActor {
     ///   - text: The full text
     ///   - wordRange: The range of the word
     /// - Returns: The sentence containing the word
-    func extractSentence(from text: String, containing wordRange: Range<String.Index>) -> String {
+    public func extractSentence(from text: String, containing wordRange: Range<String.Index>) -> String {
         let sentenceTokenizer = NLTokenizer(unit: .sentence)
         sentenceTokenizer.string = text
         
@@ -112,7 +119,7 @@ actor TokenizationActor {
     ///   - sentence: The original sentence
     ///   - word: The word to replace
     /// - Returns: Cloze sentence with the word replaced by [_____]
-    func generateCloze(sentence: String, targetWord: String) -> String {
+    public func generateCloze(sentence: String, targetWord: String) -> String {
         // Case-insensitive replacement
         let pattern = "\\b\(NSRegularExpression.escapedPattern(for: targetWord))\\b"
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {

@@ -1,31 +1,23 @@
 import Foundation
 import SwiftData
 
-/// Vocabulary state for highlighting
-enum VocabularyState: String, Sendable {
-    case new        // Blue - Not yet captured
-    case learning   // Yellow - In learning queue
-    case known      // Clear - Mastered
-    case unknown    // Gray - Not in database (show as new)
-}
-
 /// Resolves lemmas to vocabulary states via SwiftData lookup
 @MainActor
-final class LemmaResolver {
+public final class LemmaResolver {
     
     private let modelContext: ModelContext
     
     /// Cache for vocabulary lookups to avoid repeated queries
     private var stateCache: [String: VocabularyState] = [:]
     
-    init(modelContext: ModelContext) {
+    public init(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
     
     /// Resolve a batch of lemmas to their vocabulary states
     /// - Parameter lemmas: Set of lemmas to look up
     /// - Returns: Dictionary mapping lemma to VocabularyState
-    func resolveStates(for lemmas: Set<String>) -> [String: VocabularyState] {
+    public func resolveStates(for lemmas: Set<String>) -> [String: VocabularyState] {
         var results: [String: VocabularyState] = [:]
         
         // Check cache first
@@ -95,12 +87,12 @@ final class LemmaResolver {
     }
     
     /// Clear the cache (call when vocabulary updates)
-    func invalidateCache() {
+    public func invalidateCache() {
         stateCache.removeAll()
     }
     
     /// Invalidate a specific lemma (e.g., after capture)
-    func invalidate(lemma: String) {
+    public func invalidate(lemma: String) {
         stateCache.removeValue(forKey: lemma)
     }
 }

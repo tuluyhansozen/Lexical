@@ -2,33 +2,33 @@ import SwiftUI
 import UIKit
 
 extension Color {
-    static let sonPrimary = Color(hex: "4F735C")
-    static let sonCloud = Color(hex: "F2EDE7")
-    static let sonMidnight = Color(hex: "2F2F2F")
-    static let sonCharcoal = Color(hex: "3E3E42")
+    static public let sonPrimary = Color(hex: "4F735C")
+    static public let sonCloud = Color(hex: "F2EDE7")
+    static public let sonMidnight = Color(hex: "2F2F2F")
+    static public let sonCharcoal = Color(hex: "3E3E42")
     
     // Semantic Colors
-    static let sonBackgroundLight = Color.white
-    static let sonBackgroundDark = Color(hex: "2F2F2F")
-    static let sonSurfaceDark = Color(hex: "3E3E42")
+    static public let sonBackgroundLight = Color.white
+    static public let sonBackgroundDark = Color(hex: "2F2F2F")
+    static public let sonSurfaceDark = Color(hex: "3E3E42")
     
     // Adapted for Light/Dark mode
-    static let sonBackground = Color("SonBackground") // In a real app we'd set this up in Assets, but here we can stick to programmatic for simplicity or use system adaptation.
+    static public let sonBackground = Color("SonBackground") // In a real app we'd set this up in Assets, but here we can stick to programmatic for simplicity or use system adaptation.
     
     // Let's use programmatic adaptation for simplicity in this single-file context
-    static var adaptiveBackground: Color {
+    static public var adaptiveBackground: Color {
         Color(uiColor: UIColor { traitCollection in
             return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "2F2F2F") : UIColor.white
         })
     }
     
-    static var adaptiveSurface: Color {
+    static public var adaptiveSurface: Color {
         Color(uiColor: UIColor { traitCollection in
             return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "3E3E42") : UIColor(hex: "F2EDE7")
         })
     }
     
-    static var adaptiveText: Color {
+    static public var adaptiveText: Color {
         Color(uiColor: UIColor { traitCollection in
             return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "F2EDE7") : UIColor(hex: "2F2F2F")
         })
@@ -36,7 +36,7 @@ extension Color {
 }
 
 extension Color {
-    init(hex: String) {
+    public init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&int)

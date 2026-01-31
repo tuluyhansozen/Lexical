@@ -4,32 +4,32 @@ import UIKit
 
 /// Immutable review event log for CRDT-based sync
 @Model
-final class ReviewLog {
+public final class ReviewLog {
     /// Unique identifier for this review event
-    var id: UUID
+    public var id: UUID
     
     /// The vocabulary item that was reviewed
-    var vocabularyItem: VocabularyItem?
+    public var vocabularyItem: VocabularyItem?
     
     /// FSRS grade (1=Again, 2=Hard, 3=Good, 4=Easy)
-    var grade: Int
+    public var grade: Int
     
     /// When the review occurred
-    var reviewDate: Date
+    public var reviewDate: Date
     
     /// Time spent on this review (in seconds)
-    var duration: TimeInterval
+    public var duration: TimeInterval
     
     /// Device that recorded this review (for CRDT merging)
-    var deviceId: String
+    public var deviceId: String
     
     /// Stability value after this review
-    var stabilityAfter: Double
+    public var stabilityAfter: Double
     
     /// Difficulty value after this review
-    var difficultyAfter: Double
+    public var difficultyAfter: Double
     
-    init(
+    public init(
         vocabularyItem: VocabularyItem,
         grade: Int,
         duration: TimeInterval,

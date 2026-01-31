@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import LexicalCore
 
 /// Main container for the study session
 struct ReviewSessionView: View {
@@ -73,7 +74,7 @@ struct SessionContent: View {
                         isFlipped: $isFlipped
                     )
                     .id(card.lemma) // Force transition for new card
-                    .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+                    .transition(AnyTransition.asymmetric(insertion: AnyTransition.move(edge: .trailing), removal: AnyTransition.move(edge: .leading)))
                     
                     Spacer()
                     

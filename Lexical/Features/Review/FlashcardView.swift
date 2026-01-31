@@ -1,4 +1,5 @@
 import SwiftUI
+import LexicalCore
 
 /// Two-sided flashcard with Liquid Glass design and 3D flip animation
 struct FlashcardView: View {

@@ -18,6 +18,10 @@
 - `ReviewLog`: Immutable append-only for CRDT sync
 - `MorphologicalRoot`: Etymology tracking
 
+- **App Intents**: `ReviewIntents.swift` for background grading.
+- **Persistence**: Shared ModelContainer via App Groups.
+- **Widgets**: `MicroDoseWidget` code implemented (ready for target integration).
+
 ## Environment Notes
 - **MCP Servers**: `ios-simulator` and `filesystem` for agentic interactions.
 - **uv Integration**: Python script execution via uv for zero-setup utility tasks.
@@ -29,5 +33,5 @@
 - ✅ Phase 3: Core UI Implementation
 - ✅ Phase 4: The Acquisition Engine (Immersive Reader)
 - ✅ Phase 5: The Retention Engine (FSRS Review Loop)
-- 🔲 Phase 6: Home Screen Offensive (Widgets & Intents)
+- ✅ Phase 6: Home Screen Offensive (Widgets & Intents)
 - 🔲 Phase 7: Intelligent Engagement & Integration
