@@ -1,2 +1,22 @@
 *.log
 .DS_Store
+
+# Agent tasks (documented as untracked)
+.agent/tasks.json
+
+# iOS/Xcode
+build/
+DerivedData/
+*.xcworkspace
+!contents.xcworkspacedata
+xcuserdata/
+*.xccheckout
+*.xcscheme
+*.xcuserstate
+.swiftpm/
+.build/
+
+# Other
+.DS_Store
+*.swp
+*.lock
