@@ -1,14 +1,14 @@
 #!/bin/bash
 set -x
 
-PROJECT_ROOT="/Users/tuluyhan/projects/son"
+PROJECT_ROOT="/Users/tuluyhan/projects/Lexical"
 DERIVED_DATA_ROOT="/Users/tuluyhan/Library/Developer/Xcode/DerivedData"
 
-# Find latest build product (safely)
-# We assume the directory name starts with 'Lexical-'
-BINARY_DIR=$(find "$DERIVED_DATA_ROOT" -name "Lexical-*" -type d -print -quit)
-if [ -z "$BINARY_DIR" ]; then
-    echo "Could not find DerivedData for Lexical"
+# Use the specific DerivedData path we just built to
+BINARY_DIR="/Users/tuluyhan/Library/Developer/Xcode/DerivedData/Lexical-fzisfpgkunvwchfwloqfcavzfhmc"
+
+if [ ! -d "$BINARY_DIR" ]; then
+    echo "Could not find DerivedData at $BINARY_DIR"
     exit 1
 fi
 
