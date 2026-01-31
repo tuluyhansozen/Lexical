@@ -3,6 +3,7 @@ import SwiftUI
 struct ArticleCardView: View {
     let article: Article
     @State private var selectedWord: HighlightedWord?
+    @State private var showReader = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -129,7 +130,7 @@ struct ArticleCardView: View {
                         Spacer()
                         
                         Button {
-                            // Action
+                            showReader = true
                         } label: {
                             HStack(spacing: 4) {
                                 Text("Continue Reading")
@@ -184,6 +185,19 @@ struct ArticleCardView: View {
             WordCaptureSheet(word: word.word, definition: word.definition)
                 .presentationDetents([.fraction(0.75), .large])
                 .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(isPresented: $showReader) {
+            NavigationStack {
+                ReaderView(title: article.title, content: article.content)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close") {
+                                showReader = false
+                            }
+                        }
+                    }
+            }
         }
     }
 }

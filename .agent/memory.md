@@ -11,6 +11,7 @@
 - **Immersive Reader**: TextKit 2 based reading experience with "Tap-to-Capture".
 - **CRDT Sync**: Decentralized synchronization logic.
 - **NLP Pipeline**: `TokenizationActor` + `LemmaResolver` for lemmatization.
+- **Review Engine**: `SessionManager` + `FlashcardView` with Brain Boost re-queueing.
 
 ## SwiftData Models
 - `VocabularyItem`: Core model with FSRS fields (stability, difficulty, retrievability)
@@ -27,6 +28,6 @@
 - ✅ Phase 2: Architecture & Core Logic
 - ✅ Phase 3: Core UI Implementation
 - ✅ Phase 4: The Acquisition Engine (Immersive Reader)
-- 🔲 Phase 5: The Retention Engine (FSRS Review Loop)
+- ✅ Phase 5: The Retention Engine (FSRS Review Loop)
 - 🔲 Phase 6: Home Screen Offensive (Widgets & Intents)
 - 🔲 Phase 7: Intelligent Engagement & Integration

@@ -1,10 +1,16 @@
 import SwiftUI
 import UIKit
 
+/// Represents a highlight to apply at a specific text range
+struct TokenHighlight: Sendable {
+    let range: Range<String.Index>
+    let state: VocabularyState
+}
+
 /// TextKit 2 based reader view with vocabulary highlighting
 struct ReaderTextView: UIViewRepresentable {
     let text: String
-    let vocabularyStates: [String: VocabularyState]
+    let tokenHighlights: [TokenHighlight]
     let onWordTap: (String, String, Range<String.Index>) -> Void
     
     func makeUIView(context: Context) -> UITextView {
@@ -27,11 +33,11 @@ struct ReaderTextView: UIViewRepresentable {
         let attributedText = createAttributedText()
         textView.attributedText = attributedText
         context.coordinator.text = text
-        context.coordinator.vocabularyStates = vocabularyStates
+        context.coordinator.tokenHighlights = tokenHighlights
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: text, vocabularyStates: vocabularyStates, onWordTap: onWordTap)
+        Coordinator(text: text, tokenHighlights: tokenHighlights, onWordTap: onWordTap)
     }
     
     private func createAttributedText() -> NSAttributedString {
@@ -53,54 +59,45 @@ struct ReaderTextView: UIViewRepresentable {
             range: NSRange(location: 0, length: text.count)
         )
         
-        // Apply vocabulary-based highlighting
-        for (word, state) in vocabularyStates {
-            highlightWord(word, state: state, in: attributedString)
-        }
-        
-        return attributedString
-    }
-    
-    private func highlightWord(_ word: String, state: VocabularyState, in attributedString: NSMutableAttributedString) {
-        let text = attributedString.string.lowercased()
-        let searchWord = word.lowercased()
-        var searchRange = text.startIndex..<text.endIndex
-        
-        while let range = text.range(of: searchWord, options: .caseInsensitive, range: searchRange) {
-            let nsRange = NSRange(range, in: text)
+        // Apply pre-computed token highlights (no substring matching needed!)
+        for highlight in tokenHighlights {
+            let nsRange = NSRange(highlight.range, in: text)
+            let backgroundColor = colorForState(highlight.state)
             
-            let backgroundColor: UIColor
-            switch state {
-            case .new:
-                backgroundColor = UIColor(red: 0.89, green: 0.95, blue: 0.99, alpha: 1.0) // #E3F2FD
-            case .learning:
-                backgroundColor = UIColor(red: 1.0, green: 0.98, blue: 0.77, alpha: 1.0) // #FFF9C4
-            case .known:
-                backgroundColor = .clear
-            case .unknown:
-                backgroundColor = UIColor.systemGray6
-            }
-            
-            if state != .known {
+            if highlight.state != .known {
                 attributedString.addAttributes([
                     .backgroundColor: backgroundColor,
                     .underlineStyle: NSUnderlineStyle.single.rawValue,
                     .underlineColor: backgroundColor.withAlphaComponent(0.5)
                 ], range: nsRange)
             }
-            
-            searchRange = range.upperBound..<text.endIndex
+        }
+        
+        return attributedString
+    }
+    
+    private func colorForState(_ state: VocabularyState) -> UIColor {
+        switch state {
+        case .new:
+            return UIColor(red: 0.89, green: 0.95, blue: 0.99, alpha: 1.0) // #E3F2FD
+        case .learning:
+            return UIColor(red: 1.0, green: 0.98, blue: 0.77, alpha: 1.0) // #FFF9C4
+        case .known:
+            return .clear
+        case .unknown:
+            return UIColor.systemGray6
         }
     }
+
     
     class Coordinator: NSObject {
         var text: String
-        var vocabularyStates: [String: VocabularyState]
+        var tokenHighlights: [TokenHighlight]
         let onWordTap: (String, String, Range<String.Index>) -> Void
         
-        init(text: String, vocabularyStates: [String: VocabularyState], onWordTap: @escaping (String, String, Range<String.Index>) -> Void) {
+        init(text: String, tokenHighlights: [TokenHighlight], onWordTap: @escaping (String, String, Range<String.Index>) -> Void) {
             self.text = text
-            self.vocabularyStates = vocabularyStates
+            self.tokenHighlights = tokenHighlights
             self.onWordTap = onWordTap
         }
         

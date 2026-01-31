@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab: Int = 0
+    @State private var showSession: Bool = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -15,31 +16,38 @@ struct ContentView: View {
                     .background(Color.adaptiveBackground)
                     .tag(1)
                 
-                VStack {
+                VStack(spacing: 20) {
                     Spacer()
-                    Button("Start Practice Session") {
-                        // In a real app we'd use a router. 
-                        // For now this is just a placeholder tab.
+                    
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 80))
+                        .foregroundStyle(Color.sonPrimary)
+                    
+                    Text("Ready to Review?")
+                        .font(.display(size: 32, weight: .bold))
+                        .foregroundStyle(Color.adaptiveText)
+                    
+                    Text("Your retention engine is primed.")
+                        .font(.bodyText)
+                        .foregroundStyle(.secondary)
+                    
+                    Button("Start Session") {
+                        showSession = true
                     }
                     .font(.headline)
-                    .padding()
-                    .background(Color.sonPrimary)
                     .foregroundStyle(.white)
-                    .cornerRadius(12)
+                    .padding()
+                    .frame(maxWidth: 200)
+                    .background(Color.sonPrimary)
+                    .cornerRadius(16)
                     
-                    Text("(Tap 'Practice' in Tab Bar to see placeholder)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.top)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.adaptiveBackground)
                 .tag(2)
-                .sheet(isPresented: .constant(true)) { // Force show for demo? No that's annoying.
-                     // I will actually replace the CONTENT of the tab with ReviewSessionView 
-                     // and hide the close button conceptually or just leave it non-functional
-                     ReviewSessionView()
+                .fullScreenCover(isPresented: $showSession) {
+                    ReviewSessionView()
                 }
                 
                 StatsView()

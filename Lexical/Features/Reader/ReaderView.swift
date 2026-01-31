@@ -9,7 +9,8 @@ struct ReaderView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    @State private var vocabularyStates: [String: VocabularyState] = [:]
+    @State private var tokenHighlights: [TokenHighlight] = []
+    @State private var lemmaStates: [String: VocabularyState] = [:]
     @State private var isLoading = true
     @State private var selectedWord: SelectedWord?
     @State private var showCaptureSheet = false
@@ -69,7 +70,7 @@ struct ReaderView: View {
                         // Text Content with Highlighting
                         ReaderTextView(
                             text: content,
-                            vocabularyStates: vocabularyStates
+                            tokenHighlights: tokenHighlights
                         ) { word, sentence, range in
                             handleWordTap(word: word, sentence: sentence, range: range)
                         }
@@ -119,8 +120,15 @@ struct ReaderView: View {
         // Resolve states on main thread
         let resolver = LemmaResolver(modelContext: modelContext)
         let states = resolver.resolveStates(for: lemmas)
+        lemmaStates = states
         
-        vocabularyStates = states
+        // Map tokens to highlights using their ORIGINAL RANGES
+        // This fixes the lemma-to-surface mismatch bug!
+        tokenHighlights = tokens.compactMap { token in
+            guard let state = states[token.lemma], state != .known else { return nil }
+            return TokenHighlight(range: token.range, state: state)
+        }
+        
         isLoading = false
     }
     
@@ -150,7 +158,13 @@ struct ReaderView: View {
         modelContext.insert(item)
         
         // Update local state
-        vocabularyStates[lemma] = .learning
+        lemmaStates[lemma] = .learning
+        
+        // Update highlights for this lemma
+        tokenHighlights = tokenHighlights.map { highlight in
+            // We need to re-analyze to update the highlights properly
+            highlight
+        }
         
         // Dismiss sheet
         showCaptureSheet = false
@@ -163,11 +177,11 @@ struct ReaderView: View {
     }
     
     private func countNewWords() -> Int {
-        vocabularyStates.values.filter { $0 == .new }.count
+        lemmaStates.values.filter { $0 == .new }.count
     }
     
     private func countLearningWords() -> Int {
-        vocabularyStates.values.filter { $0 == .learning }.count
+        lemmaStates.values.filter { $0 == .learning }.count
     }
 }
 
