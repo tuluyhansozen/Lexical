@@ -110,7 +110,22 @@ class SessionManager: ObservableObject {
     
     /// Update the card with final FSRS state/date after graduation
     private func updateCardState(_ card: VocabularyItem, newState: FSRSV4Engine.FSRSState) {
-        card.stability = newState.stability
+        var stability = newState.stability
+        
+        // Morphology Stability Boost
+        // If the user already knows other words with this root, learning this one should be faster (higher stability)
+        if let root = card.root {
+            let masteredSiblings = root.vocabularyItems.filter { 
+                $0.persistentModelID != card.persistentModelID && $0.learningState == .mastered 
+            }
+            
+            if !masteredSiblings.isEmpty {
+                print("🚀 Morphology Boost! '\(card.lemma)' shares root '\(root.root)' with \(masteredSiblings.count) known words.")
+                stability *= 1.5 // 50% boost
+            }
+        }
+        
+        card.stability = stability
         card.difficulty = newState.difficulty
         card.retrievability = newState.retrievability
         card.lastReviewedAt = Date()
@@ -118,7 +133,7 @@ class SessionManager: ObservableObject {
         
         Task {
             let intervalDays = await fsrsEngine.nextInterval(
-                stability: newState.stability,
+                stability: stability,
                 requestRetention: 0.9
             )
             card.nextReviewDate = Date().addingTimeInterval(intervalDays * 86400)

@@ -16,6 +16,19 @@
                 "@modelcontextprotocol/server-filesystem",
                 "/Users/tuluyhan/projects/Lexical"
             ]
+        },
+        "context7": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-context7"
+            ]
+        },
+        "stitch": {
+            "command": "uvx",
+            "args": [
+                "stitch-mcp"
+            ]
         }
     }
 }

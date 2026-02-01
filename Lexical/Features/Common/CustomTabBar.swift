@@ -5,10 +5,10 @@ struct CustomTabBar: View {
     
     let tabs = [
         (icon: "book.fill", label: "Feed"),
-        (icon: "magnifyingglass", label: "Search"),
+        (icon: "network", label: "Explore"),
         (icon: "graduationcap.fill", label: "Practice"),
         (icon: "chart.bar.fill", label: "Stats"),
-        (icon: "gearshape.fill", label: "Settings")
+        (icon: "person.circle", label: "Profile")
     ]
     
     var body: some View {

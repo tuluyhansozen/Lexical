@@ -5,20 +5,20 @@ import SwiftData
 @Model
 public final class MorphologicalRoot {
     /// The root string (e.g., "spect", "chron")
-    @Attribute(.unique) var root: String
+    @Attribute(.unique) public var root: String
     
     /// Meaning of the root
-    var meaning: String
+    public var meaning: String
     
     /// Origin language (Latin, Greek, etc.)
-    var origin: String
+    public var origin: String
     
     /// Example words derived from this root
-    var exampleWords: [String]
+    public var exampleWords: [String]
     
     /// Vocabulary items connected to this root
     @Relationship
-    var vocabularyItems: [VocabularyItem]
+    public var vocabularyItems: [VocabularyItem]
     
     public init(root: String, meaning: String, origin: String = "Latin", exampleWords: [String] = []) {
         self.root = root.lowercased()

@@ -5,6 +5,7 @@
 - **Offline-First**: Use SwiftData and CRDTs for data consistency across devices.
 - **FSRS v4.5**: Core retention algorithm used for spaced repetition.
 - **Liquid Glass UI**: Modern, glassmorphic design system for iOS.
+- **Pre-seeded Vocabulary**: Seed pipeline in place; starter seed included (expand to 500–1000 words).
 
 ## Core Components
 - **FSRS Engine**: Spaced repetition scheduling.
@@ -12,18 +13,30 @@
 - **CRDT Sync**: Decentralized synchronization logic.
 - **NLP Pipeline**: `TokenizationActor` + `LemmaResolver` for lemmatization.
 - **Review Engine**: `SessionManager` + `FlashcardView` with Brain Boost re-queueing.
+- **Bandit Scheduler**: Epsilon-Greedy MAB for notification timing optimization.
+- **Morphology Matrix**: Force-directed graph visualization of word families.
+- **Vocabulary Seeding**: `VocabularySeedService` + `vocab_seed.json` first-launch seeding.
+- **Debug Verification**: Seed count overlay (DEBUG) + `--lexical-debug-autocycle` tab cycling for simulator checks.
 
 ## SwiftData Models
 - `VocabularyItem`: Core model with FSRS fields (stability, difficulty, retrievability)
 - `ReviewLog`: Immutable append-only for CRDT sync
-- `MorphologicalRoot`: Etymology tracking
+- `MorphologicalRoot`: Etymology tracking for morphology matrix
 
-- **App Intents**: `ReviewIntents.swift` for background grading.
-- **Persistence**: Shared ModelContainer via App Groups.
-- **Widgets**: `MicroDoseWidget` code implemented (ready for target integration).
+## Current Placeholder Status
+- **Search Tab (Tab 1)**: `Text("Search Placeholder")` - needs `SearchView.swift`
+- **Stats Tab (Tab 3)**: Mock data (hardcoded) - needs real SwiftData queries
+- **Settings**: Missing entirely - needs `SettingsView.swift`
+
+## Completion Phases (8-10)
+- **Phase 8**: Complete Placeholder Screens & Seed Vocabulary
+  - SearchView, SettingsView, real Stats data
+  - VocabularySeedService for first-launch seeding
+- **Phase 9**: Authentication & Cloud Sync (Sign in with Apple, CloudKit)
+- **Phase 10**: Production Polish & App Store (Onboarding, Privacy Manifests)
 
 ## Environment Notes
-- **MCP Servers**: `ios-simulator` and `filesystem` for agentic interactions.
+- **MCP Servers**: `ios-simulator`, `filesystem`, `context7` for agentic interactions.
 - **uv Integration**: Python script execution via uv for zero-setup utility tasks.
 - **Simulator**: iPhone 16e (98FACCED-3F83-4A94-8D7B-F8905AAF08D1)
 
@@ -34,4 +47,7 @@
 - ✅ Phase 4: The Acquisition Engine (Immersive Reader)
 - ✅ Phase 5: The Retention Engine (FSRS Review Loop)
 - ✅ Phase 6: Home Screen Offensive (Widgets & Intents)
-- 🔲 Phase 7: Intelligent Engagement & Integration
+- ✅ Phase 7: Intelligent Engagement & Integration
+- 🟡 Phase 8: Complete Placeholder Screens & Seed Vocabulary (seeding started)
+- 🔲 Phase 9: Authentication & Cloud Sync
+- 🔲 Phase 10: Production Polish & App Store Release

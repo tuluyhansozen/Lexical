@@ -151,10 +151,30 @@ struct ReaderView: View {
     }
     
     private func handleCapture(lemma: String, sentence: String) {
+        // Resolve Root
+        var rootObj: MorphologicalRoot? = nil
+        if let rootStr = EtymologyService.resolveRoot(for: lemma) {
+            // Check if root already exists
+            let descriptor = FetchDescriptor<MorphologicalRoot>(predicate: #Predicate<MorphologicalRoot> { $0.root == rootStr })
+            if let existing = try? modelContext.fetch(descriptor).first {
+                rootObj = existing
+            } else {
+                // Create new root (placeholder metadata for now)
+                let newRoot = MorphologicalRoot(
+                    root: rootStr,
+                    meaning: "Root of \(lemma)", // Placeholder
+                    origin: "Unknown"
+                )
+                modelContext.insert(newRoot)
+                rootObj = newRoot
+            }
+        }
+    
         // Create new VocabularyItem
         let item = VocabularyItem(
             lemma: lemma,
-            contextSentence: sentence
+            contextSentence: sentence,
+            root: rootObj
         )
         modelContext.insert(item)
         

@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "roots": [
+    {
+      "root": "spect",
+      "meaning": "to look, to see",
+      "origin": "Latin",
+      "exampleWords": ["inspect", "spectacle", "prospect", "retrospect"]
+    },
+    {
+      "root": "port",
+      "meaning": "to carry",
+      "origin": "Latin",
+      "exampleWords": ["transport", "import", "export", "portable"]
+    },
+    {
+      "root": "fer",
+      "meaning": "to carry, to bring",
+      "origin": "Latin",
+      "exampleWords": ["refer", "transfer", "prefer", "infer"]
+    },
+    {
+      "root": "scrib",
+      "meaning": "to write",
+      "origin": "Latin",
+      "exampleWords": ["describe", "inscribe", "manuscript", "script"]
+    },
+    {
+      "root": "chron",
+      "meaning": "time",
+      "origin": "Greek",
+      "exampleWords": ["chronology", "synchronize", "chronic", "chronicle"]
+    }
+  ],
+  "words": [
+    {
+      "lemma": "inspect",
+      "definition": "to examine closely",
+      "context": "The scientist will inspect the samples before the test.",
+      "root": "spect"
+    },
+    {
+      "lemma": "spectacle",
+      "definition": "a remarkable sight or event",
+      "context": "The fireworks were a spectacle that drew a crowd.",
+      "root": "spect"
+    },
+    {
+      "lemma": "prospect",
+      "definition": "the possibility that something will happen",
+      "context": "There is a strong prospect of rain this afternoon.",
+      "root": "spect"
+    },
+    {
+      "lemma": "retrospect",
+      "definition": "looking back on past events",
+      "context": "In retrospect, the choice was obvious.",
+      "root": "spect"
+    },
+    {
+      "lemma": "transport",
+      "definition": "to carry from one place to another",
+      "context": "Ships transport goods across the ocean.",
+      "root": "port"
+    },
+    {
+      "lemma": "import",
+      "definition": "to bring goods into a country",
+      "context": "The company will import coffee beans from Brazil.",
+      "root": "port"
+    },
+    {
+      "lemma": "export",
+      "definition": "to send goods to another country",
+      "context": "Local farms export fruit to Europe.",
+      "root": "port"
+    },
+    {
+      "lemma": "portable",
+      "definition": "easy to carry or move",
+      "context": "She bought a portable charger for travel.",
+      "root": "port"
+    },
+    {
+      "lemma": "refer",
+      "definition": "to mention or allude to",
+      "context": "Please refer to the manual for setup steps.",
+      "root": "fer"
+    },
+    {
+      "lemma": "transfer",
+      "definition": "to move something from one place to another",
+      "context": "They will transfer the files to the new server.",
+      "root": "fer"
+    },
+    {
+      "lemma": "prefer",
+      "definition": "to like one thing more than another",
+      "context": "I prefer tea over coffee in the evening.",
+      "root": "fer"
+    },
+    {
+      "lemma": "infer",
+      "definition": "to conclude from evidence",
+      "context": "From the clues, we can infer the answer.",
+      "root": "fer"
+    },
+    {
+      "lemma": "describe",
+      "definition": "to give an account of something",
+      "context": "She described the scene in vivid detail.",
+      "root": "scrib"
+    },
+    {
+      "lemma": "inscribe",
+      "definition": "to write or carve on a surface",
+      "context": "They inscribe names on the monument.",
+      "root": "scrib"
+    },
+    {
+      "lemma": "manuscript",
+      "definition": "a handwritten or typed document",
+      "context": "The author submitted the manuscript yesterday.",
+      "root": "scrib"
+    },
+    {
+      "lemma": "script",
+      "definition": "written text of a play or film",
+      "context": "The actor memorized the script.",
+      "root": "scrib"
+    },
+    {
+      "lemma": "chronology",
+      "definition": "the order of events in time",
+      "context": "The detective built a chronology of the night.",
+      "root": "chron"
+    },
+    {
+      "lemma": "synchronize",
+      "definition": "to cause things to occur at the same time",
+      "context": "They synchronized their watches before the hike.",
+      "root": "chron"
+    },
+    {
+      "lemma": "chronic",
+      "definition": "continuing for a long time",
+      "context": "He suffers from chronic back pain.",
+      "root": "chron"
+    },
+    {
+      "lemma": "chronicle",
+      "definition": "a written record of events",
+      "context": "The book chronicles the city's history.",
+      "root": "chron"
+    },
+    {
+      "lemma": "analyze",
+      "definition": "to examine in detail",
+      "context": "We analyze the results after each experiment.",
+      "root": null
+    },
+    {
+      "lemma": "clarify",
+      "definition": "to make something clear",
+      "context": "Could you clarify the instructions?",
+      "root": null
+    },
+    {
+      "lemma": "compare",
+      "definition": "to examine similarities and differences",
+      "context": "Students compare the two solutions.",
+      "root": null
+    },
+    {
+      "lemma": "decide",
+      "definition": "to make a choice",
+      "context": "She will decide after the meeting.",
+      "root": null
+    },
+    {
+      "lemma": "explore",
+      "definition": "to investigate or travel through",
+      "context": "They explore the coast during summer.",
+      "root": null
+    },
+    {
+      "lemma": "focus",
+      "definition": "to concentrate attention",
+      "context": "Try to focus on one task at a time.",
+      "root": null
+    },
+    {
+      "lemma": "improve",
+      "definition": "to make better",
+      "context": "Daily practice can improve your skills.",
+      "root": null
+    },
+    {
+      "lemma": "organize",
+      "definition": "to arrange systematically",
+      "context": "We organize the files by date.",
+      "root": null
+    },
+    {
+      "lemma": "review",
+      "definition": "to study something again",
+      "context": "Please review your notes before the quiz.",
+      "root": null
+    },
+    {
+      "lemma": "reflect",
+      "definition": "to think carefully about",
+      "context": "He reflected on the decision overnight.",
+      "root": null
+    }
+  ]
+}

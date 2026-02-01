@@ -18,6 +18,9 @@ let package = Package(
             name: "Lexical",
             dependencies: ["LexicalCore"],
             path: "Lexical",
+            resources: [
+                .process("Resources")
+            ],
             linkerSettings: [
                 .unsafeFlags([
                     "-Xlinker", "-sectcreate",

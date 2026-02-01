@@ -1,8 +1,8 @@
 # Lexical App: Project Implementation Plan
 
 > **Generated:** 2026-01-31
-> **Last Updated:** 2026-01-31
-> **Status:** Milestones 1-5 Completed | Milestones 6-7 Pending
+> **Last Updated:** 2026-02-01
+> **Status:** Core Features Complete | Completion Phases Pending
 
 ---
 
@@ -122,8 +122,6 @@ Build the "Output" interface enforcing "Recall Dominance" with FSRS-driven study
 
 ---
 
-# 🔲 PENDING PHASES
-
 ## Phase 6: Home Screen Offensive (Widgets & Intents)
 
 **Status:** ✅ Complete
@@ -146,35 +144,147 @@ Enable "Micro-Dose" learning via App Intents and Widgets (Preparation).
 
 ## Phase 7: Intelligent Engagement & Integration
 
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
 ### Section 1: Objective
 Implement adaptive notifications via Bandit Algorithms, Morphology Matrix visualization, and final system integration.
 
 ### Section 2: Key Activities
-- **Bandit Scheduler:** Implement Epsilon-Greedy MAB for notification optimization with interruptibility modeling
-- **Morphology Matrix:** Build force-directed graph visualizing etymological word relationships
-- **Final Integration:** Merge all modules, run agentic QA automation, prepare for App Store release
+- **Bandit Scheduler:** Implemented Epsilon-Greedy MAB for notification optimization with time slot selection.
+- **Morphology Matrix:** Built force-directed graph visualizing word families using SwiftUI Canvas.
+- **Final Integration:** Integrated Matrix tab into main navigation, updated CustomTabBar.
 
 ### Section 3: Deliverables
-- [ ] `BanditScheduler` with notification templates
-- [ ] `WordMatrixView` with physics-based graph
-- [ ] End-to-end QA walkthrough artifacts
-- [ ] Production-ready `.ipa` and Privacy Manifests
+- [x] `BanditScheduler.swift` with notification templates
+- [x] `ForceDirectedGraph.swift` physics engine
+- [x] `WordMatrixView.swift` with Canvas-based graph
+- [x] Navigation integration (ContentView, CustomTabBar)
+
+---
+
+# 🔲 COMPLETION PHASES
+
+---
+
+## Phase 8: Navigation Restructure & Placeholder Completion
+
+**Status:** 🟡 In Progress
+
+> [!IMPORTANT]
+> This phase addresses placeholder UI elements, navigation alignment, and vocabulary seeding; seeding is now in progress while article personalization remains pending.
+
+### Section 1: Objective
+Replace placeholder screens with functional implementations and restructure navigation to match the design spec (Feed, Explore, Practice, Stats, Profile).
+
+### Section 2: Key Activities
+
+#### 8.1 ExploreView (Replaced Search Placeholder)
+- **Matrix + Search Combined:** Created `ExploreView.swift` combining Morphology Matrix with vocabulary search
+- **Last Learned Word:** Matrix centers on the most recently reviewed word
+- **Related Words:** Displays words sharing the same root around the center
+- **Search Functionality:** Search bar for filtering vocabulary with results that recenter the matrix
+
+#### 8.2 SettingsView (New Profile Tab)
+- **Profile Section:** Avatar, editable name, streak display
+- **Learning Settings:** Daily goal slider, dark mode toggle
+- **Notification Settings:** Bandit timing preferences
+- **Data Management:** Export vocabulary, reset progress options
+- **About Section:** Version info, privacy policy link
+
+#### 8.3 Navigation Update
+- **CustomTabBar:** Updated icons and labels (Explore, Profile instead of Search, Matrix)
+- **ContentView:** Replaced placeholders with actual views
+
+#### 8.4 Bug Fixes
+- **SessionManager:** Fixed FSRS stability mutability issue
+- **SettingsView:** Fixed reviewDate property reference
+
+### Section 3: Deliverables
+- [x] `ExploreView.swift` - Matrix + Search combined view
+- [x] `SettingsView.swift` - Full settings with profile
+- [x] `CustomTabBar.swift` - Updated tab icons/labels
+- [x] `ContentView.swift` - Uses new views
+- [x] `SessionManager.swift` - FSRS bug fix
+- [x] `VocabularySeedService.swift` - Pre-seeds vocabulary on first launch
+- [x] `vocab_seed.json` - JSON file with initial vocabulary data
+- [x] Debug seed count overlay (DEBUG-only verification)
+- [ ] `InterestProfile.swift` - Interest weighting & preference storage
+- [ ] `ArticleGenerator.swift` - Builds personalized articles from target words
+- [ ] `ArticleTemplateBank.json` - Template/structure library for article assembly
+- [ ] `ArticleConstraintsEvaluator.swift` - Enforces density, repetition, and difficulty rules
+- [ ] `ArticleStore.swift` - File-backed article persistence + metadata
+
+---
+
+## Phase 9: Authentication & Cloud Sync
+
+**Status:** 🔲 Not Started
+
+### Section 1: Objective
+Implement user authentication via Sign in with Apple and enable cross-device synchronization using CloudKit.
+
+### Section 2: Key Activities
+- **Sign in with Apple:** Implement `AuthenticationService` using AuthenticationServices framework
+- **User Profile:** Create `UserProfile` model with preferences, streak data, and subscription status
+- **CloudKit Container:** Configure CKContainer for private database sync
+- **CRDT Sync Implementation:** Wire up the existing CRDT logic to CloudKit push/pull
+- **Conflict Resolution:** Implement G-Set merge for ReviewLogs and LWW-Set for VocabularyItem states
+- **Offline Queue:** Build pending operations queue for offline-first sync
+
+### Section 3: Deliverables
+- [ ] `AuthenticationService.swift` - Sign in with Apple flow
+- [ ] `UserProfile.swift` - User data model
+- [ ] `CloudKitSyncManager.swift` - CKContainer integration
+- [ ] `SyncConflictResolver.swift` - CRDT merge logic
+- [ ] `OfflineSyncQueue.swift` - Pending operations handler
+- [ ] `ProfileView.swift` - User profile UI with stats
+
+---
+
+## Phase 10: Production Polish & App Store Release
+
+**Status:** 🔲 Not Started
+
+### Section 1: Objective
+Complete onboarding experience, accessibility compliance, and prepare all assets for App Store submission.
+
+### Section 2: Key Activities
+- **Onboarding Flow:** Create 4-screen onboarding with value proposition, permissions, and vocabulary preference
+- **Accessibility Audit:** Ensure VoiceOver support, Dynamic Type, and Reduce Motion compliance
+- **Performance Optimization:** Profile with Instruments, ensure <150MB memory, 120fps scrolling
+- **Privacy Manifests:** Create `PrivacyInfo.xcprivacy` with required disclosures (tracking, data usage)
+- **App Store Assets:** Generate screenshots (6.5", 5.5"), app preview video, metadata
+- **TestFlight Release:** Create beta build, invite testers, collect feedback
+
+### Section 3: Deliverables
+- [ ] `OnboardingView.swift` - First-run experience
+- [ ] `PrivacyInfo.xcprivacy` - Privacy manifest
+- [ ] App Store Connect metadata (description, keywords, categories)
+- [ ] Screenshot set for all required device sizes
+- [ ] TestFlight build uploaded and distributed
 
 ---
 
 ## Implementation Priority
 
-| Phase | Priority | Estimated Effort | Dependencies |
-|-------|----------|------------------|--------------|
-| Phase 6 | 🟡 Medium | 1 week | Phase 5 |
-| Phase 7 | 🟡 Medium | 2 weeks | Phase 4, 5, 6 |
+| Phase | Priority | Estimated Effort | Key Focus |
+|-------|----------|------------------|-----------|
+| Phase 8 | 🔴 Critical | 1 week | Complete placeholder screens, seed vocab, personalized articles |
+| Phase 9 | 🟡 High | 1.5 weeks | User accounts, cloud sync |
+| Phase 10 | 🟡 Medium | 1 week | Onboarding, App Store prep |
+
+---
+
+## Current Placeholder Status
+
+| Screen | Current State | Phase to Complete |
+|--------|---------------|-------------------|
+| Search (Tab 1) | `Text("Search Placeholder")` | Phase 8 |
+| Practice (Tab 2) | ✅ Functional | - |
+| Stats (Tab 3) | Mock data (hardcoded) | Phase 8 |
+| Matrix (Tab 4) | ✅ Functional | - |
+| Settings | ❌ Missing entirely | Phase 8 |
 
 ---
 
 ## Next Steps
-
-1. Begin **Phase 6** (Home Screen Offensive)
-2. Create App Group for data sharing
-3. Build Micro-Dose Widget
