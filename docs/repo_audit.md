@@ -15,6 +15,7 @@ Audit run: **2026-02-02**.
 - **Phase 7 Resolved:** Bandit Scheduler and Morphology Pipeline are verified.
 - **Navigation:** `ContentView.swift` correctly implements the 5-tab structure (Feed, Explore, Practice, Stats, Profile).
 - **Launch Issue Resolved:** Fixed stale bundle identifier `com.rawbit.app.Lexical` -> `com.lexical.Lexical` by clean build and manual packaging.
+- **Phase 8.5 Verified:** `VocabularySeedService` correctly seeds 10 words/3 roots from `vocab_seed.json` on clean install; Debug overlay confirms counts.
 
 ### ⚠️ Gaps & Risks
 - **Phase 8 Pending:** Article Personalization components (`ArticleGenerator`, `InterestProfile`) are not yet started.

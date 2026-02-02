@@ -8,7 +8,7 @@ The objective of this Software Requirements Specification (SRS) is to articulate
 
 The prevailing market for Mobile Assisted Language Learning (MALL) has bifurcated into two distinct but incomplete methodological camps. On one side, mass-market applications like Duolingo prioritize "gamified habit formation" through aggressive engagement mechanics, often at the expense of pedagogical depth and long-term retention for advanced learners.1 On the other, niche tools like Anki provide powerful retention engines based on Spaced Repetition Systems (SRS) but suffer from high-friction user interfaces and a lack of contextual learning features, limiting their adoption to highly motivated autodidacts.1
 
-The Target System defined herein aims to bridge this chasm by implementing a "Personalized Lexical Ecosystem".1 This system is designed specifically to address the "intermediate plateau," a critical phase where learners possess basic vocabulary but fail to bridge the gap between passive recognition and active retrieval in spontaneous conversation. To achieve this, the application architecture must synthesize three historically distinct domains: the mathematical precision of algorithmic retention (SRS), the immersive depth of Contextual Incidental Learning, and the structural clarity of Morphological Analysis.1
+The Target System defined herein aims to bridge this chasm by implementing a "Personalized Lexical Ecosystem".1 This system is designed specifically to address the "intermediate plateau," a critical phase where learners possess basic vocabulary but fail to bridge the gap between passive recognition and active retrieval in spontaneous conversation. To achieve this, the application architecture must synthesize three historically distinct domains: the mathematical precision of algorithmic retention (SRS), the immersive depth of Contextual Incidental Learning, and the structural clarity of Collocation Matrix Analysis.1
 
 This specification serves as the primary governing document for the development lifecycle, guiding system architecture, user interface design, and quality assurance processes. It adheres to the principles of ISO/IEC/IEEE 29148:2018 for software requirements 4, ensuring that all specifications are verifiable, unambiguous, and traceable to the core strategic goals of reducing friction and maximizing lexical growth.7
 
@@ -32,7 +32,7 @@ To ensure consistent interpretation of requirements, the following domain-specif
 * **SRS (Spaced Repetition System):** A learning technique that schedules review of information at increasing intervals to exploit the psychological spacing effect.1  
 * **FSRS (Free Spaced Repetition Scheduler):** A modern, open-source SRS algorithm that calculates review intervals based on Retrievability (![][image1]), Stability (![][image2]), and Difficulty (![][image3]), offering superior predictive accuracy over the legacy SM-2 algorithm.8  
 * **CRDT (Conflict-free Replicated Data Type):** A data structure that allows multiple replicas to be updated independently and concurrently without coordination, mathematically guaranteeing eventual consistency upon merging.13  
-* **Lemma:** The canonical form or morphological root of a word (e.g., "run" is the lemma for "running," "ran," "runs"). Tracking at the lemma level prevents fragmented learning.1  
+* **Lemma:** The canonical form of a word (e.g., "run" is the lemma for "running," "ran," "runs"). Tracking at the lemma level prevents fragmented learning.1  
 * **MALL (Mobile Assisted Language Learning):** The use of handheld mobile technology to assist in language learning.1  
 * **Cloze Deletion:** A flashcard format where a portion of a sentence is occluded (e.g., "The cat sat on the \[\_\_\_\_\_\]"), requiring the user to retrieve the missing word based on context.1  
 * **App Intent:** A system framework in iOS that allows widgets to perform actions (like updating a database) in the background without launching the main application.18  
@@ -58,7 +58,7 @@ The Target System functions as a "Personalized Lexical Ecosystem" rather than a 
 
 * **The User:** Specifically, intermediate to advanced learners who have exhausted the utility of beginner apps and require tools for deep acquisition.1  
 * **External Content Sources:** Web browsers (via Safari Extension) and media players (Netflix/YouTube) from which the system must ingest text and subtitles.1  
-* **Linguistic Databases:** External APIs or embedded databases for morphological roots, etymology, and corpus frequency data (e.g., COCA, WordsAPI).1  
+* **Linguistic Databases:** External APIs or embedded databases for collocations, example sentences, and corpus frequency data (e.g., COCA, WordsAPI).1  
 * **Generative AI Services:** Cloud-based LLMs for generating semantic context, mnemonics, and example sentences.1
 
 ### **2.2 User Characteristics**
@@ -68,7 +68,7 @@ The primary user persona, referred to as the "Plateaued Learner," exhibits speci
 * **High Motivation, Low Time:** They are willing to study but struggle to find dedicated blocks of time. This necessitates the "Micro-Dose" widget strategy.1  
 * **Content Driven:** They prefer reading authentic material (news, books) over artificial textbook exercises. This validates the need for the "Importer Bridge".1  
 * **Data Sensitive:** They are discouraged by the loss of progress or "broken streaks," requiring sophisticated "streak defense" mechanisms in the notification architecture.1  
-* **Analytical:** They value understanding the *structure* of language (roots, prefixes) rather than just rote memorization, supporting the inclusion of the Morphological Engine.1
+* **Analytical:** They value understanding the *structure* of language (collocations, context) rather than just rote memorization, supporting the inclusion of the Collocation Engine.1
 
 ### **2.3 Assumptions and Dependencies**
 
@@ -130,9 +130,9 @@ The interface must distinguish between "Reviewing" (Long-term SRS) and "Learning
 
 The system must track vocabulary at the lemma level to prevent redundancy.
 
-* **Root Identification:** When a user captures "running," the system must perform stemming/lemmatization to identify "run" as the root.  
+* **Lemma Identification:** When a user captures "running," the system must perform stemming/lemmatization to identify "run" as the lemma.  
 * **State Inheritance:** If "run" is already "Known," the system shall prompt the user: "You already know 'run'. Do you want to add 'running' as a separate card?" This minimizes database bloat and focuses the user on truly new concepts.1  
-* **Family Updates:** Reviewing a derived form (e.g., "unhappiness") should contribute a fractional stability increase to the root ("happy"), reflecting the interconnected nature of the mental lexicon.1
+* **Family Updates:** Reviewing a derived form (e.g., "unhappiness") should contribute a fractional stability increase to the lemma ("happy"), reflecting the interconnected nature of the mental lexicon.1
 
 ## ---
 
@@ -321,15 +321,15 @@ The synchronization layer shall use a Swift-compatible CRDT library (e.g., a por
 
 ## ---
 
-**9\. Functional Requirements: Morphology and Audio**
+**9\. Functional Requirements: Collocation Matrix and Audio**
 
-### **9.1 The Morphology Engine ("Word Matrix")**
+### **9.1 The Collocation Engine ("Matrix View")**
 
 The system must visualize the structural relationships between words.1
 
-* **Data Source:** The app must integrate with an etymological database (e.g., Etymonline or Wiktionary parser) to map lemmas to their roots.1  
-* **Visualization:** A force-directed graph or "Matrix" view showing the root (e.g., *SPECT*) and its satellites (*inspect, respect, suspect*).  
-* **Learning Mechanic:** When a user learns a new root, the system "unlocks" related words in the SRS queue, boosting their initial stability because the user now possesses the "key" to their meaning.1
+* **Data Source:** The app must integrate with a collocation database to map lemmas to their related words.1  
+* **Visualization:** A force-directed graph or "Matrix" view showing the central word (e.g., *Decision*) and its collocations (*Make, Take, Final*).  
+* **Learning Mechanic:** When a user learns a new collocation cluster, the system "unlocks" related words in the SRS queue, boosting their initial stability because the user now possesses the "key" to their usage.1
 
 ### **9.2 Text-to-Speech (TTS) Pipeline**
 

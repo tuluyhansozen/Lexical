@@ -9,7 +9,7 @@ public struct Persistence {
         let schema = Schema([
             VocabularyItem.self,
             ReviewLog.self,
-            MorphologicalRoot.self
+
         ])
         
         let modelConfiguration: ModelConfiguration

@@ -45,7 +45,7 @@ Construct the "Digital Shipyard" by initializing the Antigravity IDE, configurin
 Implement the offline-first data layer (SwiftData), FSRS 4.5 algorithm, and CRDT synchronization engine.
 
 ### Section 2: Key Activities
-- Design SwiftData schema: `VocabularyItem`, `ReviewLog`, `MorphologicalRoot`
+- Design SwiftData schema: `VocabularyItem` (with `collocations`), `ReviewLog`
 - Implement `FSRSV4Engine` (Swift Actor) with stability/difficulty calculations
 - Build CRDT foundation: G-Set for logs, LWW-Set for state
 - Create `BanditScheduler` stub for future engagement optimization
@@ -90,14 +90,14 @@ Build the "Input" interface using TextKit 2 to facilitate contextual vocabulary 
 - **TextKit 2 Integration:** Implemented `ReaderTextView` UIViewRepresentable with vocabulary highlighting
 - **NLP Pipeline:** Created `TokenizationActor` for background lemmatization using `NaturalLanguage` framework
 - **Tap-to-Capture:** Built capture sheet with sentence boundary extraction
-- **SwiftData Models:** Created `VocabularyItem`, `ReviewLog`, `MorphologicalRoot`
+- **SwiftData Models:** Created `VocabularyItem` (w/ collocations), `ReviewLog`
 
 ### Section 3: Deliverables
 - [x] `ReaderView.swift` - Full reader with highlighting integration
 - [x] `ReaderTextView.swift` - UIKit text view with vocabulary coloring
 - [x] `TokenizationActor.swift` - Background NLP processing
 - [x] `LemmaResolver.swift` - SwiftData batch lookups with caching
-- [x] `VocabularyItem.swift`, `ReviewLog.swift`, `MorphologicalRoot.swift`
+- [x] `VocabularyItem.swift`, `ReviewLog.swift`
 
 ---
 
@@ -151,7 +151,7 @@ Implement adaptive notifications via Bandit Algorithms, Morphology Matrix visual
 
 ### Section 2: Key Activities
 - **Bandit Scheduler:** Implemented Epsilon-Greedy MAB for notification optimization with time slot selection.
-- **Morphology Matrix:** Built force-directed graph visualizing word families using SwiftUI Canvas.
+- **Collocation Matrix:** Built force-directed graph visualizing semantic word connections (collocations) using SwiftUI Canvas.
 - **Final Integration:** Integrated Matrix tab into main navigation, updated CustomTabBar.
 
 ### Section 3: Deliverables
@@ -179,9 +179,9 @@ Replace placeholder screens with functional implementations and restructure navi
 ### Section 2: Key Activities
 
 #### 8.1 ExploreView (Replaced Search Placeholder)
-- **Matrix + Search Combined:** Created `ExploreView.swift` combining Morphology Matrix with vocabulary search
+- **Matrix + Search Combined:** Created `ExploreView.swift` combining Collocation Matrix with vocabulary search
 - **Last Learned Word:** Matrix centers on the most recently reviewed word
-- **Related Words:** Displays words sharing the same root around the center
+- **Related Words:** Displays collocated words (semantic context) around the center
 - **Search Functionality:** Search bar for filtering vocabulary with results that recenter the matrix
 
 #### 8.2 SettingsView (New Profile Tab)
@@ -199,20 +199,37 @@ Replace placeholder screens with functional implementations and restructure navi
 - **SessionManager:** Fixed FSRS stability mutability issue
 - **SettingsView:** Fixed reviewDate property reference
 
+#### 8.5 Vocabulary Seeding (Tasks)
+- **VocabularySeedService:** Build service with versioned, idempotent seeding using `UserDefaults.seed_version`
+- **Starter Dataset:** Add `vocab_seed.json` containing roots, words, definitions, and example contexts
+- **Execution Logic:** Ensure seeding runs on first launch and on version bumps only
+- **Collocation Linking:** Logic to link seeded words based on co-occurrence (matrix edges)
+- **Verification:** Log/overlay seed counts in DEBUG builds only
+
+#### 8.6 Personalized Articles (Tasks)
+- **InterestProfile:** Model for explicit tags + implicit weights from reading history
+- **ArticleGenerator:**
+  - Select targets from **recently learned** + **due-soon** words
+  - Enforce density (1–3 new words per 100) and repetition (2–4x per target)
+  - Co-locate related words (matrix connections) in same sentences
+- **Templates:** Add `ArticleTemplateBank.json` for structured generation
+- **Constraints:** Implement `ArticleConstraintsEvaluator` for density/coverage/readability checks
+- **Persistence:** Add `ArticleStore` for file-backed content + SwiftData metadata
+- **Triggers:** Refresh generation after review sessions or target set changes
+
 ### Section 3: Deliverables
 - [x] `ExploreView.swift` - Matrix + Search combined view
 - [x] `SettingsView.swift` - Full settings with profile
 - [x] `CustomTabBar.swift` - Updated tab icons/labels
 - [x] `ContentView.swift` - Uses new views
 - [x] `SessionManager.swift` - FSRS bug fix
-- [x] `VocabularySeedService.swift` - Pre-seeds vocabulary on first launch
-- [x] `vocab_seed.json` - JSON file with initial vocabulary data
-- [x] Debug seed count overlay (DEBUG-only verification)
-- [ ] `InterestProfile.swift` - Interest weighting & preference storage
-- [ ] `ArticleGenerator.swift` - Builds personalized articles from target words
-- [ ] `ArticleTemplateBank.json` - Template/structure library for article assembly
-- [ ] `ArticleConstraintsEvaluator.swift` - Enforces density, repetition, and difficulty rules
-- [ ] `ArticleStore.swift` - File-backed article persistence + metadata
+- [x] `VocabularySeedService.swift` - Versioned seeding logic
+- [x] `vocab_seed.json` - Initial dataset
+- [ ] `InterestProfile.swift` - User interest model
+- [ ] `ArticleGenerator.swift` - Dynamic content generation
+- [ ] `ArticleTemplateBank.json` - Structural templates
+- [ ] `ArticleConstraintsEvaluator.swift` - Quality assurance logic
+- [ ] `ArticleStore.swift` - Content persistence
 
 ---
 

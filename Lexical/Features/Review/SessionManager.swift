@@ -114,15 +114,13 @@ class SessionManager: ObservableObject {
         
         // Morphology Stability Boost
         // If the user already knows other words with this root, learning this one should be faster (higher stability)
-        if let root = card.root {
-            let masteredSiblings = root.vocabularyItems.filter { 
-                $0.persistentModelID != card.persistentModelID && $0.learningState == .mastered 
-            }
-            
-            if !masteredSiblings.isEmpty {
-                print("🚀 Morphology Boost! '\(card.lemma)' shares root '\(root.root)' with \(masteredSiblings.count) known words.")
-                stability *= 1.5 // 50% boost
-            }
+        // Matrix Stability Boost
+        // If the user already knows collocated words (context), learning this one should be faster
+        let masteredContext = card.collocations.filter { $0.learningState == .mastered }
+        
+        if !masteredContext.isEmpty {
+            print("🚀 Matrix Boost! '\(card.lemma)' connects to \(masteredContext.count) known words.")
+            stability *= 1.5 // 50% boost
         }
         
         card.stability = stability

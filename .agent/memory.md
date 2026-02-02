@@ -14,24 +14,23 @@
 - **NLP Pipeline**: `TokenizationActor` + `LemmaResolver` for lemmatization.
 - **Review Engine**: `SessionManager` + `FlashcardView` with Brain Boost re-queueing.
 - **Bandit Scheduler**: Epsilon-Greedy MAB for notification timing optimization.
-- **Morphology Matrix**: Force-directed graph visualization of word families.
+- **Collocation Matrix**: Force-directed graph visualization of semantic connections.
 - **Vocabulary Seeding**: `VocabularySeedService` + `vocab_seed.json` first-launch seeding.
 - **Debug Verification**: Seed count overlay (DEBUG) + `--lexical-debug-autocycle` tab cycling for simulator checks.
 
 ## SwiftData Models
-- `VocabularyItem`: Core model with FSRS fields (stability, difficulty, retrievability)
+- `VocabularyItem`: Core model with FSRS fields and `collocations` (Many-to-Many self-reference)
 - `ReviewLog`: Immutable append-only for CRDT sync
-- `MorphologicalRoot`: Etymology tracking for morphology matrix
 
 ## Current Placeholder Status
-- **Search Tab (Tab 1)**: `Text("Search Placeholder")` - needs `SearchView.swift`
+- **Explore Tab (Tab 1)**: ✅ `ExploreView.swift` (Matrix + Search)
 - **Stats Tab (Tab 3)**: Mock data (hardcoded) - needs real SwiftData queries
-- **Settings**: Missing entirely - needs `SettingsView.swift`
+- **Profile (Tab 4)**: ✅ `SettingsView.swift`
 
 ## Completion Phases (8-10)
-- **Phase 8**: Complete Placeholder Screens & Seed Vocabulary
-  - SearchView, SettingsView, real Stats data
-  - VocabularySeedService for first-launch seeding
+- **Phase 8**: Vocabulary Seeding & Personalized Articles
+  - ✅ VocabularySeedService for first-launch seeding
+  - 🟡 Article Personalization (ArticleGenerator, InterestProfile)
 - **Phase 9**: Authentication & Cloud Sync (Sign in with Apple, CloudKit)
 - **Phase 10**: Production Polish & App Store (Onboarding, Privacy Manifests)
 
@@ -48,6 +47,6 @@
 - ✅ Phase 5: The Retention Engine (FSRS Review Loop)
 - ✅ Phase 6: Home Screen Offensive (Widgets & Intents)
 - ✅ Phase 7: Intelligent Engagement & Integration
-- 🟡 Phase 8: Complete Placeholder Screens & Seed Vocabulary (seeding started)
+- 🟡 Phase 8: Vocabulary Seeding & Personalized Articles (Seeding ✅, Articles 🟡)
 - 🔲 Phase 9: Authentication & Cloud Sync
 - 🔲 Phase 10: Production Polish & App Store Release

@@ -20,7 +20,7 @@ The following table outlines the Tab Bar architecture:
 | :---- | :---- | :---- | :---- |
 | **Home (Reader)** | book.fill | Discovery & Input | **Curated Feed:** A algorithmic stream of articles/videos tailored to the user's level. **Importer Bridge:** Access to the share extension inbox. **Status Dashboard:** Visual density of "New" vs. "Known" words. |
 | **Review** | rectangle.stack.fill | Retention Engine | **SRS Queue:** The primary study interface. **Brain Boost Triage:** Short-term recovery queue for failed items. **Deck Management:** Settings for FSRS optimization. |
-| **Explore** | network | Morphology | **Word Matrix:** Force-directed graph of word families. **Etymology Trees:** Historical root visualization. **Search:** Deep dictionary lookup with corpus data. |
+| **Explore** | network | Matrix | **Collocation Matrix:** Force-directed graph of word connections. **Collocation Clusters:** Contextual relationship visualization. **Search:** Deep dictionary lookup with corpus data. |
 | **Stats** | chart.bar.xaxis | Metacognition | **Forgetting Curve:** Visualization of memory decay. **Heatmap:** Daily consistency tracking. **Growth Chart:** Velocity of lexical acquisition. |
 | **Profile** | person.circle | Configuration | **Sync Status:** CRDT merge logs. **Notification Settings:** "Bandit" algorithm preferences. **Voice Settings:** TTS accent and speed control. |
 
@@ -53,7 +53,7 @@ The following table defines the semantic color tokens for Light and Dark modes, 
 | **New (Unknown)** | vocab.new.bg | \#E3F2FD (Blue 50\) | \#1565C0 (Blue 800\) | 4.5:1 (Text) | Represents "Cool" potential. Highlight indicates interactivity. |
 | **Learning (SRS)** | vocab.learning.bg | \#FFF9C4 (Yellow 50\) | \#FBC02D (Yellow 700\) | 15:1 (Text) | Represents "Hot/Active" memory. Yellow alerts the user to focus. |
 | **Known (Passive)** | vocab.known.bg | Transparent | Transparent | 21:1 (Text) | Absence of color signifies mastery/safety. Standard text color. |
-| **Root (Morphology)** | vocab.root.bg | \#E8F5E9 (Green 50\) | \#2E7D32 (Green 800\) | 4.5:1 (Text) | Used in the "Explore" tab to signify the generative root of a word. |
+| **Collocation (Matrix)** | vocab.root.bg | \#E8F5E9 (Green 50\) | \#2E7D32 (Green 800\) | 4.5:1 (Text) | Used in the "Explore" tab to signify the connected words in the matrix. |
 | **Critical/Fail** | ui.alert.error | \#FFEBEE (Red 50\) | \#C62828 (Red 800\) | 4.5:1 (Text) | Used for "Again" grading and high-urgency notifications. |
 
 To support users who cannot distinguish between the Blue and Yellow hues (Tritanopia), the design includes a **"Pattern Mode"** toggle in the Accessibility settings. When enabled, this applies a secondary visual cue:
@@ -187,25 +187,25 @@ To support the "Personalized Lexical Ecosystem," the design includes a Safari Ac
 * **Performance:** To prevent rendering lag on complex websites, highlights are "lazy loaded" only for the viewport as the user scrolls.  
 * **Interaction:** Tapping a highlighted word in Safari opens a lightweight HTML overlay that replicates the native "Capture Card," allowing users to save words without leaving the browser.1
 
-## **7\. Structural Analysis: The Morphology Matrix**
+## **7\. Structural Analysis: The Collocation Matrix**
 
-This feature targets the analytical learner, visualizing *why* a word means what it means. It shifts the mental model from "memorizing strings" to "understanding structures."
+This feature targets the analytical learner, visualizing *how* a word connects to others in usage. It shifts the mental model from "memorizing strings" to "understanding context."
 
 ### **7.1 Force-Directed Graph Visualization**
 
-**Strategy:** Visualize the etymological family tree of a word.1 **Visualization Implementation:**
+**Strategy:** Visualize the collocation network of a word.1 **Visualization Implementation:**
 
 * **Graph Library:** The design specifies the use of a lightweight force-directed graph library (custom SwiftUI Layout or a library like Grape).15  
 * **Node Architecture:**  
-  * **Central Node:** The Root (e.g., *SPECT* meaning "to look").  
-  * **Branch Nodes:** Prefixes (*IN-*, *RE-*, *SU-*).  
-  * **Leaf Nodes:** Derived words (*Inspect, Respect, Suspect*).  
-* **Color Coding:** The nodes are colored according to the user's SRS status (Blue/Yellow/Known). This allows the user to instantly see "knowledge gaps"—for example, seeing that they know *Inspect* and *Respect* (White) but *Suspect* is New (Blue), inviting them to "complete the set."
+  * **Central Node:** The Lemma (e.g., *Decision*).  
+  * **Connected Nodes:** Strong Collocations (*Make, Take, Reach*).  
+  * **Leaf Nodes:** Secondary Contexts (*Make a decision, Reach a verdict*).  
+* **Color Coding:** The nodes are colored according to the user's SRS status (Blue/Yellow/Known). This allows the user to instantly see "knowledge gaps"—for example, seeing that they know *Decision* and *Make* (White) but *Reach* is New (Blue), inviting them to "complete the set."
 
 **Interaction Design:**
 
 * **Physics-Based:** The graph should feel organic. Dragging a node pulls its connected neighbors (spring physics), making the structural relationship tactile.  
-* **Expansion:** Double-tapping a leaf node (e.g., *Respect*) re-centers the graph on that word, potentially revealing *its* own derivatives (*Respectful, Respectable*), allowing for infinite traversal of the lexical web.16
+* **Expansion:** Double-tapping a leaf node (e.g., *Reach*) re-centers the graph on that word, potentially revealing *its* own derivatives (*Reach out, Reach for*), allowing for infinite traversal of the lexical web.16
 
 ## **8\. Engagement Architecture: The "Bandit" Notification System**
 

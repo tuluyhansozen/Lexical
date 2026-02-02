@@ -7,7 +7,7 @@ import LexicalCore
 struct ExploreView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VocabularyItem.lastReviewedAt, order: .reverse) private var vocabularyItems: [VocabularyItem]
-    @Query private var roots: [MorphologicalRoot]
+
     
     @StateObject private var graph = ForceDirectedGraph()
     @State private var searchText: String = ""
@@ -252,52 +252,46 @@ struct ExploreView: View {
     
     // MARK: - Graph Building
     
+    // MARK: - Graph Building
+    
     private func buildGraphFromLastLearned() {
-        // Build graph centered on last learned word
         var words: [(lemma: String, rootId: String?, color: Color?)] = []
         
         if let lastWord = lastLearnedWord {
-            // Add the last learned word first (will be positioned at center)
             let color = colorForState(lastWord.learningState)
-            let rootId = EtymologyService.resolveRoot(for: lastWord.lemma) ?? lastWord.root?.root
-            words.append((lemma: lastWord.lemma, rootId: rootId, color: color))
+            // Use lemma itself as the 'group' identifier since concepts cluster around it
+            let groupId = lastWord.lemma
             
-            // Add related words (same root)
-            if let rootId = rootId {
-                let relatedWords = vocabularyItems.filter { item in
-                    item.persistentModelID != lastWord.persistentModelID &&
-                    (EtymologyService.resolveRoot(for: item.lemma) == rootId || item.root?.root == rootId)
-                }
-                
-                for item in relatedWords.prefix(8) {
-                    words.append((lemma: item.lemma, rootId: rootId, color: colorForState(item.learningState)))
-                }
+            words.append((lemma: lastWord.lemma, rootId: groupId, color: color))
+            
+            // Add collocations
+            for relatedItem in lastWord.collocations.prefix(12) {
+                words.append((
+                    lemma: relatedItem.lemma,
+                    rootId: groupId,
+                    color: colorForState(relatedItem.learningState)
+                ))
             }
             
             // Also add some recently reviewed words
-            let recentWords = vocabularyItems.prefix(10).filter { item in
+            let recentWords = vocabularyItems.prefix(5).filter { item in
                 !words.contains(where: { $0.lemma == item.lemma })
             }
             
-            for item in recentWords.prefix(5) {
-                let root = EtymologyService.resolveRoot(for: item.lemma) ?? item.root?.root
-                words.append((lemma: item.lemma, rootId: root, color: colorForState(item.learningState)))
+            for item in recentWords {
+                words.append((lemma: item.lemma, rootId: item.lemma, color: colorForState(item.learningState)))
             }
         }
         
-        // If empty, use sample data
+        // If empty or cold start
         if words.isEmpty {
+            // Sample mock for empty state
             graph.buildGraph(words: [
-                (lemma: "inspect", rootId: "spect", color: .green),
-                (lemma: "spectacle", rootId: "spect", color: .yellow),
-                (lemma: "perspective", rootId: "spect", color: .blue),
-                (lemma: "prospect", rootId: "spect", color: .blue),
-                (lemma: "transfer", rootId: "fer", color: .green),
-                (lemma: "refer", rootId: "fer", color: .yellow),
-                (lemma: "prefer", rootId: "fer", color: .yellow),
-                (lemma: "transport", rootId: "port", color: .green),
-                (lemma: "import", rootId: "port", color: .blue),
-                (lemma: "export", rootId: "port", color: .blue)
+                (lemma: "rain", rootId: "rain", color: .blue),
+                (lemma: "heavy", rootId: "rain", color: .yellow),
+                (lemma: "fall", rootId: "rain", color: .green),
+                (lemma: "cloud", rootId: "rain", color: .blue),
+                (lemma: "wet", rootId: "rain", color: .yellow)
             ])
         } else {
             graph.buildGraph(words: words)
@@ -305,43 +299,34 @@ struct ExploreView: View {
         
         graph.runSimulation(iterations: 100)
         
-        // Center on first node (last learned word)
-        if let firstNode = graph.nodes.first {
-            if let index = graph.nodes.firstIndex(where: { $0.id == firstNode.id }) {
-                graph.nodes[index].position = .zero // Center position
-            }
+        // Center on first node
+        if let firstNode = graph.nodes.first,
+           let index = graph.nodes.firstIndex(where: { $0.id == firstNode.id }) {
+            graph.nodes[index].position = .zero
         }
     }
     
     private func centerGraphOnWord(_ lemma: String) {
-        // Rebuild graph centered on this word
         if let item = vocabularyItems.first(where: { $0.lemma == lemma }) {
-            // Temporarily set as "last reviewed" for graph building
             var words: [(lemma: String, rootId: String?, color: Color?)] = []
             
             let color = colorForState(item.learningState)
-            let rootId = EtymologyService.resolveRoot(for: item.lemma) ?? item.root?.root
-            words.append((lemma: item.lemma, rootId: rootId, color: color))
+            let groupId = item.lemma
             
-            // Add related words
-            if let rootId = rootId {
-                let related = vocabularyItems.filter { 
-                    $0.persistentModelID != item.persistentModelID &&
-                    (EtymologyService.resolveRoot(for: $0.lemma) == rootId || $0.root?.root == rootId)
-                }
-                for relatedItem in related.prefix(8) {
-                    words.append((
-                        lemma: relatedItem.lemma,
-                        rootId: rootId,
-                        color: colorForState(relatedItem.learningState)
-                    ))
-                }
+            words.append((lemma: item.lemma, rootId: groupId, color: color))
+            
+            // Add collocations
+            for relatedItem in item.collocations.prefix(10) {
+                 words.append((
+                    lemma: relatedItem.lemma,
+                    rootId: groupId,
+                    color: colorForState(relatedItem.learningState)
+                 ))
             }
             
             graph.buildGraph(words: words)
             graph.runSimulation(iterations: 100)
             
-            // Center the selected word
             if let index = graph.nodes.firstIndex(where: { $0.label == lemma }) {
                 graph.nodes[index].position = .zero
             }
@@ -357,7 +342,7 @@ struct ExploreView: View {
     }
 }
 
-// MARK: - Search Result Card
+
 
 struct SearchResultCard: View {
     let item: VocabularyItem
@@ -407,5 +392,5 @@ struct SearchResultCard: View {
 
 #Preview {
     ExploreView()
-        .modelContainer(for: [VocabularyItem.self, MorphologicalRoot.self])
+        .modelContainer(for: [VocabularyItem.self])
 }

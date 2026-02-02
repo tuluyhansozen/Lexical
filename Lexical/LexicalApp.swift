@@ -34,7 +34,8 @@ private struct RootView: View {
     var body: some View {
         ContentView()
             .task {
-                VocabularySeedService.shared.seedIfNeeded(modelContext: modelContext)
+                // Use new VocabularySeeder for 5000-entry seed_data.json
+                await VocabularySeeder.shared.seed(modelContainer: Persistence.sharedModelContainer)
             }
     }
 }

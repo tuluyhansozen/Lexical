@@ -9,7 +9,6 @@ struct ContentView: View {
 #if DEBUG
     @State private var didAutoCycle: Bool = false
     @Query private var debugVocabularyItems: [VocabularyItem]
-    @Query private var debugRoots: [MorphologicalRoot]
 #endif
     
     var body: some View {
@@ -81,8 +80,7 @@ struct ContentView: View {
 #if DEBUG
         .overlay(alignment: .topTrailing) {
             DebugSeedOverlay(
-                wordCount: debugVocabularyItems.count,
-                rootCount: debugRoots.count
+                wordCount: debugVocabularyItems.count
             )
             .padding(.top, 12)
             .padding(.trailing, 12)
@@ -116,7 +114,6 @@ struct ContentView: View {
 #if DEBUG
 private struct DebugSeedOverlay: View {
     let wordCount: Int
-    let rootCount: Int
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
@@ -125,9 +122,6 @@ private struct DebugSeedOverlay: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(.white)
             Text("\(wordCount) words")
-                .font(.caption2)
-                .foregroundStyle(.white)
-            Text("\(rootCount) roots")
                 .font(.caption2)
                 .foregroundStyle(.white)
         }

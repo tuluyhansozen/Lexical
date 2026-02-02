@@ -40,7 +40,7 @@ The Lexical App is defined by a hybrid architecture that synthesizes three histo
 
 1. **Algorithmic Retention (The "When"):** We replace legacy SM-2 static intervals with the **FSRS v4.5** algorithm. This model calculates review intervals (![][image1]) based on Retrievability (![][image2]), Stability (![][image3]), and Difficulty (![][image4]). The system must track memory states at the atomic **Lemma** (root word) level to prevent database bloat and ensure efficient learning.2  
 2. **Contextual Acquisition (The "How"):** The application rejects isolated flashcards in favor of "rich, authentic input." The **Immersive Reader**, built on **TextKit 2**, facilitates "Tap-to-Capture" interactions, instantly converting raw text into structured learning objects within a specific context sentence.2  
-3. **Structural Analysis (The "Why"):** The **Morphology Engine** visualizes the etymological roots of words using a force-directed graph. This component is critical for the "analytical" user persona who benefits from understanding the generative roots of language (e.g., *spect* \-\> *inspect*, *respect*).2
+3. **Structural Analysis (The "Context"):** The **Collocation Engine** visualizes the semantic connections of words using a force-directed graph (Matrix View). This component is critical for the "analytical" user persona who benefits from understanding the contextual web of language (e.g., *rain* -> *heavy*, *pouring* -> *rain*).2
 
 ### **2.2 The Offline-First Data Strategy**
 
@@ -127,7 +127,7 @@ Milestone 2 establishes the data foundation. The Lexical App requires a persiste
 
 #### **2.2.1 SwiftData Schema Design**
 
-* **Atomic Lemma Modeling:** Design the VocabularyItem entity. It must use the @Model macro and include a \#Unique constraint on the lemma string to prevent duplicates. Fields must include stability (Double), difficulty (Double), and retrievability (Double) to support FSRS.13  
+* **Collocation/Matrix Modeling:** Design the VocabularyItem entity. It must use the @Model macro and include a \#Unique constraint on the lemma string to prevent duplicates. Fields must include stability (Double), difficulty (Double), and retrievability (Double) to support FSRS.13  
 * **Immutable Review Logs:** Create the ReviewLog entity. This model is critical for the CRDT strategy. It must be treated as an **Append-Only Log**.  
   * *Attributes:* uuid (UUID), cardID (UUID), grade (Int: 1-4), reviewDate (Date), duration (TimeInterval), deviceID (String).  
   * *Constraint:* Records in this table are never updated or deleted, only inserted. This guarantees that synchronization is a commutative operation (Order A ![][image8] B \= Order B ![][image8] A).8  

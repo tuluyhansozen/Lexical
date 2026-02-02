@@ -45,22 +45,21 @@ public final class VocabularyItem {
     @Relationship(deleteRule: .cascade, inverse: \ReviewLog.vocabularyItem)
     public var reviewLogs: [ReviewLog]
     
-    /// Root word connections for morphology matrix
+    /// Connected words (Matrix Graph)
     @Relationship
-    public var root: MorphologicalRoot?
+    public var collocations: [VocabularyItem]
     
     public init(
         lemma: String,
         originalWord: String? = nil,
         contextSentence: String = "",
-        definition: String? = nil,
-        root: MorphologicalRoot? = nil
+        definition: String? = nil
     ) {
         self.lemma = lemma.lowercased()
         self.originalWord = originalWord ?? lemma
         self.contextSentence = contextSentence
         self.definition = definition
-        self.root = root // Fixed property name
+        self.collocations = []
         
         // FSRS initial values
         self.stability = 0.0
