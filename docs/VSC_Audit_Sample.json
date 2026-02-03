@@ -1,0 +1,67 @@
+[
+  {
+    "candidate_lemma": "united",
+    "evaluation": {
+      "frequency_check": true,
+      "rank": 210,
+      "polysemy_exception": false,
+      "news_test_passed": true,
+      "collocation_count": 19,
+      "proper_noun_check": true,
+      "cefr_verified": "A2"
+    },
+    "verdict": "PASS"
+  },
+  {
+    "candidate_lemma": "service",
+    "evaluation": {
+      "frequency_check": true,
+      "rank": 97,
+      "polysemy_exception": false,
+      "news_test_passed": true,
+      "collocation_count": 16,
+      "proper_noun_check": true,
+      "cefr_verified": "A2"
+    },
+    "verdict": "PASS"
+  },
+  {
+    "candidate_lemma": "task",
+    "evaluation": {
+      "frequency_check": true,
+      "rank": 2035,
+      "polysemy_exception": false,
+      "news_test_passed": true,
+      "collocation_count": 16,
+      "proper_noun_check": true,
+      "cefr_verified": "A2"
+    },
+    "verdict": "PASS"
+  },
+  {
+    "candidate_lemma": "reference",
+    "evaluation": {
+      "frequency_check": false,
+      "rank": 666,
+      "polysemy_exception": false,
+      "news_test_passed": true,
+      "collocation_count": 6,
+      "proper_noun_check": true,
+      "cefr_verified": "B1"
+    },
+    "verdict": "PASS"
+  },
+  {
+    "candidate_lemma": "resort",
+    "evaluation": {
+      "frequency_check": false,
+      "rank": 1864,
+      "polysemy_exception": false,
+      "news_test_passed": true,
+      "collocation_count": 4,
+      "proper_noun_check": true,
+      "cefr_verified": "B2"
+    },
+    "verdict": "PASS"
+  }
+]

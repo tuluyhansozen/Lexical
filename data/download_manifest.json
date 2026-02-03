@@ -1,0 +1,48 @@
+{
+    "version": "1.0.0",
+    "description": "Download manifest for Lexical Seed Database sources",
+    "sources": {
+        "coca_frequency": {
+            "name": "COCA 60k Frequency List",
+            "primary_url": "https://www.english-corpora.org/resources.asp",
+            "fallback_url": "https://www.wordfrequency.info/samples.asp",
+            "notes": "Top 5000 free lemmas available at fallback. Full 60k requires purchase.",
+            "local_path": "data/raw/coca_frequency.csv"
+        },
+        "oxford_cefr": {
+            "name": "Oxford 3000/5000 CEFR Lists",
+            "primary_url": "https://github.com/Berehulia/Oxford-3000-5000",
+            "verification_url": "https://www.oxfordlearnersdictionaries.com/wordlists/oxford3000-5000",
+            "notes": "Community CSV extraction with CEFR levels A1-C2",
+            "local_path": "data/raw/oxford_cefr.csv"
+        },
+        "subtlex_us": {
+            "name": "SUBTLEX-US Frequency List",
+            "primary_url": "https://osf.io/djpqz/files/osfstorage",
+            "notes": "Excel file with PoS, Zipf, and Contextual Diversity. ~10.8 MB",
+            "local_path": "data/raw/subtlex_us.xlsx"
+        },
+        "kaikki_wiktionary": {
+            "name": "Kaikki.org Wiktionary Extract",
+            "primary_url": "https://kaikki.org/dictionary/English/index.html",
+            "direct_download": "https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz",
+            "format": "JSONL (gzipped)",
+            "notes": "WARNING: Large file (~2GB). Stream processing required.",
+            "local_path": "data/raw/kaikki_english.jsonl"
+        },
+        "tatoeba_sentences": {
+            "name": "Tatoeba Sentence Corpus",
+            "primary_url": "https://tatoeba.org/eng/downloads",
+            "sentences_file": "sentences_detailed.tar.bz2",
+            "links_file": "links.tar.bz2",
+            "license": "CC-BY 2.0 FR",
+            "notes": "Large corpus. Filter for English sentences 5-15 words.",
+            "local_path": "data/raw/tatoeba/"
+        }
+    },
+    "processing": {
+        "target_vocabulary_size": 5000,
+        "fsrs_difficulty_formula": "D = 2.0 + (Rank / 60000.0) * 8.0",
+        "output_file": "Lexical/Resources/seed_data.json"
+    }
+}

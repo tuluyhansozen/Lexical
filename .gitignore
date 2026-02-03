@@ -20,3 +20,6 @@ xcuserdata/
 .DS_Store
 *.swp
 *.lock
+
+# Raw Data
+data/raw/
