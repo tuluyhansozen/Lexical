@@ -22,4 +22,11 @@ xcuserdata/
 *.lock
 
 # Raw Data
-data/raw/
+data/
+roots1.json
+roots2.json
+AWL.txt
+*.tar.bz2
+*.jsonl
+*.jsonl.gz
+

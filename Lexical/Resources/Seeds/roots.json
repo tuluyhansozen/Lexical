@@ -1,0 +1,2511 @@
+[
+  {
+    "root_id": 1,
+    "root": "act",
+    "basic_meaning": "do; perform",
+    "word_ids": [
+      383,
+      720,
+      2108,
+      2484,
+      4131,
+      4445,
+      4848,
+      5495
+    ]
+  },
+  {
+    "root_id": 2,
+    "root": "anim",
+    "basic_meaning": "life; spirit",
+    "word_ids": [
+      957,
+      2411,
+      2882,
+      5257,
+      5305,
+      5378,
+      5459,
+      5483
+    ]
+  },
+  {
+    "root_id": 3,
+    "root": "ann/enn",
+    "basic_meaning": "year",
+    "word_ids": [
+      712,
+      2293,
+      3357,
+      5189,
+      5222,
+      5361,
+      5369,
+      5509
+    ]
+  },
+  {
+    "root_id": 4,
+    "root": "aqua",
+    "basic_meaning": "water",
+    "word_ids": [
+      3875,
+      4045,
+      5128,
+      5252,
+      5271,
+      5316,
+      5347,
+      5449
+    ]
+  },
+  {
+    "root_id": 5,
+    "root": "astro",
+    "basic_meaning": "star, celestial body",
+    "word_ids": [
+      3073,
+      3834,
+      5139,
+      5140,
+      5354,
+      5423,
+      5493,
+      5514
+    ]
+  },
+  {
+    "root_id": 6,
+    "root": "aud",
+    "basic_meaning": "hear",
+    "word_ids": [
+      486,
+      1958,
+      2174,
+      5181,
+      5225,
+      5238,
+      5474,
+      5498
+    ]
+  },
+  {
+    "root_id": 7,
+    "root": "bell",
+    "basic_meaning": "pretty, beautiful",
+    "word_ids": [
+      698,
+      1018,
+      3929,
+      5196,
+      5309,
+      5438,
+      5466,
+      5536
+    ]
+  },
+  {
+    "root_id": 8,
+    "root": "bene/bon",
+    "basic_meaning": "good, well",
+    "word_ids": [
+      1216,
+      1809,
+      3647,
+      5254,
+      5303,
+      5402,
+      5425,
+      5434
+    ]
+  },
+  {
+    "root_id": 9,
+    "root": "bio",
+    "basic_meaning": "life",
+    "word_ids": [
+      2026,
+      2032,
+      4056,
+      5163,
+      5185,
+      5269,
+      5529,
+      5564
+    ]
+  },
+  {
+    "root_id": 10,
+    "root": "calc",
+    "basic_meaning": "stone; to compute (as with stones)",
+    "word_ids": [
+      2183,
+      2290,
+      3245,
+      3270,
+      5266,
+      5284,
+      5328,
+      5520
+    ]
+  },
+  {
+    "root_id": 11,
+    "root": "cent",
+    "basic_meaning": "hundred",
+    "word_ids": [
+      649,
+      1083,
+      1947,
+      5151,
+      5242,
+      5331,
+      5439,
+      5473
+    ]
+  },
+  {
+    "root_id": 12,
+    "root": "circum",
+    "basic_meaning": "around, about",
+    "word_ids": [
+      1989,
+      4034,
+      4239,
+      4240,
+      5219,
+      5443,
+      5540,
+      5566
+    ]
+  },
+  {
+    "root_id": 13,
+    "root": "clam/claim",
+    "basic_meaning": "shout, call out",
+    "word_ids": [
+      1394,
+      4825,
+      5179,
+      5194,
+      5306,
+      5399,
+      5467,
+      5476
+    ]
+  },
+  {
+    "root_id": 14,
+    "root": "clar",
+    "basic_meaning": "clear",
+    "word_ids": [
+      690,
+      1628,
+      2860,
+      3644,
+      3969,
+      4241,
+      5336,
+      5377
+    ]
+  },
+  {
+    "root_id": 15,
+    "root": "comput",
+    "basic_meaning": "calculate, reckon",
+    "word_ids": [
+      252,
+      293,
+      1389,
+      3323,
+      3953,
+      4126,
+      4855,
+      5510
+    ]
+  },
+  {
+    "root_id": 16,
+    "root": "cred",
+    "basic_meaning": "believe, trust",
+    "word_ids": [
+      353,
+      3005,
+      4317,
+      4318,
+      5211,
+      5224,
+      5513,
+      5551
+    ]
+  },
+  {
+    "root_id": 17,
+    "root": "cycl",
+    "basic_meaning": "circle, wheel, round",
+    "word_ids": [
+      1732,
+      1904,
+      2590,
+      3434,
+      4857,
+      5192,
+      5202,
+      5299
+    ]
+  },
+  {
+    "root_id": 18,
+    "root": "dict",
+    "basic_meaning": "say, speak",
+    "word_ids": [
+      1371,
+      2853,
+      3841,
+      4377,
+      5092,
+      5212,
+      5221,
+      5414
+    ]
+  },
+  {
+    "root_id": 19,
+    "root": "doc",
+    "basic_meaning": "teach",
+    "word_ids": [
+      621,
+      1404,
+      3125,
+      3828,
+      5134,
+      5182,
+      5487,
+      5496
+    ]
+  },
+  {
+    "root_id": 20,
+    "root": "duc/duct",
+    "basic_meaning": "lead, bring",
+    "word_ids": [
+      1406,
+      1532,
+      1715,
+      2800,
+      4424,
+      5348,
+      5407,
+      5556
+    ]
+  },
+  {
+    "root_id": 21,
+    "root": "equ",
+    "basic_meaning": "equal, even",
+    "word_ids": [
+      1550,
+      1677,
+      1981,
+      2820,
+      3099,
+      3896,
+      5270,
+      5508
+    ]
+  },
+  {
+    "root_id": 22,
+    "root": "fac",
+    "basic_meaning": "make, do",
+    "word_ids": [
+      652,
+      1297,
+      1433,
+      1848,
+      2998,
+      3321,
+      5380,
+      5402
+    ]
+  },
+  {
+    "root_id": 23,
+    "root": "fall/fals",
+    "basic_meaning": "err, deceive",
+    "word_ids": [
+      1101,
+      1596,
+      1712,
+      2798,
+      5261,
+      5334,
+      5372,
+      5563
+    ]
+  },
+  {
+    "root_id": 24,
+    "root": "fer",
+    "basic_meaning": "carry, bring",
+    "word_ids": [
+      490,
+      522,
+      607,
+      982,
+      2515,
+      4613,
+      4859,
+      5543
+    ]
+  },
+  {
+    "root_id": 25,
+    "root": "flor",
+    "basic_meaning": "flower",
+    "word_ids": [
+      1598,
+      2828,
+      3092,
+      4505,
+      5256,
+      5363,
+      5530,
+      5537
+    ]
+  },
+  {
+    "root_id": 26,
+    "root": "gen",
+    "basic_meaning": "birth, kind, origin",
+    "word_ids": [
+      159,
+      1401,
+      1750,
+      2079,
+      2342,
+      2511,
+      4531,
+      5546
+    ]
+  },
+  {
+    "root_id": 27,
+    "root": "grad/gress",
+    "basic_meaning": "step, go",
+    "word_ids": [
+      1090,
+      1217,
+      1360,
+      1432,
+      3611,
+      5126,
+      5216,
+      5218
+    ]
+  },
+  {
+    "root_id": 28,
+    "root": "grat",
+    "basic_meaning": "thanks, pleasing",
+    "word_ids": [
+      3748,
+      3911,
+      4281,
+      5244,
+      5285,
+      5403,
+      5431,
+      5553
+    ]
+  },
+  {
+    "root_id": 29,
+    "root": "habit/hibit",
+    "basic_meaning": "have, hold (dwell)",
+    "word_ids": [
+      2542,
+      2879,
+      4553,
+      4620,
+      5258,
+      5329,
+      5359,
+      5512
+    ]
+  },
+  {
+    "root_id": 30,
+    "root": "hospit/host",
+    "basic_meaning": "host, guest",
+    "word_ids": [
+      987,
+      1178,
+      3130,
+      3924,
+      4574,
+      4576,
+      5387,
+      5515
+    ]
+  },
+  {
+    "root_id": 31,
+    "root": "ide",
+    "basic_meaning": "idea",
+    "word_ids": [
+      916,
+      1887,
+      3984,
+      4582,
+      4583,
+      5148,
+      5364,
+      5401
+    ]
+  },
+  {
+    "root_id": 32,
+    "root": "inter",
+    "basic_meaning": "between, among",
+    "word_ids": [
+      178,
+      201,
+      2787,
+      3829,
+      4638,
+      4639,
+      5327,
+      5550
+    ]
+  },
+  {
+    "root_id": 33,
+    "root": "leg/lect",
+    "basic_meaning": "read; choose",
+    "word_ids": [
+      365,
+      1488,
+      2334,
+      2377,
+      2496,
+      5159,
+      5236,
+      5268
+    ]
+  },
+  {
+    "root_id": 34,
+    "root": "lingu",
+    "basic_meaning": "language, tongue",
+    "word_ids": [
+      450,
+      5152,
+      5213,
+      5232,
+      5342,
+      5418,
+      5479,
+      5542
+    ]
+  },
+  {
+    "root_id": 35,
+    "root": "liter",
+    "basic_meaning": "letter",
+    "word_ids": [
+      890,
+      1242,
+      2836,
+      2919,
+      5170,
+      5311,
+      5371,
+      5381
+    ]
+  },
+  {
+    "root_id": 36,
+    "root": "loc",
+    "basic_meaning": "place",
+    "word_ids": [
+      194,
+      282,
+      2739,
+      3603,
+      4149,
+      5383,
+      5408,
+      5534
+    ]
+  },
+  {
+    "root_id": 37,
+    "root": "mar",
+    "basic_meaning": "sea",
+    "word_ids": [
+      1474,
+      3558,
+      3659,
+      5147,
+      5165,
+      5347,
+      5538
+    ]
+  },
+  {
+    "root_id": 38,
+    "root": "plac",
+    "basic_meaning": "please, calm",
+    "word_ids": [
+      124,
+      2438,
+      2972,
+      5350,
+      5370,
+      5412,
+      5457,
+      5497
+    ]
+  },
+  {
+    "root_id": 39,
+    "root": "popul",
+    "basic_meaning": "people",
+    "word_ids": [
+      138,
+      529,
+      958,
+      1079,
+      2678,
+      5168,
+      5422,
+      5507
+    ]
+  },
+  {
+    "root_id": 40,
+    "root": "port",
+    "basic_meaning": "carry",
+    "word_ids": [
+      127,
+      884,
+      995,
+      1570,
+      1780,
+      5136,
+      5156,
+      5355
+    ]
+  },
+  {
+    "root_id": 41,
+    "root": "priv",
+    "basic_meaning": "separate, own",
+    "word_ids": [
+      147,
+      321,
+      3898,
+      4363,
+      5144,
+      5235,
+      5315,
+      5340
+    ]
+  },
+  {
+    "root_id": 42,
+    "root": "reg",
+    "basic_meaning": "rule, guide",
+    "word_ids": [
+      603,
+      959,
+      1762,
+      3151,
+      4865,
+      5157,
+      5365,
+      5465
+    ]
+  },
+  {
+    "root_id": 43,
+    "root": "scrib/script",
+    "basic_meaning": "write",
+    "word_ids": [
+      306,
+      660,
+      1618,
+      1877,
+      1948,
+      3396,
+      4686,
+      5332
+    ]
+  },
+  {
+    "root_id": 44,
+    "root": "sect/sec",
+    "basic_meaning": "cut",
+    "word_ids": [
+      237,
+      1192,
+      2694,
+      3829,
+      4626,
+      5210,
+      5326,
+      5547
+    ]
+  },
+  {
+    "root_id": 45,
+    "root": "sens/sent",
+    "basic_meaning": "feel",
+    "word_ids": [
+      1121,
+      2165,
+      2284,
+      2726,
+      4917,
+      4918,
+      4919,
+      5351
+    ]
+  },
+  {
+    "root_id": 46,
+    "root": "sign",
+    "basic_meaning": "mark, sign",
+    "word_ids": [
+      199,
+      226,
+      1024,
+      1589,
+      1827,
+      3677,
+      4881,
+      5241
+    ]
+  },
+  {
+    "root_id": 47,
+    "root": "spect",
+    "basic_meaning": "look, see",
+    "word_ids": [
+      1201,
+      2134,
+      3203,
+      4628,
+      4967,
+      4968,
+      5215,
+      5395
+    ]
+  },
+  {
+    "root_id": 48,
+    "root": "struct",
+    "basic_meaning": "build, arrange",
+    "word_ids": [
+      893,
+      1756,
+      1929,
+      2224,
+      2871,
+      3415,
+      5427,
+      5505
+    ]
+  },
+  {
+    "root_id": 49,
+    "root": "super",
+    "basic_meaning": "above, beyond",
+    "word_ids": [
+      2907,
+      5008,
+      5124,
+      5227,
+      5287,
+      5448,
+      5454,
+      5545
+    ]
+  },
+  {
+    "root_id": 50,
+    "root": "tele",
+    "basic_meaning": "far, distant",
+    "word_ids": [
+      953,
+      1150,
+      4075,
+      5129,
+      5308,
+      5458,
+      5499,
+      5541
+    ]
+  },
+  {
+    "root_id": 51,
+    "root": "tox",
+    "basic_meaning": "poison",
+    "word_ids": [
+      3313,
+      5130,
+      5335,
+      5341,
+      5432,
+      5503,
+      5531,
+      5561
+    ]
+  },
+  {
+    "root_id": 52,
+    "root": "typ",
+    "basic_meaning": "type, model, impression",
+    "word_ids": [
+      192,
+      2179,
+      3932,
+      4992,
+      5240,
+      5317,
+      5375,
+      5472
+    ]
+  },
+  {
+    "root_id": 53,
+    "root": "vert/vers",
+    "basic_meaning": "turn",
+    "word_ids": [
+      236,
+      1557,
+      2129,
+      2280,
+      2426,
+      2759,
+      4087,
+      5450
+    ]
+  },
+  {
+    "root_id": 54,
+    "root": "vict/vinc",
+    "basic_meaning": "conquer, overcome",
+    "word_ids": [
+      2477,
+      2942,
+      3930,
+      4297,
+      4298,
+      5175,
+      5190,
+      5277
+    ]
+  },
+  {
+    "root_id": 55,
+    "root": "vid/vis",
+    "basic_meaning": "see",
+    "word_ids": [
+      134,
+      323,
+      964,
+      1311,
+      1830,
+      2545,
+      5009,
+      5133
+    ]
+  },
+  {
+    "root_id": 56,
+    "root": "voc/vok",
+    "basic_meaning": "call, voice",
+    "word_ids": [
+      929,
+      3309,
+      3531,
+      3782,
+      4469,
+      4837,
+      5411,
+      5433
+    ]
+  },
+  {
+    "root_id": 57,
+    "root": "zoo",
+    "basic_meaning": "animal",
+    "word_ids": [
+      2970,
+      5167,
+      5180,
+      5286,
+      5413,
+      5482,
+      5494,
+      5532
+    ]
+  },
+  {
+    "root_id": 58,
+    "root": "cap / cep / cip",
+    "basic_meaning": "to take",
+    "word_ids": [
+      1316,
+      1655,
+      2360,
+      2865,
+      4165,
+      5516
+    ]
+  },
+  {
+    "root_id": 59,
+    "root": "ten / tain",
+    "basic_meaning": "to hold",
+    "word_ids": [
+      1608,
+      1694,
+      1733,
+      4371,
+      5345,
+      5426
+    ]
+  },
+  {
+    "root_id": 60,
+    "root": "mit / mis",
+    "basic_meaning": "to send",
+    "word_ids": [
+      128,
+      1396,
+      3360,
+      4038,
+      5200,
+      5367
+    ]
+  },
+  {
+    "root_id": 61,
+    "root": "fer",
+    "basic_meaning": "to carry",
+    "word_ids": [
+      490,
+      982,
+      1829,
+      4613,
+      5524,
+      5543
+    ]
+  },
+  {
+    "root_id": 62,
+    "root": "pos / pon",
+    "basic_meaning": "to place",
+    "word_ids": [
+      117,
+      700,
+      4756,
+      4801,
+      5197,
+      5263
+    ]
+  },
+  {
+    "root_id": 63,
+    "root": "fac / fic",
+    "basic_meaning": "to make",
+    "word_ids": [
+      652,
+      805,
+      1964,
+      4345,
+      5282,
+      5366
+    ]
+  },
+  {
+    "root_id": 64,
+    "root": "duc / duct",
+    "basic_meaning": "to lead",
+    "word_ids": [
+      1532,
+      1715,
+      2800,
+      4606,
+      5173,
+      5492
+    ]
+  },
+  {
+    "root_id": 65,
+    "root": "tend / tens",
+    "basic_meaning": "to stretch",
+    "word_ids": [
+      2127,
+      2187,
+      3873,
+      4294,
+      4818,
+      5410
+    ]
+  },
+  {
+    "root_id": 66,
+    "root": "spec / spic",
+    "basic_meaning": "to look",
+    "word_ids": [
+      573,
+      1201,
+      1558,
+      2134,
+      5141,
+      5215
+    ]
+  },
+  {
+    "root_id": 67,
+    "root": "st / sta",
+    "basic_meaning": "to stand",
+    "word_ids": [
+      965,
+      1247,
+      1714,
+      3707,
+      4240,
+      5358
+    ]
+  },
+  {
+    "root_id": 68,
+    "root": "cur / curs",
+    "basic_meaning": "to run",
+    "word_ids": [
+      266,
+      1327,
+      1946,
+      5171,
+      5214,
+      5275
+    ]
+  },
+  {
+    "root_id": 69,
+    "root": "grad / gress",
+    "basic_meaning": "to step",
+    "word_ids": [
+      897,
+      1090,
+      1217,
+      1360,
+      5126,
+      5549
+    ]
+  },
+  {
+    "root_id": 70,
+    "root": "ven / vent",
+    "basic_meaning": "to come",
+    "word_ids": [
+      493,
+      1470,
+      1551,
+      4639,
+      4642,
+      5566
+    ]
+  },
+  {
+    "root_id": 71,
+    "root": "mov / mot",
+    "basic_meaning": "to move",
+    "word_ids": [
+      854,
+      1165,
+      1173,
+      1522,
+      4441,
+      5523
+    ]
+  },
+  {
+    "root_id": 72,
+    "root": "ject",
+    "basic_meaning": "to throw",
+    "word_ids": [
+      210,
+      3816,
+      4622,
+      5138,
+      5294,
+      5376
+    ]
+  },
+  {
+    "root_id": 73,
+    "root": "tract",
+    "basic_meaning": "to pull",
+    "word_ids": [
+      898,
+      1063,
+      1651,
+      3045,
+      3565,
+      5239
+    ]
+  },
+  {
+    "root_id": 74,
+    "root": "pel / puls",
+    "basic_meaning": "to drive",
+    "word_ids": [
+      2175,
+      2287,
+      4257,
+      5490,
+      5506,
+      5558
+    ]
+  },
+  {
+    "root_id": 75,
+    "root": "ced / cess",
+    "basic_meaning": "to go/yield",
+    "word_ids": [
+      262,
+      833,
+      1013,
+      4268,
+      4804,
+      4853
+    ]
+  },
+  {
+    "root_id": 76,
+    "root": "port",
+    "basic_meaning": "to carry",
+    "word_ids": [
+      458,
+      884,
+      995,
+      1229,
+      1754,
+      5156
+    ]
+  },
+  {
+    "root_id": 77,
+    "root": "rupt",
+    "basic_meaning": "to break",
+    "word_ids": [
+      4306,
+      4401,
+      4465,
+      4638,
+      5362
+    ]
+  },
+  {
+    "root_id": 78,
+    "root": "dic / dict",
+    "basic_meaning": "to speak",
+    "word_ids": [
+      1371,
+      1973,
+      3841,
+      4377,
+      5092,
+      5212
+    ]
+  },
+  {
+    "root_id": 79,
+    "root": "voc / vok",
+    "basic_meaning": "to call",
+    "word_ids": [
+      929,
+      3309,
+      3531,
+      4469,
+      4837,
+      5231
+    ]
+  },
+  {
+    "root_id": 80,
+    "root": "log / loqu",
+    "basic_meaning": "to word/reason",
+    "word_ids": [
+      2955,
+      3042,
+      4159,
+      5207,
+      5226
+    ]
+  },
+  {
+    "root_id": 81,
+    "root": "nunc / nounc",
+    "basic_meaning": "to declare",
+    "word_ids": [
+      2973,
+      4356,
+      4829,
+      5186,
+      5330
+    ]
+  },
+  {
+    "root_id": 82,
+    "root": "vid / vis",
+    "basic_meaning": "to see",
+    "word_ids": [
+      134,
+      323,
+      1311,
+      2545,
+      5133,
+      5382
+    ]
+  },
+  {
+    "root_id": 83,
+    "root": "aud",
+    "basic_meaning": "to hear",
+    "word_ids": [
+      486,
+      1958,
+      2174,
+      5238,
+      5474,
+      5498
+    ]
+  },
+  {
+    "root_id": 84,
+    "root": "scrib / scrip",
+    "basic_meaning": "to write",
+    "word_ids": [
+      1618,
+      1819,
+      1948,
+      4686,
+      5146,
+      5504
+    ]
+  },
+  {
+    "root_id": 85,
+    "root": "sent / sens",
+    "basic_meaning": "to feel",
+    "word_ids": [
+      1121,
+      2165,
+      2284,
+      3490,
+      4918,
+      5177
+    ]
+  },
+  {
+    "root_id": 86,
+    "root": "path",
+    "basic_meaning": "to feeling",
+    "word_ids": [
+      3440,
+      4089,
+      5187,
+      5310,
+      5440
+    ]
+  },
+  {
+    "root_id": 87,
+    "root": "clam / claim",
+    "basic_meaning": "to shout",
+    "word_ids": [
+      1394,
+      4825,
+      5194,
+      5306,
+      5399
+    ]
+  },
+  {
+    "root_id": 88,
+    "root": "cred",
+    "basic_meaning": "to believe",
+    "word_ids": [
+      353,
+      4317,
+      4318,
+      5143,
+      5209,
+      5441
+    ]
+  },
+  {
+    "root_id": 89,
+    "root": "fid",
+    "basic_meaning": "to faith",
+    "word_ids": [
+      2064,
+      3049,
+      3579,
+      5314,
+      5420,
+      5488
+    ]
+  },
+  {
+    "root_id": 90,
+    "root": "gno / gni",
+    "basic_meaning": "to know",
+    "word_ids": [
+      168,
+      2454,
+      3453,
+      5246,
+      5392,
+      5470
+    ]
+  },
+  {
+    "root_id": 91,
+    "root": "sci",
+    "basic_meaning": "to know",
+    "word_ids": [
+      356,
+      3882,
+      4284,
+      5280,
+      5325,
+      5526
+    ]
+  },
+  {
+    "root_id": 92,
+    "root": "mem",
+    "basic_meaning": "to memory",
+    "word_ids": [
+      738,
+      2213,
+      4695,
+      4696,
+      5135,
+      5404
+    ]
+  },
+  {
+    "root_id": 93,
+    "root": "put",
+    "basic_meaning": "to think",
+    "word_ids": [
+      252,
+      2728,
+      3015,
+      3028,
+      5379,
+      5468
+    ]
+  },
+  {
+    "root_id": 94,
+    "root": "doc",
+    "basic_meaning": "to teach",
+    "word_ids": [
+      1303,
+      1404,
+      3125,
+      3828,
+      5182,
+      5487
+    ]
+  },
+  {
+    "root_id": 95,
+    "root": "cern / cert",
+    "basic_meaning": "to sure/separate",
+    "word_ids": [
+      829,
+      1299,
+      1949,
+      5160,
+      5230,
+      5333
+    ]
+  },
+  {
+    "root_id": 96,
+    "root": "not",
+    "basic_meaning": "to mark",
+    "word_ids": [
+      370,
+      1930,
+      2019,
+      3606,
+      4737,
+      4739
+    ]
+  },
+  {
+    "root_id": 97,
+    "root": "rat",
+    "basic_meaning": "to reckon",
+    "word_ids": [
+      288,
+      1867,
+      3685,
+      5183,
+      5397,
+      5511
+    ]
+  },
+  {
+    "root_id": 98,
+    "root": "dem",
+    "basic_meaning": "to people",
+    "word_ids": [
+      2211,
+      2624,
+      3986,
+      4462,
+      5158
+    ]
+  },
+  {
+    "root_id": 99,
+    "root": "pop",
+    "basic_meaning": "to people",
+    "word_ids": [
+      529,
+      2540,
+      5276,
+      5422,
+      5451,
+      5507
+    ]
+  },
+  {
+    "root_id": 100,
+    "root": "arch",
+    "basic_meaning": "to ruler",
+    "word_ids": [
+      550,
+      1362,
+      3331,
+      3815,
+      5125,
+      5248
+    ]
+  },
+  {
+    "root_id": 101,
+    "root": "crat",
+    "basic_meaning": "to rule",
+    "word_ids": [
+      2211,
+      3733,
+      4217,
+      5250,
+      5278
+    ]
+  },
+  {
+    "root_id": 102,
+    "root": "reg",
+    "basic_meaning": "to rule",
+    "word_ids": [
+      603,
+      606,
+      1286,
+      1762,
+      3151,
+      5251
+    ]
+  },
+  {
+    "root_id": 103,
+    "root": "dom",
+    "basic_meaning": "to house/master",
+    "word_ids": [
+      693,
+      745,
+      1298,
+      1518,
+      5554
+    ]
+  },
+  {
+    "root_id": 104,
+    "root": "leg",
+    "basic_meaning": "to law",
+    "word_ids": [
+      331,
+      436,
+      1716,
+      2158,
+      2778,
+      3690
+    ]
+  },
+  {
+    "root_id": 105,
+    "root": "jud / jur",
+    "basic_meaning": "to judge",
+    "word_ids": [
+      1684,
+      1706,
+      2853,
+      4810,
+      5149
+    ]
+  },
+  {
+    "root_id": 106,
+    "root": "civ",
+    "basic_meaning": "to citizen",
+    "word_ids": [
+      119,
+      1184,
+      3147,
+      3722,
+      3859,
+      5552
+    ]
+  },
+  {
+    "root_id": 107,
+    "root": "bell",
+    "basic_meaning": "to war",
+    "word_ids": [
+      3777,
+      4851,
+      5283,
+      5338,
+      5444
+    ]
+  },
+  {
+    "root_id": 108,
+    "root": "bio",
+    "basic_meaning": "to life",
+    "word_ids": [
+      2026,
+      2032,
+      2219,
+      4056,
+      5163,
+      5529
+    ]
+  },
+  {
+    "root_id": 109,
+    "root": "viv / vit",
+    "basic_meaning": "to life",
+    "word_ids": [
+      2686,
+      2781,
+      3441,
+      5201,
+      5204,
+      5360
+    ]
+  },
+  {
+    "root_id": 110,
+    "root": "gen",
+    "basic_meaning": "to birth",
+    "word_ids": [
+      159,
+      1401,
+      1750,
+      2511,
+      3384,
+      5475
+    ]
+  },
+  {
+    "root_id": 111,
+    "root": "nat",
+    "basic_meaning": "to born",
+    "word_ids": [
+      755,
+      1287,
+      1542,
+      3439,
+      5297,
+      5489
+    ]
+  },
+  {
+    "root_id": 112,
+    "root": "mort",
+    "basic_meaning": "to death",
+    "word_ids": [
+      816,
+      3327,
+      5150,
+      5161,
+      5416
+    ]
+  },
+  {
+    "root_id": 113,
+    "root": "corp",
+    "basic_meaning": "to body",
+    "word_ids": [
+      819,
+      2908,
+      3625,
+      5188,
+      5548
+    ]
+  },
+  {
+    "root_id": 114,
+    "root": "man",
+    "basic_meaning": "to hand",
+    "word_ids": [
+      699,
+      1180,
+      3321,
+      4684,
+      4686,
+      5368
+    ]
+  },
+  {
+    "root_id": 115,
+    "root": "ped / pod",
+    "basic_meaning": "to foot",
+    "word_ids": [
+      5198,
+      5220,
+      5321,
+      5373,
+      5485
+    ]
+  },
+  {
+    "root_id": 116,
+    "root": "dent / dont",
+    "basic_meaning": "to tooth",
+    "word_ids": [
+      2027,
+      4357,
+      5290,
+      5469,
+      5491,
+      5555
+    ]
+  },
+  {
+    "root_id": 117,
+    "root": "derm",
+    "basic_meaning": "to skin",
+    "word_ids": [
+      5184,
+      5272,
+      5304,
+      5452,
+      5517
+    ]
+  },
+  {
+    "root_id": 118,
+    "root": "chron",
+    "basic_meaning": "to time",
+    "word_ids": [
+      2735,
+      3688,
+      5228,
+      5398,
+      5445
+    ]
+  },
+  {
+    "root_id": 119,
+    "root": "temp",
+    "basic_meaning": "to time",
+    "word_ids": [
+      1330,
+      1821,
+      2186,
+      4067,
+      5339,
+      5519
+    ]
+  },
+  {
+    "root_id": 120,
+    "root": "ann / enn",
+    "basic_meaning": "to year",
+    "word_ids": [
+      712,
+      2293,
+      5301,
+      5361,
+      5509
+    ]
+  },
+  {
+    "root_id": 121,
+    "root": "loc",
+    "basic_meaning": "to place",
+    "word_ids": [
+      194,
+      2739,
+      4149,
+      5279,
+      5307,
+      5408
+    ]
+  },
+  {
+    "root_id": 122,
+    "root": "terr",
+    "basic_meaning": "to earth",
+    "word_ids": [
+      2107,
+      3390,
+      3580,
+      3934,
+      5127,
+      5481
+    ]
+  },
+  {
+    "root_id": 123,
+    "root": "geo",
+    "basic_meaning": "to earth",
+    "word_ids": [
+      2774,
+      2795,
+      3506,
+      3870,
+      5409,
+      5460
+    ]
+  },
+  {
+    "root_id": 124,
+    "root": "astr",
+    "basic_meaning": "to star",
+    "word_ids": [
+      2414,
+      3073,
+      5139,
+      5354,
+      5514,
+      5527
+    ]
+  },
+  {
+    "root_id": 125,
+    "root": "lum / luc",
+    "basic_meaning": "to light",
+    "word_ids": [
+      5155,
+      5237,
+      5318,
+      5386,
+      5446,
+      5539
+    ]
+  },
+  {
+    "root_id": 126,
+    "root": "mar",
+    "basic_meaning": "to sea",
+    "word_ids": [
+      1474,
+      3659,
+      5147,
+      5347,
+      5538
+    ]
+  },
+  {
+    "root_id": 127,
+    "root": "medi",
+    "basic_meaning": "to middle",
+    "word_ids": [
+      1149,
+      1952,
+      2880,
+      3484,
+      5525
+    ]
+  },
+  {
+    "root_id": 128,
+    "root": "junct",
+    "basic_meaning": "to join",
+    "word_ids": [
+      355,
+      1428,
+      3193,
+      3382,
+      5217,
+      5533
+    ]
+  },
+  {
+    "root_id": 129,
+    "root": "greg",
+    "basic_meaning": "to flock",
+    "word_ids": [
+      3419,
+      5166,
+      5195,
+      5247,
+      5415,
+      5436
+    ]
+  },
+  {
+    "root_id": 130,
+    "root": "her / hes",
+    "basic_meaning": "to stick",
+    "word_ids": [
+      4135,
+      4567,
+      4618,
+      5353,
+      5393
+    ]
+  },
+  {
+    "root_id": 131,
+    "root": "string / strict",
+    "basic_meaning": "to bind",
+    "word_ids": [
+      609,
+      3445,
+      5191,
+      5264,
+      5274
+    ]
+  },
+  {
+    "root_id": 132,
+    "root": "solv",
+    "basic_meaning": "to loosen",
+    "word_ids": [
+      822,
+      1071,
+      2756,
+      5172,
+      5313
+    ]
+  },
+  {
+    "root_id": 133,
+    "root": "fract",
+    "basic_meaning": "to break",
+    "word_ids": [
+      3636,
+      4515,
+      4516,
+      5528,
+      5560
+    ]
+  },
+  {
+    "root_id": 134,
+    "root": "sect",
+    "basic_meaning": "to cut",
+    "word_ids": [
+      237,
+      1192,
+      3829,
+      5210,
+      5326,
+      5480
+    ]
+  },
+  {
+    "root_id": 135,
+    "root": "cis",
+    "basic_meaning": "to cut",
+    "word_ids": [
+      2164,
+      3543,
+      4339,
+      5243,
+      5298,
+      5435
+    ]
+  },
+  {
+    "root_id": 136,
+    "root": "part",
+    "basic_meaning": "to part",
+    "word_ids": [
+      171,
+      431,
+      836,
+      1960,
+      2637,
+      5385
+    ]
+  },
+  {
+    "root_id": 137,
+    "root": "struct",
+    "basic_meaning": "to build",
+    "word_ids": [
+      893,
+      1756,
+      1929,
+      3415,
+      5352,
+      5427
+    ]
+  },
+  {
+    "root_id": 138,
+    "root": "ben / bon",
+    "basic_meaning": "to good",
+    "word_ids": [
+      1216,
+      1809,
+      3647,
+      5254,
+      5303,
+      5402
+    ]
+  },
+  {
+    "root_id": 139,
+    "root": "mal",
+    "basic_meaning": "to bad",
+    "word_ids": [
+      3958,
+      5265,
+      5349,
+      5461,
+      5518,
+      5535
+    ]
+  },
+  {
+    "root_id": 140,
+    "root": "grat",
+    "basic_meaning": "to pleasing",
+    "word_ids": [
+      3911,
+      4281,
+      5164,
+      5262,
+      5403
+    ]
+  },
+  {
+    "root_id": 141,
+    "root": "ver",
+    "basic_meaning": "to truth",
+    "word_ids": [
+      146,
+      236,
+      2644,
+      5092,
+      5233,
+      5300
+    ]
+  },
+  {
+    "root_id": 142,
+    "root": "clar",
+    "basic_meaning": "to clear",
+    "word_ids": [
+      690,
+      2860,
+      3644,
+      3969,
+      4241,
+      5346
+    ]
+  },
+  {
+    "root_id": 143,
+    "root": "dur",
+    "basic_meaning": "to hard",
+    "word_ids": [
+      290,
+      2345,
+      3587,
+      4450,
+      5312,
+      5544
+    ]
+  },
+  {
+    "root_id": 144,
+    "root": "fort",
+    "basic_meaning": "to strong",
+    "word_ids": [
+      770,
+      1806,
+      5259,
+      5424,
+      5442
+    ]
+  },
+  {
+    "root_id": 145,
+    "root": "val",
+    "basic_meaning": "to worth",
+    "word_ids": [
+      125,
+      332,
+      1040,
+      2519,
+      5337,
+      5428
+    ]
+  },
+  {
+    "root_id": 146,
+    "root": "vac",
+    "basic_meaning": "to empty",
+    "word_ids": [
+      1082,
+      2672,
+      4468,
+      5203,
+      5462,
+      5521
+    ]
+  },
+  {
+    "root_id": 147,
+    "root": "sim",
+    "basic_meaning": "to like",
+    "word_ids": [
+      519,
+      4182,
+      4941,
+      5169,
+      5205,
+      5206
+    ]
+  },
+  {
+    "root_id": 148,
+    "root": "ali",
+    "basic_meaning": "to other",
+    "word_ids": [
+      3120,
+      3653,
+      5162,
+      5295,
+      5356
+    ]
+  },
+  {
+    "root_id": 149,
+    "root": "alter",
+    "basic_meaning": "to other",
+    "word_ids": [
+      1068,
+      2830,
+      3522,
+      5322,
+      5456
+    ]
+  },
+  {
+    "root_id": 150,
+    "root": "ambi",
+    "basic_meaning": "to both",
+    "word_ids": [
+      4154,
+      4155,
+      5291,
+      5337,
+      5565
+    ]
+  },
+  {
+    "root_id": 151,
+    "root": "anti",
+    "basic_meaning": "to against",
+    "word_ids": [
+      3905,
+      4165,
+      5163,
+      5292,
+      5302
+    ]
+  },
+  {
+    "root_id": 152,
+    "root": "contra",
+    "basic_meaning": "to against",
+    "word_ids": [
+      320,
+      1535,
+      2351,
+      3356,
+      4311,
+      5212
+    ]
+  },
+  {
+    "root_id": 153,
+    "root": "fin",
+    "basic_meaning": "to end",
+    "word_ids": [
+      1508,
+      1724,
+      3719,
+      4276,
+      4348,
+      5153
+    ]
+  },
+  {
+    "root_id": 154,
+    "root": "mut",
+    "basic_meaning": "to change",
+    "word_ids": [
+      2531,
+      5273,
+      5320,
+      5343,
+      5388
+    ]
+  },
+  {
+    "root_id": 155,
+    "root": "nov",
+    "basic_meaning": "to new",
+    "word_ids": [
+      2115,
+      4061,
+      5323,
+      5324,
+      5406
+    ]
+  },
+  {
+    "root_id": 156,
+    "root": "tort",
+    "basic_meaning": "to twist",
+    "word_ids": [
+      2899,
+      4406,
+      5253,
+      5374,
+      5557
+    ]
+  },
+  {
+    "root_id": 157,
+    "root": "vert",
+    "basic_meaning": "to turn",
+    "word_ids": [
+      236,
+      2129,
+      3017,
+      4087,
+      5288
+    ]
+  },
+  {
+    "root_id": 158,
+    "root": "quis",
+    "basic_meaning": "to seek",
+    "word_ids": [
+      473,
+      1102,
+      2541,
+      5357,
+      5455,
+      5464
+    ]
+  },
+  {
+    "root_id": 159,
+    "root": "serv",
+    "basic_meaning": "to serve/save",
+    "word_ids": [
+      83,
+      1530,
+      3260,
+      3574,
+      4285,
+      5229
+    ]
+  },
+  {
+    "root_id": 160,
+    "root": "fus",
+    "basic_meaning": "to pour",
+    "word_ids": [
+      3062,
+      3511,
+      4279,
+      5463,
+      5484,
+      5559
+    ]
+  },
+  {
+    "root_id": 161,
+    "root": "spir",
+    "basic_meaning": "to breathe",
+    "word_ids": [
+      1478,
+      3788,
+      4477,
+      4629,
+      5478
+    ]
+  },
+  {
+    "root_id": 162,
+    "root": "graph",
+    "basic_meaning": "to write",
+    "word_ids": [
+      166,
+      1612,
+      3034,
+      3256,
+      5419,
+      5421
+    ]
+  },
+  {
+    "root_id": 163,
+    "root": "matr",
+    "basic_meaning": "to mother",
+    "word_ids": [
+      1033,
+      1795,
+      3547,
+      5131,
+      5145,
+      5174
+    ]
+  },
+  {
+    "root_id": 164,
+    "root": "patr",
+    "basic_meaning": "to father",
+    "word_ids": [
+      1196,
+      4777,
+      5154,
+      5234,
+      5319,
+      5502
+    ]
+  },
+  {
+    "root_id": 165,
+    "root": "flu",
+    "basic_meaning": "to flow",
+    "word_ids": [
+      1866,
+      2814,
+      3075,
+      5199,
+      5417,
+      5471
+    ]
+  },
+  {
+    "root_id": 166,
+    "root": "prim",
+    "basic_meaning": "to first",
+    "word_ids": [
+      921,
+      1443,
+      5400,
+      5501,
+      5562
+    ]
+  },
+  {
+    "root_id": 167,
+    "root": "nom",
+    "basic_meaning": "to name",
+    "word_ids": [
+      92,
+      1615,
+      3935,
+      4732,
+      5405,
+      5437
+    ]
+  },
+  {
+    "root_id": 168,
+    "root": "sign",
+    "basic_meaning": "to sign",
+    "word_ids": [
+      199,
+      226,
+      1827,
+      3677,
+      4367,
+      5255
+    ]
+  },
+  {
+    "root_id": 169,
+    "root": "mod",
+    "basic_meaning": "to measure",
+    "word_ids": [
+      386,
+      891,
+      2926,
+      3678,
+      3743,
+      5260
+    ]
+  },
+  {
+    "root_id": 170,
+    "root": "oper",
+    "basic_meaning": "to work",
+    "word_ids": [
+      1015,
+      2329,
+      2333,
+      2402,
+      5193,
+      5429
+    ]
+  },
+  {
+    "root_id": 171,
+    "root": "labor",
+    "basic_meaning": "to work",
+    "word_ids": [
+      1452,
+      1645,
+      4249,
+      4429,
+      5249,
+      5477
+    ]
+  },
+  {
+    "root_id": 172,
+    "root": "text",
+    "basic_meaning": "to weave",
+    "word_ids": [
+      285,
+      1382,
+      3766,
+      3780,
+      5137,
+      5394
+    ]
+  },
+  {
+    "root_id": 173,
+    "root": "art",
+    "basic_meaning": "to skill",
+    "word_ids": [
+      274,
+      3100,
+      4176,
+      5344,
+      5380,
+      5384
+    ]
+  },
+  {
+    "root_id": 174,
+    "root": "liter",
+    "basic_meaning": "to letter",
+    "word_ids": [
+      890,
+      1242,
+      2919,
+      5170,
+      5371,
+      5381
+    ]
+  },
+  {
+    "root_id": 175,
+    "root": "verb",
+    "basic_meaning": "to word",
+    "word_ids": [
+      4058,
+      5178,
+      5281,
+      5296,
+      5430,
+      5522
+    ]
+  },
+  {
+    "root_id": 176,
+    "root": "func",
+    "basic_meaning": "to perform",
+    "word_ids": [
+      567,
+      651,
+      1353,
+      2786,
+      5349,
+      5500
+    ]
+  },
+  {
+    "root_id": 177,
+    "root": "us / ut",
+    "basic_meaning": "to use",
+    "word_ids": [
+      56,
+      1502,
+      1792,
+      3885,
+      5142,
+      5223
+    ]
+  },
+  {
+    "root_id": 178,
+    "root": "clud",
+    "basic_meaning": "to close",
+    "word_ids": [
+      570,
+      3246,
+      3831,
+      5289,
+      5389,
+      5453
+    ]
+  },
+  {
+    "root_id": 179,
+    "root": "pend",
+    "basic_meaning": "to hang",
+    "word_ids": [
+      1847,
+      2751,
+      4259,
+      5015,
+      5176,
+      5486
+    ]
+  },
+  {
+    "root_id": 180,
+    "root": "ple",
+    "basic_meaning": "to fill",
+    "word_ids": [
+      417,
+      827,
+      2662,
+      2812,
+      3817,
+      5293
+    ]
+  },
+  {
+    "root_id": 181,
+    "root": "hab",
+    "basic_meaning": "to hold",
+    "word_ids": [
+      2514,
+      2879,
+      4553,
+      4620,
+      5258,
+      5329
+    ]
+  },
+  {
+    "root_id": 182,
+    "root": "sid",
+    "basic_meaning": "to sit",
+    "word_ids": [
+      1077,
+      2238,
+      2298,
+      4879,
+      5132,
+      5396
+    ]
+  },
+  {
+    "root_id": 183,
+    "root": "equ",
+    "basic_meaning": "to equal",
+    "word_ids": [
+      1550,
+      1677,
+      1981,
+      2820,
+      3099,
+      5245
+    ]
+  },
+  {
+    "root_id": 184,
+    "root": "sat",
+    "basic_meaning": "to enough",
+    "word_ids": [
+      2244,
+      3319,
+      5208,
+      5267,
+      5390
+    ]
+  },
+  {
+    "root_id": 185,
+    "root": "sequ",
+    "basic_meaning": "to follow",
+    "word_ids": [
+      395,
+      1523,
+      3372,
+      3756,
+      3776,
+      4832
+    ]
+  },
+  {
+    "root_id": 186,
+    "root": "min",
+    "basic_meaning": "to small",
+    "word_ids": [
+      1176,
+      1369,
+      1723,
+      3774,
+      4136,
+      4382
+    ]
+  },
+  {
+    "root_id": 187,
+    "root": "magn",
+    "basic_meaning": "to great",
+    "word_ids": [
+      504,
+      1785,
+      3781,
+      4046,
+      5391,
+      5447
+    ]
+  }
+]

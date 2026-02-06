@@ -31,16 +31,6 @@ You must strictly utilize the following four data pillars. Do not hallucinate UR
   * **URL Reference:** https://www.english-corpora.org/resources.asp  
   * **Fallback:** If raw access is restricted, use the wordfrequency.info sample list logic for the top 5,000 free lemmas available at https://www.wordfrequency.info/samples.asp.
 
-### **Pillar B: Pedagogical Alignment (The Filter)**
-
-**Source:** Oxford 3000™ / 5000™ (CEFR Aligned)
-
-* **Target File:** CSV extraction of CEFR levels (A1-C2).  
-* **Strategic Value:** Mapping lemmas to proficiency levels allows the app to warn users about "Too Difficult" content.  
-* **Acquisition Action:**  
-  * Scrape or download the CSV representation.  
-  * **URL Reference:** https://github.com/Berehulia/Oxford-3000-5000 (Community CSV extraction).  
-  * **Verification:** Cross-reference against https://www.oxfordlearnersdictionaries.com/wordlists/oxford3000-5000.
 
 ### **Pillar C: Spoken Relevance (The Weighting)**
 
@@ -97,15 +87,39 @@ uv run dependencies=\["pandas", "openpyxl", "msgspec", "lxml", "tqdm", "regex"\]
 
 You will orchestrate a multi-stage pipeline. Create the script scripts/seed\_builder.py implementing the following logic:
 
-### **Stage 1: The Lemma Registry (Normalization)**
+Stage 1: Master Pool Generation & Normalization
 
-1. **Ingest COCA:** Read the top 60,000 lemmas.  
-2. **Ingest Oxford:** Read the CEFR lists.  
-3. **Merge:** Perform a LEFT JOIN on the COCA list.  
-   * If a word is in Oxford, assign its cefr\_level (A1-C2).  
-   * If not in Oxford, estimate CEFR based on COCA rank (e.g., Rank 1-1000 ≈ A1, Rank 10k+ ≈ C2).  
-4. **Resolve Conflicts:** If spelling differs (flavor/flavour), prefer the COCA (US) version but store the Oxford version as a variant.  
-5. **Output:** lemmas\_normalized.csv (Columns: id, text, rank, cefr, pos).
+Ingest Wordlists: Scan and read all lemmas from the source files located in data/raw/wordlist/:
+
+Oxford 5000: The core general vocabulary list.
+
+Vocabso: The curated custom word selection.
+
+AWL (Academic Word List): Specialized academic terminology.
+
+Ingest Roots & Derivatives: Parse root1.json and root2.json to extract:
+
+All primary root entries.
+
+All associated derivative words mapped to those roots.
+
+Deduplicate & Freeze: Merge all collected words from the sources above and remove duplicates.
+
+The "Closed Set" Constraint: This resulting list is the official Master Pool. Once this step is complete, the pool is frozen; no additional words shall be added or removed during any subsequent processing stages.
+
+Map COCA Frequencies: Perform a lookup for every word in the Master Pool against the COCA (Corpus of Contemporary American English) frequency database:
+
+Assign the official usage rank (1–60,000) to matching lemmas.
+
+If a word in the pool is not found in COCA, designate it as "rare" and assign a fallback default rank (e.g., 60,001+).
+
+Spelling Normalization: If spelling variations are detected (e.g., color vs. colour):
+
+Prioritize the COCA (US) version as the primary lemma text.
+
+Store the Oxford (UK) version in the variants column to maintain searchability and regional accuracy.
+
+Output: Generate lemmas_normalized.csv with the following columns: id, text, rank, cefr, pos, variants.
 
 ### Stage 2: The Metadata & Collocation Enrichment (Critical for Matrix View)
 
@@ -171,18 +185,17 @@ Instead of inserting directly into CoreData (which is complex from Python), gene
   }
 ]
 ```
-
+also make roots.json according to the best practices.
 ## ---
 
 **4\. Quality Assurance & Validation Protocols**
 
 Before finalizing the seed data, you must run scripts/validate\_seed.py to enforce the following constraints:
 
-1. **The "No-Null" Policy:** Every lemma in the Top 5000 *must* have a CEFR tag and an IPA transcription.  
-2. **The "Matrix Density" Check:** Ensure that the average node degree (collocations per word) is > 2.0. Isolated nodes break the Matrix view.  
-3. **The "Sanity Check" Policy:** Ensure no definition exceeds 200 characters (truncate if necessary for UI layout).  
-4. **The "Tatoeba Filter":** When selecting example sentences from Tatoeba:  
-   * Prefer sentences between 5 and 15 words.  
+1. **The "No-Null" Policy:** Every lemma in the Top 5000 *must* rank and an IPA transcription.  
+2. **The "Sanity Check" Policy:** Ensure no definition exceeds 200 characters (truncate if necessary for UI layout).  
+3. **The "Tatoeba Filter":** When selecting example sentences from Tatoeba:  
+   * Prefer sentences between 8 and 15 words.  
    * Reject sentences containing profanity or non-ASCII characters (unless valid UTF-8).  
    * Ensure the target lemma actually appears in the sentence (fuzzy matching).
 
@@ -192,3 +205,4 @@ Before finalizing the seed data, you must run scripts/validate\_seed.py to enfor
 2. **Processing Phase:** Execute uv run scripts/seed\_builder.py.  
 3. **Validation Phase:** Execute uv run scripts/validate\_seed.py.  
 4. **Asset Transfer:** Move seed\_data.json to MyiOSApp/Resources/Seeds/.
+5  **Asset Transfer:** Move roots.json to MyiOSApp/Resources/Seeds/.
