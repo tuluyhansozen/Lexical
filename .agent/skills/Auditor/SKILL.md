@@ -9,7 +9,7 @@ The Auditor skill is designed to systematically review the repository state agai
 
 ## 1. Audit Process
 
-1.  **Scope Definition**: Identify the target Phase and specific deliverables from `docs/project_implementation_plan.md` and `docs/Lexical App Master Project Plan.md`.
+1.  **Scope Definition**: Identify the target Phase and specific deliverables from `docs/project_implementation_plan.md` (single source of implementation-plan truth).
 2.  **Code Inspection**:
     *   Verify file existence.
     *   Check for required functionality/logic implementation (not just file presense).

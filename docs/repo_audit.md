@@ -1,30 +1,34 @@
-# Repository Audit Report (Docs Compliance)
+# Repository Audit Report (Phase 0 + Phase 8 Alignment)
 
 ## Scope
-This audit re-runs the **Phase 8.4 (Navigation & Bug Fixes)** review against the requirements in:
-`docs/project_implementation_plan.md`, `docs/Lexical App Master Project Plan.md`,
-`docs/iOS App Design Document Creation.md`, `docs/iOS App Requirements from Strategy.md`,
-and the `.agent/` configuration/memory.
-Audit run: **2026-02-02**.
+This audit validates repository state against:
+- `docs/project_implementation_plan.md`
+- `.agent/tasks.json`
+- `.agent/rules/*` and `.agent/skills/*` role/quality expectations
+
+Audit run: **2026-02-07**.
 
 ## Findings
 
 ### ✅ Compliant Items
-- **Phase 8 UI Navigation:** `ExploreView` replaces placeholder Search tab; `SettingsView` is functional; `CustomTabBar` updated.
-- **Phase 8.4 Fixes:** `SessionManager` mutability issue resolved; `SettingsView` uses correct `ReviewLog.reviewDate` property.
-- **Phase 7 Resolved:** Bandit Scheduler and Morphology Pipeline are verified.
-- **Navigation:** `ContentView.swift` correctly implements the 5-tab structure (Feed, Explore, Practice, Stats, Profile).
-- **Launch Issue Resolved:** Fixed stale bundle identifier `com.rawbit.app.Lexical` -> `com.lexical.Lexical` by clean build and manual packaging.
-- **Phase 8.5 Verified:** `VocabularySeedService` correctly seeds 10 words/3 roots from `vocab_seed.json` on clean install; Debug overlay confirms counts.
+- **Phase 0 stabilization implemented:** platform-guarded imports and cross-platform glass abstraction are in place (`LexicalCore/Models/ReviewLog.swift`, `LexicalCore/DesignSystem/Colors.swift`, `LexicalCore/DesignSystem/GlassEffectContainer.swift`).
+- **SwiftPM warning cleanup implemented:** executable target excludes now omit non-source files (`Package.swift`).
+- **Swift 6 actor warning resolved:** `ArticleStore` no longer calls an actor-isolated method from initializer (`LexicalCore/Services/ArticleStore.swift`).
+- **Build verification passed:** `xcodebuild -scheme Lexical -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16e' build` reports `BUILD SUCCEEDED` on 2026-02-07.
+- **Phase 8 personalization core present:** `InterestProfile`, `ArticleGenerator`, `ArticleConstraintsEvaluator`, `ArticleStore`, and `ArticleTemplateBank.json` are implemented and wired into feed/profile flows.
+- **Navigation structure matches target app shape:** `ContentView` + `CustomTabBar` provide Feed/Explore/Practice/Stats/Profile tabs.
 
 ### ⚠️ Gaps & Risks
-- **Phase 8 Pending:** Article Personalization components (`ArticleGenerator`, `InterestProfile`) are not yet started.
-- **Phase 9/10:** Authentication and Cloud Sync remain "Not Started".  
+- **Target selection is still temporary:** article generation currently uses static `targetWords` in `HomeFeedView.triggerGeneration()` instead of FSRS-driven due/recent selection.
+- **Production generation backend not wired:** `ArticleGenerator` defaults to `MockLLMProvider`; `RemoteArticleService` is present but not integrated as primary provider.
+- **Stats fidelity incomplete:** `StatsView` period chips are currently visual-only and heatmap values are randomized each render.
+- **Test coverage gap:** there are no focused tests yet for seeding idempotency/hash upgrades, article constraint validation behavior, or stats calculations.
 
 ## Recommendations
-1. **Proceed to Article Personalization:** Focus on implementing `ArticleGenerator`, `InterestProfile`, and `ArticleStore` to complete Phase 8.
-2. **Phase 8.4 Verification:** Continue regression testing on `ExploreView` and `SettingsView` edge cases (e.g., empty states, dark mode, large font sizes).
-3. **Prepare for Cloud Sync:** Initial planning for Phase 9 (CloudKit) should begin, validating the `ReviewLog` CRDT structure against CloudKit record types.
+1. Connect article target selection to real FSRS state (`VocabularyItem` due/recent windows) and remove static demo values.
+2. Promote `RemoteArticleService` (or equivalent provider abstraction) to production default with retry/backoff and failure fallback.
+3. Complete Stats hardening by wiring period filters to query windows and replacing randomized heatmap with persisted review-activity bins.
+4. Add Phase 0/8 regression tests for seeding idempotency, article quality constraints, and stats metrics.
 
 ## Notes
-This audit focuses on Phase 8.4 implementation and Phase 8 UI structure, verifying specific bug fixes and navigation updates.
+This audit is repository-level and build-level validation. It does not replace simulator walkthrough QA for end-to-end UX behavior.

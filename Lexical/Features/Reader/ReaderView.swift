@@ -15,6 +15,7 @@ struct ReaderView: View {
     @State private var isLoading = true
     @State private var selectedWord: SelectedWord?
     @State private var showCaptureSheet = false
+    @State private var captureNotice: String?
     
     private let tokenizationActor = TokenizationActor()
     
@@ -102,6 +103,21 @@ struct ReaderView: View {
                 .presentationDragIndicator(.visible)
             }
         }
+        .alert(
+            "Word Selection",
+            isPresented: Binding(
+                get: { captureNotice != nil },
+                set: { newValue in
+                    if !newValue {
+                        captureNotice = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(captureNotice ?? "")
+        }
         .task {
             await analyzeText()
         }
@@ -120,7 +136,8 @@ struct ReaderView: View {
         
         // Resolve states on main thread
         let resolver = LemmaResolver(modelContext: modelContext)
-        let states = resolver.resolveStates(for: lemmas)
+        let rawStates = resolver.resolveStates(for: lemmas)
+        let states = applyRankFiltering(to: rawStates)
         lemmaStates = states
         
         // Map tokens to highlights using their ORIGINAL RANGES
@@ -139,6 +156,23 @@ struct ReaderView: View {
         Task {
             let tokens = await tokenizationActor.tokenize(word)
             let lemma = tokens.first?.lemma ?? word.lowercased()
+
+            switch captureEligibility(for: lemma) {
+            case .allowed:
+                break
+            case .alreadyTracked:
+                captureNotice = "'\(lemma)' is already in your learning queue."
+                return
+            case .ignored:
+                captureNotice = "'\(lemma)' is in your ignored words list."
+                return
+            case let .tooEasy(rank):
+                captureNotice = "'\(lemma)' is below your target band (rank \(rank))."
+                return
+            case let .tooHard(rank):
+                captureNotice = "'\(lemma)' is above your current target band (rank \(rank))."
+                return
+            }
             
             selectedWord = SelectedWord(
                 word: word,
@@ -151,24 +185,141 @@ struct ReaderView: View {
     }
     
     private func handleCapture(lemma: String, sentence: String) {
-        // Create new VocabularyItem
-        let item = VocabularyItem(
-            lemma: lemma,
-            contextSentence: sentence
+        let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalizedLemma.isEmpty else { return }
+
+        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
+            predicate: #Predicate { $0.lemma == normalizedLemma }
         )
-        modelContext.insert(item)
-        
-        // Update local state
-        lemmaStates[lemma] = .learning
-        
-        // Update highlights for this lemma
-        tokenHighlights = tokenHighlights.map { highlight in
-            // We need to re-analyze to update the highlights properly
-            highlight
+        let existingLexeme = try? modelContext.fetch(lexemeDescriptor).first
+        let definition = existingLexeme?.basicMeaning ?? fetchDefinition(for: normalizedLemma)
+
+        if let existingLexeme {
+            if existingLexeme.sampleSentence?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
+                existingLexeme.sampleSentence = sentence
+            }
+            if existingLexeme.basicMeaning?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true,
+               let definition, !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                existingLexeme.basicMeaning = definition
+            }
+        } else {
+            let lexeme = LexemeDefinition(
+                lemma: normalizedLemma,
+                basicMeaning: definition,
+                sampleSentence: sentence
+            )
+            modelContext.insert(lexeme)
         }
-        
-        // Dismiss sheet
+
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let stateKey = UserWordState.makeKey(userId: activeProfile.userId, lemma: normalizedLemma)
+        let stateDescriptor = FetchDescriptor<UserWordState>(
+            predicate: #Predicate { $0.userLemmaKey == stateKey }
+        )
+        let userState = (try? modelContext.fetch(stateDescriptor).first) ?? {
+            let newState = UserWordState(userId: activeProfile.userId, lemma: normalizedLemma, status: .learning)
+            modelContext.insert(newState)
+            return newState
+        }()
+
+        userState.status = .learning
+        if userState.nextReviewDate == nil || userState.nextReviewDate ?? .distantFuture > Date() {
+            userState.nextReviewDate = Date()
+        }
+        userState.touch()
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("ReaderView: failed to save captured word: \(error)")
+        }
+
+        lemmaStates[normalizedLemma] = .learning
         showCaptureSheet = false
+    }
+
+    private enum CaptureEligibility {
+        case allowed
+        case alreadyTracked
+        case ignored
+        case tooEasy(rank: Int)
+        case tooHard(rank: Int)
+    }
+
+    private func captureEligibility(for lemma: String) -> CaptureEligibility {
+        let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        if let state = lemmaStates[normalizedLemma], state == .learning || state == .known {
+            return .alreadyTracked
+        }
+
+        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let ignored = Set(profile.ignoredWords.map { $0.lowercased() })
+        if ignored.contains(normalizedLemma) {
+            return .ignored
+        }
+
+        let rankDescriptor = FetchDescriptor<LexemeDefinition>(
+            predicate: #Predicate { $0.lemma == normalizedLemma }
+        )
+        let rank = (try? modelContext.fetch(rankDescriptor).first)?.rank
+        guard let rank else { return .allowed }
+
+        let range = LexicalCalibrationEngine().proximalRange(for: profile.lexicalRank)
+        if rank < range.lowerBound {
+            return .tooEasy(rank: rank)
+        }
+        if rank > range.upperBound {
+            return .tooHard(rank: rank)
+        }
+        return .allowed
+    }
+
+    private func applyRankFiltering(
+        to baseStates: [String: VocabularyState]
+    ) -> [String: VocabularyState] {
+        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let ignored = Set(profile.ignoredWords.map { $0.lowercased() })
+        let range = LexicalCalibrationEngine().proximalRange(for: profile.lexicalRank)
+
+        let lexemes = (try? modelContext.fetch(FetchDescriptor<LexemeDefinition>())) ?? []
+        var rankByLemma: [String: Int] = [:]
+        rankByLemma.reserveCapacity(lexemes.count)
+        for lexeme in lexemes {
+            if let rank = lexeme.rank {
+                rankByLemma[lexeme.lemma] = rank
+            }
+        }
+
+        var filtered = baseStates
+        for (lemma, state) in baseStates {
+            if ignored.contains(lemma) {
+                filtered[lemma] = .known
+                continue
+            }
+
+            guard let rank = rankByLemma[lemma] else {
+                filtered[lemma] = state
+                continue
+            }
+
+            if rank < range.lowerBound {
+                filtered[lemma] = .known
+            } else if rank > range.upperBound {
+                filtered[lemma] = .unknown
+            } else {
+                filtered[lemma] = state
+            }
+        }
+
+        return filtered
+    }
+
+    private func fetchDefinition(for lemma: String) -> String? {
+        let descriptor = FetchDescriptor<LexemeDefinition>(
+            predicate: #Predicate { $0.lemma == lemma }
+        )
+        return (try? modelContext.fetch(descriptor).first)?.basicMeaning
     }
     
     // MARK: - Stats

@@ -6,8 +6,11 @@ import LexicalCore
 /// Per design spec: Sync Status, Notification Settings, Voice Settings, etc.
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var vocabularyItems: [VocabularyItem]
-    @Query private var reviewLogs: [ReviewLog]
+    @Query private var lexemeDefinitions: [LexemeDefinition]
+    @Query private var userStates: [UserWordState]
+    @Query private var reviewEvents: [ReviewEvent]
+    @Query private var userProfiles: [UserProfile]
+    @Query private var interestProfiles: [InterestProfile]
     
     @AppStorage("dailyGoal") private var dailyGoal: Int = 20
     @AppStorage("darkModeEnabled") private var darkModeEnabled: Bool = false
@@ -17,10 +20,21 @@ struct SettingsView: View {
     @State private var showingExportSheet = false
     @State private var showingResetAlert = false
     
+    private var activeUserId: String {
+        userProfiles.first?.userId ?? UserProfile.fallbackLocalUserID
+    }
+
     // Calculated stats
-    private var totalWords: Int { vocabularyItems.count }
-    private var masteredWords: Int { vocabularyItems.filter { $0.learningState == .mastered }.count }
+    private var totalWords: Int { lexemeDefinitions.count }
+    private var masteredWords: Int {
+        userStates.filter { $0.userId == activeUserId && $0.status == .known }.count
+    }
     private var currentStreak: Int { calculateStreak() }
+    
+    // Safe accessor for InterestProfile (singleton pattern)
+    private var profile: InterestProfile? {
+        interestProfiles.first
+    }
     
     var body: some View {
         ZStack {
@@ -36,6 +50,7 @@ struct SettingsView: View {
                     
                     // Settings Groups
                     learningSettingsSection
+                    personalizationSection
                     notificationSettingsSection
                     dataSettingsSection
                     aboutSection
@@ -46,6 +61,9 @@ struct SettingsView: View {
                 .padding(.top, 16)
             }
         }
+        .onAppear {
+            ensureInterestProfileExists()
+        }
         .alert("Reset All Progress?", isPresented: $showingResetAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Reset", role: .destructive) {
@@ -53,6 +71,13 @@ struct SettingsView: View {
             }
         } message: {
             Text("This will delete all your vocabulary and review history. This cannot be undone.")
+        }
+    }
+    
+    private func ensureInterestProfileExists() {
+        if interestProfiles.isEmpty {
+            let newProfile = InterestProfile()
+            modelContext.insert(newProfile)
         }
     }
     
@@ -110,7 +135,11 @@ struct SettingsView: View {
         HStack(spacing: 12) {
             StatBox(title: "Total", value: "\(totalWords)", color: .blue)
             StatBox(title: "Mastered", value: "\(masteredWords)", color: .green)
-            StatBox(title: "Reviews", value: "\(reviewLogs.count)", color: .purple)
+            StatBox(
+                title: "Reviews",
+                value: "\(reviewEvents.filter { $0.userId == activeUserId }.count)",
+                color: .purple
+            )
         }
     }
     
@@ -141,6 +170,31 @@ struct SettingsView: View {
                 Label("Dark Mode", systemImage: "moon.fill")
             }
             .tint(Color.sonPrimary)
+        }
+    }
+    
+    // MARK: - Personalization
+    
+    private var personalizationSection: some View {
+        SettingsGroup(title: "Personalization") {
+            if let profile = profile {
+                NavigationLink {
+                    ManageInterestsView(profile: profile)
+                } label: {
+                    HStack {
+                        Label("Interests", systemImage: "heart.fill")
+                            .foregroundStyle(Color.adaptiveText)
+                        Spacer()
+                        Text("\(profile.selectedTags.count) selected")
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            } else {
+                Text("Loading profile...")
+                    .foregroundStyle(.secondary)
+            }
         }
     }
     
@@ -247,9 +301,11 @@ struct SettingsView: View {
         var checkDate = calendar.startOfDay(for: Date())
         
         // Get unique review dates
-        let reviewDates = Set(reviewLogs.compactMap { log in
-            calendar.startOfDay(for: log.reviewDate)
-        })
+        let reviewDates = Set(
+            reviewEvents
+                .filter { $0.userId == activeUserId }
+                .map { calendar.startOfDay(for: $0.reviewDate) }
+        )
         
         while reviewDates.contains(checkDate) {
             streak += 1
@@ -262,8 +318,9 @@ struct SettingsView: View {
     
     private func resetAllProgress() {
         do {
-            try modelContext.delete(model: VocabularyItem.self)
-            try modelContext.delete(model: ReviewLog.self)
+            try modelContext.delete(model: ReviewEvent.self)
+            try modelContext.delete(model: UserWordState.self)
+            try modelContext.save()
         } catch {
             print("Error resetting progress: \(error)")
         }
@@ -319,5 +376,14 @@ struct SettingsGroup<Content: View>: View {
 
 #Preview {
     SettingsView()
-        .modelContainer(for: [VocabularyItem.self, ReviewLog.self])
+        .modelContainer(
+            for: [
+                UserWordState.self,
+                ReviewEvent.self,
+                LexemeDefinition.self,
+                InterestProfile.self,
+                MorphologicalRoot.self,
+                UserProfile.self,
+            ]
+        )
 }

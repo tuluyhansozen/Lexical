@@ -21,13 +21,15 @@ public struct GraphNode: Identifiable, Equatable {
 
 /// An edge connecting two nodes
 public struct GraphEdge: Identifiable, Equatable {
-    public var id: String { "\(sourceId)-\(targetId)" }
+    public var id: String { "\(sourceId)-\(targetId)-\(isFallback ? "fallback" : "direct")" }
     public let sourceId: String
     public let targetId: String
-    
-    public init(sourceId: String, targetId: String) {
+    public let isFallback: Bool
+
+    public init(sourceId: String, targetId: String, isFallback: Bool = false) {
         self.sourceId = sourceId
         self.targetId = targetId
+        self.isFallback = isFallback
     }
 }
 

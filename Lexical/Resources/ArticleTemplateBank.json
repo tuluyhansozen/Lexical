@@ -1,0 +1,24 @@
+{
+    "templates": [
+        {
+            "id": "history_fact",
+            "category": "History",
+            "prompt_structure": "Write a short historical article about [THEME]. Include these words: [TARGETS]. Style: Narrative."
+        },
+        {
+            "id": "tech_news",
+            "category": "Technology",
+            "prompt_structure": "Write a technology explainer about [THEME]. Include these words: [TARGETS]. Style: Informative."
+        },
+        {
+            "id": "nature_doc",
+            "category": "Nature",
+            "prompt_structure": "Write a nature documentary style piece about [THEME]. Include these words: [TARGETS]."
+        },
+        {
+            "id": "general_story",
+            "category": "General",
+            "prompt_structure": "Write a short engaging story about [THEME]. Include these words: [TARGETS]."
+        }
+    ]
+}

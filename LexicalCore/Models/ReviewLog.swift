@@ -1,6 +1,8 @@
 import Foundation
 import SwiftData
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Immutable review event log for CRDT-based sync
 @Model

@@ -1,16 +1,27 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
+#if canImport(AppKit)
+import AppKit
+#endif
 
-/// A container that applies a blur effect to its background using UIVisualEffectView
+public enum GlassMaterial: Sendable {
+    case ultraThin
+    case thin
+    case regular
+}
+
+/// A platform-safe blur container for iOS and macOS builds.
 public struct GlassEffectContainer<Content: View>: View {
-    private let material: UIBlurEffect.Style
+    private let material: GlassMaterial
     private let content: Content
-    
-    public init(material: UIBlurEffect.Style = .systemUltraThinMaterial, @ViewBuilder content: () -> Content) {
+
+    public init(material: GlassMaterial = .ultraThin, @ViewBuilder content: () -> Content) {
         self.material = material
         self.content = content()
     }
-    
+
     public var body: some View {
         ZStack {
             GlassEffectView(material: material)
@@ -19,15 +30,62 @@ public struct GlassEffectContainer<Content: View>: View {
     }
 }
 
-/// UIViewRepresentable for UIVisualEffectView
+#if canImport(UIKit)
 struct GlassEffectView: UIViewRepresentable {
-    var material: UIBlurEffect.Style
-    
+    let material: GlassMaterial
+
     func makeUIView(context: Context) -> UIVisualEffectView {
-        return UIVisualEffectView(effect: UIBlurEffect(style: material))
+        UIVisualEffectView(effect: UIBlurEffect(style: blurStyle(for: material)))
     }
-    
+
     func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
-        uiView.effect = UIBlurEffect(style: material)
+        uiView.effect = UIBlurEffect(style: blurStyle(for: material))
+    }
+
+    private func blurStyle(for material: GlassMaterial) -> UIBlurEffect.Style {
+        switch material {
+        case .ultraThin:
+            return .systemUltraThinMaterial
+        case .thin:
+            return .systemThinMaterial
+        case .regular:
+            return .systemMaterial
+        }
     }
 }
+#elseif canImport(AppKit)
+struct GlassEffectView: NSViewRepresentable {
+    let material: GlassMaterial
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.blendingMode = .behindWindow
+        view.state = .active
+        view.material = appKitMaterial(for: material)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = appKitMaterial(for: material)
+    }
+
+    private func appKitMaterial(for material: GlassMaterial) -> NSVisualEffectView.Material {
+        switch material {
+        case .ultraThin:
+            return .hudWindow
+        case .thin:
+            return .sidebar
+        case .regular:
+            return .windowBackground
+        }
+    }
+}
+#else
+struct GlassEffectView: View {
+    let material: GlassMaterial
+
+    var body: some View {
+        Color.clear
+    }
+}
+#endif

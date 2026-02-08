@@ -1,19 +1,25 @@
 import SwiftUI
 import Charts
+import SwiftData
+import LexicalCore
 
 struct StatsView: View {
-    @State private var selectedPeriod = 0 // 0: 30 days, 1: 90 days, 2: Year
-    
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var selectedPeriod: StatsPeriod = .last30
+    @State private var acquiredCount: Int = 0
+    @State private var retentionRate: Double = 0.0
+    @State private var currentStreak: Int = 0
+    @State private var curvePoints: [(Double, Double)] = []
+    @State private var heatmapPoints: [HeatmapPoint] = []
+
     var body: some View {
         ZStack {
             Color.adaptiveBackground.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
-                // Custom Header
                 HStack {
-                    Button {
-                        // Back
-                    } label: {
+                    Button { } label: {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(Color.sonPrimary)
@@ -21,54 +27,72 @@ struct StatsView: View {
                             .background(Color.adaptiveSurface)
                             .clipShape(Circle())
                     }
-                    .opacity(0) // Hidden but takes space if needed, or just Spacer
-                    
+                    .opacity(0)
+
                     Spacer()
-                    
+
                     Text("Learning Statistics")
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundStyle(Color.adaptiveText)
-                    
+
                     Spacer()
-                    
-                    Button {
-                        // Calendar
-                    } label: {
+
+                    Button { } label: {
                         Image(systemName: "calendar")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(Color.sonPrimary)
                             .padding(10)
-                            .background(Color.adaptiveSurface) // In dark mode surface is distinct?
+                            .background(Color.adaptiveSurface)
                             .clipShape(Circle())
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 10)
-                .padding(.top, 10) // Safe area top
-                
+                .padding(.top, 10)
+
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Period Filter
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
-                                FilterChip(label: "Last 30 Days", isSelected: selectedPeriod == 0) { selectedPeriod = 0 }
-                                FilterChip(label: "Last 90 Days", isSelected: selectedPeriod == 1) { selectedPeriod = 1 }
-                                FilterChip(label: "This Year", isSelected: selectedPeriod == 2) { selectedPeriod = 2 }
+                                ForEach(StatsPeriod.allCases, id: \.rawValue) { period in
+                                    FilterChip(
+                                        label: period.label,
+                                        isSelected: selectedPeriod == period
+                                    ) {
+                                        selectedPeriod = period
+                                    }
+                                }
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 4)
                         }
-                        
-                        // Key Stats Grid
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            StatCard(title: "ACQUIRED", value: "1,240", subtitle: "+12 today", subtitleColor: .sonPrimary)
-                            StatCard(title: "RETENTION", value: "85%", subtitle: "Stable", subtitleColor: .green)
-                            StatCard(title: "STREAK", value: "12", subtitle: "Keep it up!", subtitleColor: .orange)
+
+                        LazyVGrid(
+                            columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                            spacing: 12
+                        ) {
+                            StatCard(
+                                title: "ACQUIRED",
+                                value: "\(acquiredCount)",
+                                subtitle: selectedPeriod.shortLabel,
+                                subtitleColor: .sonPrimary
+                            )
+                            StatCard(
+                                title: "RETENTION",
+                                value: String(format: "%.0f%%", retentionRate * 100),
+                                subtitle: selectedPeriod.shortLabel,
+                                subtitleColor: .green
+                            )
+                            StatCard(
+                                title: "STREAK",
+                                value: "\(currentStreak)",
+                                subtitle: "Days",
+                                subtitleColor: .orange
+                            )
                         }
                         .padding(.horizontal, 20)
-                        
-                        // Forgetting Curve Chart
+
                         VStack(alignment: .leading, spacing: 16) {
                             HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -81,65 +105,91 @@ struct StatsView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                HStack(spacing: 4) {
-                                    Image(systemName: "chart.line.uptrend.xyaxis")
-                                    Text("High")
-                                }
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.green)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.green.opacity(0.15))
-                                .clipShape(RoundedRectangle(cornerRadius: 6))
                             }
-                            
-                            // Mock Chart
-                            ForgettingCurveChart()
-                                .frame(height: 180)
+
+                            Chart {
+                                ForEach(curvePoints, id: \.0) { point in
+                                    LineMark(
+                                        x: .value("Day", point.0),
+                                        y: .value("Retention", point.1)
+                                    )
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(Color.sonPrimary)
+
+                                    AreaMark(
+                                        x: .value("Day", point.0),
+                                        y: .value("Retention", point.1)
+                                    )
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [Color.sonPrimary.opacity(0.3), Color.sonPrimary.opacity(0.0)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                }
+                            }
+                            .chartYAxis(.hidden)
+                            .frame(height: 180)
                         }
                         .padding(20)
                         .background(Color.adaptiveSurface)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                         .padding(.horizontal, 20)
-                        
-                        // Heatmap
+
                         VStack(alignment: .leading, spacing: 16) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Activity Heatmap")
                                     .font(.headline)
                                     .fontWeight(.bold)
                                     .foregroundStyle(Color.adaptiveText)
-                                Text("342 contributions in the last year")
+                                Text("Daily review activity")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            
-                            HeatmapGrid()
+
+                            HeatmapGrid(points: heatmapPoints)
                         }
                         .padding(20)
                         .background(Color.adaptiveSurface)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                         .padding(.horizontal, 20)
-                        
-                        Color.clear.frame(height: 100) // Bottom spacer
+
+                        Color.clear.frame(height: 100)
                     }
                     .padding(.top, 10)
                 }
             }
         }
+        .task {
+            await loadStats()
+        }
+        .onChange(of: selectedPeriod) { _ in
+            Task {
+                await loadStats()
+            }
+        }
+    }
+
+    private func loadStats() async {
+        let service = StatsService(modelContext: modelContext)
+        let snapshot = service.loadSnapshot(period: selectedPeriod)
+        acquiredCount = snapshot.acquiredCount
+        retentionRate = snapshot.retentionRate
+        currentStreak = snapshot.streak
+        curvePoints = snapshot.curvePoints
+        heatmapPoints = snapshot.heatmap
     }
 }
-
-// Components
 
 struct FilterChip: View {
     let label: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text(label)
@@ -162,19 +212,19 @@ struct StatCard: View {
     let value: String
     let subtitle: String
     let subtitleColor: Color
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption2)
                 .fontWeight(.bold)
                 .foregroundStyle(.secondary)
-            
+
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(Color.adaptiveText)
-            
+
             Text(subtitle)
                 .font(.caption)
                 .fontWeight(.medium)
@@ -188,72 +238,40 @@ struct StatCard: View {
     }
 }
 
-struct ForgettingCurveChart: View {
-    var body: some View {
-        Chart {
-            ForEach(0..<10, id: \.self) { i in
-                // Mock decaying curve data y = 100 * e^(-0.3 * x)
-                let x = Double(i)
-                let y = 100.0 * exp(-0.3 * x)
-                LineMark(
-                    x: .value("Day", x),
-                    y: .value("Retention", y)
-                )
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.sonPrimary)
-                
-                AreaMark(
-                    x: .value("Day", x),
-                    y: .value("Retention", y)
-                )
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.sonPrimary.opacity(0.3), Color.sonPrimary.opacity(0.0)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            }
-        }
-        .chartYAxis(.hidden)
-        .chartXAxis {
-            AxisMarks(values: [0, 2, 6, 9]) { value in
-                AxisValueLabel {
-                    if let intValue = value.as(Int.self) {
-                        Text(intValue == 0 ? "Now" : "\(intValue)d")
-                            .font(.caption2)
-                    }
-                }
-            }
-        }
-    }
-}
-
 struct HeatmapGrid: View {
-    let columns = Array(repeating: GridItem(.fixed(12), spacing: 4), count: 14) // 14 weeks approx
-    
+    let points: [HeatmapPoint]
+    private let rows = Array(repeating: GridItem(.fixed(12), spacing: 4), count: 7)
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHGrid(rows: Array(repeating: GridItem(.fixed(12), spacing: 4), count: 7), spacing: 4) {
-                ForEach(0..<98, id: \.self) { index in
+            LazyHGrid(rows: rows, spacing: 4) {
+                ForEach(points) { point in
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(colorForIndex(index))
+                        .fill(color(for: point.count))
                         .frame(width: 12, height: 12)
                 }
             }
         }
     }
-    
-    func colorForIndex(_ index: Int) -> Color {
-        // Randomize mock data
-        let intensity = Int.random(in: 0...4)
-        switch intensity {
-        case 0: return Color.gray.opacity(0.1)
-        case 1: return Color.sonPrimary.opacity(0.2)
-        case 2: return Color.sonPrimary.opacity(0.4)
-        case 3: return Color.sonPrimary.opacity(0.7)
-        default: return Color.sonPrimary
+
+    private func color(for count: Int) -> Color {
+        let maxCount = max(points.map(\.count).max() ?? 1, 1)
+        let normalized = Double(count) / Double(maxCount)
+        switch normalized {
+        case ..<0.01:
+            return Color.gray.opacity(0.10)
+        case ..<0.25:
+            return Color.sonPrimary.opacity(0.25)
+        case ..<0.5:
+            return Color.sonPrimary.opacity(0.45)
+        case ..<0.75:
+            return Color.sonPrimary.opacity(0.70)
+        default:
+            return Color.sonPrimary
         }
     }
+}
+
+#Preview {
+    StatsView()
 }

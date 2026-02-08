@@ -1,14 +1,16 @@
 import SwiftUI
 import SwiftData
 import LexicalCore
+import Foundation
 
 struct ContentView: View {
     @EnvironmentObject var banditScheduler: BanditScheduler
     @State private var selectedTab: Int = 0
     @State private var showSession: Bool = false
+    @State private var promptRoute: PromptCardRoute?
 #if DEBUG
     @State private var didAutoCycle: Bool = false
-    @Query private var debugVocabularyItems: [VocabularyItem]
+    @Query private var debugLexemeItems: [LexemeDefinition]
 #endif
     
     var body: some View {
@@ -77,17 +79,40 @@ struct ContentView: View {
             CustomTabBar(selectedTab: $selectedTab)
         }
         .preferredColorScheme(.light) // Force light mode default to match initial view, but better to handle both
+        .fullScreenCover(item: $promptRoute) { route in
+            NavigationStack {
+                SingleCardPromptView(
+                    lemma: route.lemma,
+                    presetDefinition: route.definition
+                )
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close") {
+                            promptRoute = nil
+                        }
+                    }
+                }
+            }
+        }
 #if DEBUG
         .overlay(alignment: .topTrailing) {
             DebugSeedOverlay(
-                wordCount: debugVocabularyItems.count
+                wordCount: debugLexemeItems.count
             )
             .padding(.top, 12)
             .padding(.trailing, 12)
         }
 #endif
         .onOpenURL { url in
-             // Handle deep link (future)
+            handleDeepLink(url)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lexicalOpenPromptCard)) { notification in
+            guard let lemma = notification.userInfo?["lemma"] as? String else { return }
+            let definition = notification.userInfo?["definition"] as? String
+            openPromptCard(lemma: lemma, definition: definition)
+        }
+        .onAppear {
+            consumePendingPromptRouteIfNeeded()
         }
 #if DEBUG
         .onAppear {
@@ -97,6 +122,37 @@ struct ContentView: View {
             startDebugAutoCycle()
         }
 #endif
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme?.lowercased() == "lexical" else { return }
+        let host = url.host?.lowercased()
+        let path = url.path.lowercased()
+        guard host == "card" || path.contains("card") else { return }
+
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let lemma = components?.queryItems?.first(where: { $0.name == "lemma" })?.value
+        let definition = components?.queryItems?.first(where: { $0.name == "definition" })?.value
+        guard let lemma, !lemma.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        openPromptCard(lemma: lemma, definition: definition)
+    }
+
+    private func openPromptCard(lemma: String, definition: String?) {
+        selectedTab = 2
+        promptRoute = PromptCardRoute(lemma: lemma, definition: definition)
+    }
+
+    private func consumePendingPromptRouteIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard let lemma = defaults.string(forKey: "lexical.pending_prompt_lemma"),
+              !lemma.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        let definition = defaults.string(forKey: "lexical.pending_prompt_definition")
+        defaults.removeObject(forKey: "lexical.pending_prompt_lemma")
+        defaults.removeObject(forKey: "lexical.pending_prompt_definition")
+        openPromptCard(lemma: lemma, definition: definition)
     }
 #if DEBUG
     private func startDebugAutoCycle() {
@@ -109,6 +165,12 @@ struct ContentView: View {
         }
     }
 #endif
+}
+
+private struct PromptCardRoute: Identifiable {
+    let lemma: String
+    let definition: String?
+    var id: String { lemma.lowercased() }
 }
 
 #if DEBUG

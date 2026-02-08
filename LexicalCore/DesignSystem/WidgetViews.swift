@@ -1,5 +1,6 @@
 import SwiftUI
 import WidgetKit
+import AppIntents
 
 // Moved MicroDoseEntry here to share between Widget and App Preview
 public struct MicroDoseEntry: Equatable, TimelineEntry {
@@ -97,8 +98,13 @@ public struct MicroDoseWidgetView: View {
                         .fontWeight(.bold)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Image(systemName: "play.circle.fill")
-                        .foregroundStyle(Color.sonPrimary)
+                    // Review Action
+                    Button(intent: GradeCardIntent(lemma: entry.word, grade: 3)) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(Color.green)
+                    }
+                    .buttonStyle(.plain)
                 }
                 
                 Spacer()

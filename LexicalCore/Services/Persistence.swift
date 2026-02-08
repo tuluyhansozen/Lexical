@@ -6,12 +6,8 @@ public struct Persistence {
     public static let appGroupIdentifier = "group.com.lexical.Lexical"
     
     public static var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            VocabularyItem.self,
-            ReviewLog.self,
+        let schema = Schema(LexicalSchemaV3.models)
 
-        ])
-        
         let modelConfiguration: ModelConfiguration
         
         // Try to use App Group container, fallback to standard documents if unavailable (e.g. simulator without entitlements)
@@ -27,7 +23,11 @@ public struct Persistence {
         }
         
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: LexicalMigrationPlan.self,
+                configurations: [modelConfiguration]
+            )
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

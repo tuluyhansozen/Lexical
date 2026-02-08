@@ -20,6 +20,15 @@ xcuserdata/
 .DS_Store
 *.swp
 *.lock
+.venv/
+.uv_cache/
+
+# Local verification artifacts
+test.swift
+test_bin
+validation_*.png
+simulator_verify*.png
+build.log
 
 # Raw Data
 data/
@@ -29,4 +38,3 @@ AWL.txt
 *.tar.bz2
 *.jsonl
 *.jsonl.gz
-

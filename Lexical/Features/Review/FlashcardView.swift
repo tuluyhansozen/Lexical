@@ -3,7 +3,7 @@ import LexicalCore
 
 /// Two-sided flashcard with Liquid Glass design and 3D flip animation
 struct FlashcardView: View {
-    let item: VocabularyItem
+    let item: ReviewCard
     let onFlip: () -> Void
     
     @Binding var isFlipped: Bool
@@ -94,7 +94,7 @@ struct CardFace<Content: View>: View {
     }
     
     var body: some View {
-        GlassEffectContainer(material: .systemUltraThinMaterial) {
+        GlassEffectContainer(material: .ultraThin) {
             VStack(spacing: 20) {
                 Text(title.uppercased())
                     .font(.caption2)
