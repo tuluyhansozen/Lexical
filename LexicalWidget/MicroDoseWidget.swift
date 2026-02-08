@@ -22,15 +22,27 @@ struct MicroDoseProvider: TimelineProvider {
             var learned = 0
             
             do {
-                let descriptor = FetchDescriptor<VocabularyItem>(sortBy: [SortDescriptor(\.nextReviewDate)])
-                let items = try modelContext.fetch(descriptor)
-                
-                if let first = items.first(where: { ($0.nextReviewDate ?? Date()) <= Date() }) {
-                    nextWord = first.lemma
-                    definition = "Tap to review this card."
+                let defaults = UserDefaults(suiteName: Persistence.appGroupIdentifier) ?? .standard
+                let activeUserId = defaults.string(forKey: UserProfile.activeUserDefaultsKey) ?? UserProfile.fallbackLocalUserID
+                let now = Date()
+                let states = try modelContext.fetch(FetchDescriptor<UserWordState>())
+                    .filter { $0.userId == activeUserId && $0.status != .ignored }
+
+                if let firstDue = states
+                    .filter({ ($0.nextReviewDate ?? now) <= now })
+                    .sorted(by: { ($0.nextReviewDate ?? now) < ($1.nextReviewDate ?? now) })
+                    .first {
+                    let dueLemma = firstDue.lemma
+                    nextWord = dueLemma
+
+                    let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
+                        predicate: #Predicate { $0.lemma == dueLemma }
+                    )
+                    let lexeme = try modelContext.fetch(lexemeDescriptor).first
+                    definition = lexeme?.basicMeaning ?? "Tap to review this card."
                 }
-                
-                learned = items.filter { $0.reviewCount > 0 }.count
+
+                learned = states.filter { $0.reviewCount > 0 || $0.status == .known }.count
             } catch {
                 print("Widget fetch failed: \(error)")
             }

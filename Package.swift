@@ -18,6 +18,10 @@ let package = Package(
             name: "Lexical",
             dependencies: ["LexicalCore"],
             path: "Lexical",
+            exclude: [
+                "Info.plist",
+                "PrivacyInfo.xcprivacy"
+            ],
             resources: [
                 .process("Resources")
             ],
@@ -34,6 +38,9 @@ let package = Package(
             name: "LexicalWidget",
             dependencies: ["LexicalCore"],
             path: "LexicalWidget",
+            exclude: [
+                "Info.plist"
+            ],
             linkerSettings: [
                 .unsafeFlags([
                     "-e", "_NSExtensionMain", // Extension entry point
@@ -43,6 +50,11 @@ let package = Package(
                     "-Xlinker", "LexicalWidget/Info.plist"
                 ])
             ]
+        ),
+        .testTarget(
+            name: "LexicalCoreTests",
+            dependencies: ["LexicalCore"],
+            path: "LexicalCoreTests"
         )
     ]
 )

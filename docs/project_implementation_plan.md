@@ -1,8 +1,8 @@
 # Lexical App: Project Implementation Plan
 
 > **Generated:** 2026-01-31
-> **Last Updated:** 2026-02-01
-> **Status:** Core Features Complete | Completion Phases Pending
+> **Last Updated:** 2026-02-08
+> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete
 
 ---
 
@@ -162,16 +162,40 @@ Implement adaptive notifications via Bandit Algorithms, Morphology Matrix visual
 
 ---
 
+## Phase 0: Build Stabilization & Plan Sync
+
+**Status:** ✅ Complete
+
+### Section 1: Objective
+Clear compile blockers/warnings and synchronize implementation tracking documents before continuing product feature work.
+
+### Section 2: Key Activities
+- **Cross-Platform Imports:** Added conditional UIKit/AppKit imports to keep shared targets buildable (`ReviewLog`, `Colors`).
+- **Glass Abstraction:** Reworked `GlassEffectContainer` to use a platform-safe `GlassMaterial` API for iOS/macOS compatibility.
+- **Package Cleanup:** Excluded non-source plist/privacy files from SwiftPM executable targets to remove unhandled-file warnings.
+- **Concurrency Fix:** Removed actor-isolation warning in `ArticleStore` by moving directory creation to actor-isolated runtime paths.
+- **Build Verification:** Rebuilt iOS simulator target using `xcodebuild -scheme Lexical -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16e' build` on 2026-02-07.
+
+### Section 3: Deliverables
+- [x] `LexicalCore/Models/ReviewLog.swift` - conditional platform imports
+- [x] `LexicalCore/DesignSystem/Colors.swift` - UIKit/AppKit adaptive color support
+- [x] `LexicalCore/DesignSystem/GlassEffectContainer.swift` - cross-platform glass implementation
+- [x] `LexicalCore/Services/ArticleStore.swift` - actor-init warning removed
+- [x] `Package.swift` - SwiftPM warning cleanup (`exclude` updates)
+- [x] iOS simulator build passes (`BUILD SUCCEEDED`)
+
+---
+
 # 🔲 COMPLETION PHASES
 
 ---
 
-## Phase 8: Navigation Restructure & Placeholder Completion
+## Phase 8: Navigation, Seeding & Personalization
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 > [!IMPORTANT]
-> This phase addresses placeholder UI elements, navigation alignment, and vocabulary seeding; seeding is now in progress while article personalization remains pending.
+> Placeholder replacement and hardening are complete. Phase 8 integration tasks are implemented and validated with an iOS simulator build.
 
 ### Section 1: Objective
 Replace placeholder screens with functional implementations and restructure navigation to match the design spec (Feed, Explore, Practice, Stats, Profile).
@@ -200,22 +224,35 @@ Replace placeholder screens with functional implementations and restructure navi
 - **SettingsView:** Fixed reviewDate property reference
 
 #### 8.5 Vocabulary Seeding (Tasks)
-- **VocabularySeedService:** Build service with versioned, idempotent seeding using `UserDefaults.seed_version`
-- **Starter Dataset:** Add `vocab_seed.json` containing roots, words, definitions, and example contexts
+- **VocabularySeeder:** Versioned, idempotent seed flow using content hash (`lexical.seed_data.hash`)
+- **Starter Dataset:** Added `seed_data.json` and `roots.json` in `Lexical/Resources/Seeds/`
 - **Execution Logic:** Ensure seeding runs on first launch and on version bumps only
 - **Collocation Linking:** Logic to link seeded words based on co-occurrence (matrix edges)
 - **Verification:** Log/overlay seed counts in DEBUG builds only
 
-#### 8.6 Personalized Articles (Tasks)
-- **InterestProfile:** Model for explicit tags + implicit weights from reading history
-- **ArticleGenerator:**
-  - Select targets from **recently learned** + **due-soon** words
-  - Enforce density (1–3 new words per 100) and repetition (2–4x per target)
-  - Co-locate related words (matrix connections) in same sentences
-- **Templates:** Add `ArticleTemplateBank.json` for structured generation
-- **Constraints:** Implement `ArticleConstraintsEvaluator` for density/coverage/readability checks
-- **Persistence:** Add `ArticleStore` for file-backed content + SwiftData metadata
-- **Triggers:** Refresh generation after review sessions or target set changes
+#### 8.6 Personalized Articles
+- **InterestProfile:** Implemented for explicit tags + implicit category weighting from read history.
+- **ArticleGenerator Pipeline:** Implemented with template-driven prompt construction, evaluator pass, and persistence.
+- **Templates:** `ArticleTemplateBank.json` added and wired into generation prompt selection.
+- **Constraints:** `ArticleConstraintsEvaluator` enforces length/density/readability heuristics.
+- **Persistence:** `ArticleStore` writes/loads generated article JSON artifacts.
+- **UI Integration:** `HomeFeedView` + `ArticlesViewModel` provide user-triggered generation and list display.
+- **Targeting + Provider Hardening:** Replaced static target-word list with FSRS/rank-based targeting and added production HTTP provider wiring with retry/fallback strategy.
+
+#### 8.7 Rank-Aware Reader Filtering (Strategic Merge)
+- **Lexical Rank Gating:** Add client-side "Proximal Zone" filtering based on `lexicalRank` to separate target words from too-easy and too-hard words.
+- **Queue Hygiene:** Restrict Add-to-Deck recommendations to high-value target band; suppress low-value outliers.
+- **Ignored Words:** Add rejection/blacklist flow to prevent repeatedly recommending unwanted words.
+
+#### 8.8 Daily Morphology Matrix (Strategic Merge)
+- **Deterministic Daily Root:** Compute daily root via epoch-day hashing (`dayID % rootCount`) for offline-consistent rotation.
+- **Fixed Topology:** Enforce 1 root + 6 satellites in all daily matrices.
+- **Adaptive Satellites:** Select satellites by lexical-rank relevance; fallback to second-degree links when root lacks six direct derivatives.
+
+#### 8.9 Notification Triage Surface (Strategic Merge)
+- **Actionable Notification Cards:** Add Reveal / Add to Deck / Ignore actions via App Intents.
+- **Deep Link:** Route notification tap directly into single-card prompt mode.
+- **Bandit + Rank Integration:** Constrain notification candidates to rank-calibrated target words.
 
 ### Section 3: Deliverables
 - [x] `ExploreView.swift` - Matrix + Search combined view
@@ -223,55 +260,96 @@ Replace placeholder screens with functional implementations and restructure navi
 - [x] `CustomTabBar.swift` - Updated tab icons/labels
 - [x] `ContentView.swift` - Uses new views
 - [x] `SessionManager.swift` - FSRS bug fix
-- [x] `VocabularySeedService.swift` - Versioned seeding logic
-- [x] `vocab_seed.json` - Initial dataset
-- [ ] `InterestProfile.swift` - User interest model
-- [ ] `ArticleGenerator.swift` - Dynamic content generation
-- [ ] `ArticleTemplateBank.json` - Structural templates
-- [ ] `ArticleConstraintsEvaluator.swift` - Quality assurance logic
-- [ ] `ArticleStore.swift` - Content persistence
+- [x] `LexicalCore/Services/VocabularySeeder.swift` - Versioned/hash-based seeding logic
+- [x] `Lexical/Resources/Seeds/seed_data.json` - Initial vocabulary dataset
+- [x] `Lexical/Resources/Seeds/roots.json` - Initial morphology root dataset
+- [x] `LexicalCore/Models/InterestProfile.swift` - User interest model
+- [x] `LexicalCore/Services/ArticleGenerator.swift` - Dynamic content generation
+- [x] `Lexical/Resources/ArticleTemplateBank.json` - Prompt templates
+- [x] `LexicalCore/Services/ArticleConstraintsEvaluator.swift` - Quality checks
+- [x] `LexicalCore/Services/ArticleStore.swift` - File-backed article persistence
+- [x] `Lexical/Features/Home/HomeFeedView.swift` - Personalized feed integration
+- [x] Due/target-word selection from FSRS state (replaces static trigger targets)
+- [x] Production LLM backend integration + retry/fallback strategy
+- [x] Lexical-rank-aware reader filtering and Add-to-Deck gating
+- [x] Deterministic daily matrix (1+6 topology) with adaptive satellites
+- [x] Actionable push triage (Reveal/Add/Ignore) + deep-link card view
 
 ---
 
-## Phase 9: Authentication & Cloud Sync
+## Phase 9: Identity, Calibration & Sync Foundation
 
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
 ### Section 1: Objective
-Implement user authentication via Sign in with Apple and enable cross-device synchronization using CloudKit.
+Implement privacy-first identity, lexical rank calibration, and resilient cross-device synchronization as the foundation for adaptive acquisition.
 
 ### Section 2: Key Activities
-- **Sign in with Apple:** Implement `AuthenticationService` using AuthenticationServices framework
-- **User Profile:** Create `UserProfile` model with preferences, streak data, and subscription status
-- **CloudKit Container:** Configure CKContainer for private database sync
-- **CRDT Sync Implementation:** Wire up the existing CRDT logic to CloudKit push/pull
-- **Conflict Resolution:** Implement G-Set merge for ReviewLogs and LWW-Set for VocabularyItem states
-- **Offline Queue:** Build pending operations queue for offline-first sync
+- **Sign in with Apple:** Implement `AuthenticationService` with private-relay compatibility and Keychain-backed session persistence.
+- **Dual-Store Topology:** Separate Static Corpus (read-mostly lexical truth) from User Progress (mutable cognitive state) using dedicated SwiftData configurations.
+- **Extended Profile Model:** Add `lexicalRank`, `interestVector`, `ignoredWords`, `easyRatingVelocity`, and matrix `cycleCount`.
+- **Lexical Calibration Engine:** Implement adaptive rank-based onboarding test (CAT/IRT-style) to estimate vocabulary size beyond CEFR bands.
+- **Warm Start Initialization:** Convert calibration result into seeded user state via synthetic review history for already-known frequency bands.
+- **CRDT Sync + Replay:** Apply G-Set strategy for immutable review events and LWW strategy for mutable profile/state fields; replay FSRS deterministically after merges.
 
 ### Section 3: Deliverables
-- [ ] `AuthenticationService.swift` - Sign in with Apple flow
-- [ ] `UserProfile.swift` - User data model
-- [ ] `CloudKitSyncManager.swift` - CKContainer integration
-- [ ] `SyncConflictResolver.swift` - CRDT merge logic
-- [ ] `OfflineSyncQueue.swift` - Pending operations handler
-- [ ] `ProfileView.swift` - User profile UI with stats
+- [x] `AuthenticationService.swift` - Sign in with Apple + relay-aware identity handling
+- [x] `LexicalCore/Models/UserProfile.swift` - Extended adaptive profile schema
+- [x] `LexicalCore/Services/LexicalCalibrationEngine.swift` - Rank estimation and confidence bounds
+- [x] `LexicalCore/Services/CalibrationWarmStartService.swift` - Synthetic history/bootstrap logic
+- [x] `LexicalCore/Models/LexemeDefinition.swift` - Canonical corpus entity for static lexical truth
+- [x] `LexicalCore/Models/UserWordState.swift` - User-scoped mutable lexical progress entity
+- [x] `LexicalCore/Models/ReviewEvent.swift` - Append-only review event stream with replay fields
+- [x] `LexicalCore/Services/LexicalSchemaMigration.swift` - VersionedSchema + custom migration/backfill stage
+- [x] `LexicalCore/Services/VocabularySeeder.swift` - Non-destructive canonical upsert (no user progress reset)
+- [x] `LexicalCore/Services/CloudKitSyncManager.swift` - Private DB sync transport
+- [x] `LexicalCore/Services/SyncConflictResolver.swift` - G-Set/LWW merge + FSRS replay
+- [x] Review/session flows (`SessionManager`, `SingleCardPromptView`, `FlashcardView`) migrated to `UserWordState` + `LexemeDefinition`
+- [x] Notification/widget/intent due+grade paths (`BanditScheduler`, `MicroDoseWidget`, `SharedIntents`) migrated to `UserWordState`
+- [x] `LexicalSchemaV3` + `Persistence` cutover to canonical entities (`LexemeDefinition`, `UserWordState`, `ReviewEvent`) without runtime legacy table usage
+- [x] Legacy fallback cleanup in active services (`StatsService`, settings reset/preview) to remove `VocabularyItem`/`ReviewLog` runtime dependencies
+- [x] Sync verification tests (`LexicalCoreTests/SyncConflictResolverTests.swift`) covering replay determinism, merge idempotency, and conflict convergence
+- [x] CloudKit environment preflight checks (`CloudKitSyncManager.validateRuntimeEnvironment`) for entitlement + account status validation
 
 ---
 
-## Phase 10: Production Polish & App Store Release
+## Phase 10: Adaptive Acquisition & Engagement Loop
 
 **Status:** 🔲 Not Started
 
 ### Section 1: Objective
-Complete onboarding experience, accessibility compliance, and prepare all assets for App Store submission.
+Operationalize adaptive difficulty loops across articles, matrix, and notifications using lexical-rank feedback from FSRS outcomes.
 
 ### Section 2: Key Activities
-- **Onboarding Flow:** Create 4-screen onboarding with value proposition, permissions, and vocabulary preference
-- **Accessibility Audit:** Ensure VoiceOver support, Dynamic Type, and Reduce Motion compliance
-- **Performance Optimization:** Profile with Instruments, ensure <150MB memory, 120fps scrolling
-- **Privacy Manifests:** Create `PrivacyInfo.xcprivacy` with required disclosures (tracking, data usage)
-- **App Store Assets:** Generate screenshots (6.5", 5.5"), app preview video, metadata
-- **TestFlight Release:** Create beta build, invite testers, collect feedback
+- **Rank-Constrained Prompting:** Generate articles with lexical difficulty bounded by profile `lexicalRank` and target band constraints.
+- **Generated Content Lifecycle:** Keep generated articles ephemeral by default; sync only explicitly saved content.
+- **Adaptive Promotion Logic:** Raise/lower lexical-rank target using rolling Easy/Hard/Again distribution and retention metrics.
+- **Daily Matrix Adaptation:** Maintain static daily root while dynamically selecting rank-appropriate satellites.
+- **Notification Intelligence:** Trigger micro-dose candidates from high-priority rank band with Reveal/Add/Ignore triage.
+- **Implicit Exposure Signal:** Write low-weight review events when target words are successfully consumed in generated content.
+
+### Section 3: Deliverables
+- [ ] `LexicalCore/Services/RankPromotionEngine.swift` - easy-rating velocity and retention-driven rank adjustment
+- [ ] `LexicalCore/Services/AdaptivePromptBuilder.swift` - rank-bounded prompt templates
+- [ ] `LexicalCore/Models/GeneratedContent.swift` - ephemeral content metadata (`isSaved`, `targetRank`, `targetWords`)
+- [ ] `Lexical/Features/Matrix/DailyRootResolver.swift` - deterministic daily root + satellite strategy
+- [ ] `LexicalCore/Services/NotificationTriageService.swift` - candidate selection and triage action routing
+
+---
+
+## Phase 11: Production Polish & App Store Release
+
+**Status:** 🔲 Not Started
+
+### Section 1: Objective
+Complete onboarding UX/accessibility hardening and prepare release artifacts for App Store and TestFlight.
+
+### Section 2: Key Activities
+- **Onboarding Flow:** Create first-run flow with value proposition, permissions, interest selection, and calibration entry point.
+- **Accessibility Audit:** Ensure VoiceOver support, Dynamic Type, and Reduce Motion compliance.
+- **Performance Optimization:** Profile with Instruments, keep reader and graph views smooth under realistic dataset size.
+- **Privacy/Compliance:** Finalize `PrivacyInfo.xcprivacy` and data collection disclosures.
+- **Release Assets:** Generate App Store screenshots, metadata, and TestFlight validation checklist.
 
 ### Section 3: Deliverables
 - [ ] `OnboardingView.swift` - First-run experience
@@ -286,9 +364,10 @@ Complete onboarding experience, accessibility compliance, and prepare all assets
 
 | Phase | Priority | Estimated Effort | Key Focus |
 |-------|----------|------------------|-----------|
-| Phase 8 | 🔴 Critical | 1 week | Complete placeholder screens, seed vocab, personalized articles |
-| Phase 9 | 🟡 High | 1.5 weeks | User accounts, cloud sync |
-| Phase 10 | 🟡 Medium | 1 week | Onboarding, App Store prep |
+| Phase 8 | 🔴 Critical | 1 week | Harden personalization, matrix/notification triage, and rank-aware filtering |
+| Phase 9 | 🔴 Critical | 1.5 weeks | Sign in with Apple, lexical calibration, dual-store migration, CRDT replay |
+| Phase 10 | 🟡 High | 1 week | Adaptive acquisition loops and rank-promotion feedback |
+| Phase 11 | 🟡 Medium | 1 week | Onboarding/accessibility/release preparation |
 
 ---
 
@@ -296,12 +375,13 @@ Complete onboarding experience, accessibility compliance, and prepare all assets
 
 | Screen | Current State | Phase to Complete |
 |--------|---------------|-------------------|
-| Search (Tab 1) | `Text("Search Placeholder")` | Phase 8 |
-| Practice (Tab 2) | ✅ Functional | - |
-| Stats (Tab 3) | Mock data (hardcoded) | Phase 8 |
-| Matrix (Tab 4) | ✅ Functional | - |
-| Settings | ❌ Missing entirely | Phase 8 |
+| Feed (Tab 1) | ✅ Functional (`HomeFeedView` + article generation UI) | Completed |
+| Explore (Tab 2) | ✅ Functional (`ExploreView`) | Completed |
+| Practice (Tab 3) | ✅ Functional | - |
+| Stats (Tab 4) | ✅ Functional (`StatsService` period snapshots + deterministic heatmap data) | Completed |
+| Profile (Tab 5) | ✅ Functional (`SettingsView` + interest management) | Completed |
 
 ---
 
 ## Next Steps
+1. Start Phase 10 adaptive acquisition loop (`RankPromotionEngine`, `AdaptivePromptBuilder`, notification candidate feedback).
