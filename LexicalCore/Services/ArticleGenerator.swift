@@ -105,27 +105,35 @@ public actor ArticleGenerator {
     private let store: ArticleStore
     private let evaluator: ArticleConstraintsEvaluator
     private let llmProvider: ArticleLLMProvider
+    private let promptBuilder: AdaptivePromptBuilder
 
     public init(
         store: ArticleStore,
         evaluator: ArticleConstraintsEvaluator = .init(),
-        llmProvider: ArticleLLMProvider = MockLLMProvider()
+        llmProvider: ArticleLLMProvider = MockLLMProvider(),
+        promptBuilder: AdaptivePromptBuilder = .init()
     ) {
         self.store = store
         self.evaluator = evaluator
         self.llmProvider = llmProvider
+        self.promptBuilder = promptBuilder
     }
 
     /// Generates a new article personalized to the user.
     public func generateArticle(
         profile: InterestProfile,
         targetWords: [String],
+        adaptiveContext: AdaptivePromptContext? = nil,
         knownWords: [String] = []
     ) async throws -> GeneratedArticle {
         _ = knownWords
         let theme = selectTheme(from: profile)
-        let prompt = constructPrompt(theme: theme, targets: targetWords)
-        let rawResponse = try await llmProvider.generateContent(prompt: prompt)
+        let constructedPrompt = constructPrompt(
+            theme: theme,
+            targets: targetWords,
+            adaptiveContext: adaptiveContext
+        )
+        let rawResponse = try await llmProvider.generateContent(prompt: constructedPrompt.body)
         let (title, content) = parseResponse(rawResponse)
 
         let wordCount = content.split(separator: " ").count
@@ -145,7 +153,8 @@ public actor ArticleGenerator {
             content: content,
             targetWords: containedTargets,
             category: theme,
-            difficultyScore: validation.score
+            difficultyScore: validation.score,
+            targetRank: constructedPrompt.centerRank
         )
 
         try await store.save(article)
@@ -171,7 +180,34 @@ public actor ArticleGenerator {
         return "Technology"
     }
 
-    private func constructPrompt(theme: String, targets: [String]) -> String {
+    private func constructPrompt(
+        theme: String,
+        targets: [String],
+        adaptiveContext: AdaptivePromptContext?
+    ) -> ConstructedPrompt {
+        let templatePrompt = templatePrompt(theme: theme, targets: targets)
+
+        guard let adaptiveContext else {
+            return ConstructedPrompt(
+                body: templatePrompt,
+                centerRank: nil
+            )
+        }
+
+        let adaptive = promptBuilder.buildPrompt(
+            context: adaptiveContext,
+            focusLemmas: targets,
+            topic: theme,
+            baseTemplate: templatePrompt
+        )
+
+        return ConstructedPrompt(
+            body: adaptive.body,
+            centerRank: adaptive.centerRank
+        )
+    }
+
+    private func templatePrompt(theme: String, targets: [String]) -> String {
         if let url = Bundle.main.url(forResource: "ArticleTemplateBank", withExtension: "json"),
            let data = try? Data(contentsOf: url),
            let bank = try? JSONDecoder().decode([String: [Template]].self, from: data),
@@ -239,4 +275,9 @@ public actor ArticleGenerator {
 fileprivate struct Template: Codable {
     let category: String
     let prompt_structure: String
+}
+
+private struct ConstructedPrompt {
+    let body: String
+    let centerRank: Int?
 }

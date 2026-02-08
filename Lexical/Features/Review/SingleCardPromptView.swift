@@ -14,8 +14,7 @@ struct SingleCardPromptView: View {
     @State private var isFlipped: Bool = false
     @State private var isLoading: Bool = true
     @State private var completionText: String?
-
-    private let fsrs = FSRSV4Engine()
+    @State private var infoData: WordDetailData?
 
     var body: some View {
         ZStack {
@@ -49,11 +48,6 @@ struct SingleCardPromptView: View {
                             .font(.headline)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Button("Ignore Word") {
-                            ignoreCard(card)
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.red)
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
@@ -70,11 +64,40 @@ struct SingleCardPromptView: View {
                     Spacer()
 
                     if isFlipped {
-                        HStack(spacing: 12) {
-                            GradeButton(title: "Again", color: .red) { submit(1) }
-                            GradeButton(title: "Hard", color: .orange) { submit(2) }
-                            GradeButton(title: "Good", color: .blue) { submit(3) }
-                            GradeButton(title: "Easy", color: .green) { submit(4) }
+                        VStack(spacing: 12) {
+                            HStack(spacing: 12) {
+                                Button {
+                                    infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+                                } label: {
+                                    Label("Info", systemImage: "info.circle")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(Color.sonPrimary)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color.sonPrimary.opacity(0.12))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+
+                                Button(role: .destructive) {
+                                    removeFromDeck(card)
+                                } label: {
+                                    Label("Remove from Deck", systemImage: "trash")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color.red.opacity(0.12))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                            }
+
+                            HStack(spacing: 12) {
+                                GradeButton(title: "Again", color: .red) { submit(1) }
+                                GradeButton(title: "Hard", color: .orange) { submit(2) }
+                                GradeButton(title: "Good", color: .blue) { submit(3) }
+                                GradeButton(title: "Easy", color: .green) { submit(4) }
+                            }
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 28)
@@ -97,6 +120,10 @@ struct SingleCardPromptView: View {
         }
         .task {
             loadOrCreateCard()
+        }
+        .sheet(item: $infoData) { detail in
+            WordDetailSheet(data: detail)
+                .presentationDetents([.medium, .large])
         }
     }
 
@@ -164,56 +191,29 @@ struct SingleCardPromptView: View {
     }
 
     private func submit(_ grade: Int) {
-        guard var card else { return }
+        guard let card else { return }
 
         Task { @MainActor in
-            let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
-            let lastReview = card.lastReviewDate ?? card.createdAt
-            let elapsedSeconds = Date().timeIntervalSince(lastReview)
-            let daysElapsed = max(0, elapsedSeconds / 86_400.0)
-
-            let newState = await fsrs.nextState(
-                currentStability: card.stability,
-                currentDifficulty: card.difficulty,
-                recalled: grade >= 3,
-                grade: grade,
-                daysElapsed: daysElapsed
-            )
-
-            let interval = await fsrs.nextInterval(stability: max(newState.stability, 0.1))
-
-            card.stability = max(newState.stability, 0.1)
-            card.difficulty = newState.difficulty
-            card.retrievability = newState.retrievability
-            card.lastReviewDate = Date()
-            card.nextReviewDate = Date().addingTimeInterval(interval * 86_400)
-            card.reviewCount += 1
-            card.status = card.stability >= 90 ? .known : .learning
-
-            let event = ReviewEvent(
-                userId: activeProfile.userId,
-                lemma: card.lemma,
-                grade: grade,
-                durationMs: 0,
-                scheduledDays: interval,
-                reviewState: ReviewEvent.reviewState(for: grade)
-            )
-            modelContext.insert(event)
-
-            upsertUserWordState(for: card, userId: activeProfile.userId, grade: grade)
-
             do {
-                try modelContext.save()
-                self.card = card
+                _ = try await ReviewWriteCoordinator.submitExplicitReview(
+                    grade: grade,
+                    lemma: card.lemma,
+                    durationMs: 0,
+                    modelContext: modelContext
+                )
+
+                if let refreshed = fetchCardSnapshot(for: card.lemma) {
+                    self.card = refreshed
+                }
                 completionText = "Saved '\(card.lemma)'"
             } catch {
-                print("SingleCardPromptView: failed to save grade: \(error)")
+                print("SingleCardPromptView: failed to submit grade: \(error)")
             }
         }
     }
 
     @MainActor
-    private func ignoreCard(_ card: ReviewCard) {
+    private func removeFromDeck(_ card: ReviewCard) {
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         activeProfile.markIgnored(card.lemma)
 
@@ -232,36 +232,41 @@ struct SingleCardPromptView: View {
 
         do {
             try modelContext.save()
-            completionText = "'\(card.lemma)' ignored"
+            completionText = "'\(card.lemma)' removed from deck"
         } catch {
             print("SingleCardPromptView: failed to ignore card: \(error)")
         }
     }
 
-    private func upsertUserWordState(for card: ReviewCard, userId: String, grade: Int) {
-        let key = UserWordState.makeKey(userId: userId, lemma: card.lemma)
+    @MainActor
+    private func fetchCardSnapshot(for lemma: String) -> ReviewCard? {
+        let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let key = UserWordState.makeKey(userId: activeProfile.userId, lemma: normalizedLemma)
+
         let descriptor = FetchDescriptor<UserWordState>(
             predicate: #Predicate { $0.userLemmaKey == key }
         )
+        guard let state = try? modelContext.fetch(descriptor).first else { return nil }
 
-        let state: UserWordState
-        if let existing = try? modelContext.fetch(descriptor).first {
-            state = existing
-        } else {
-            state = UserWordState(userId: userId, lemma: card.lemma)
-            modelContext.insert(state)
-        }
+        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
+            predicate: #Predicate { $0.lemma == normalizedLemma }
+        )
+        let lexeme = try? modelContext.fetch(lexemeDescriptor).first
 
-        state.stability = card.stability
-        state.difficulty = card.difficulty
-        state.retrievability = card.retrievability
-        state.nextReviewDate = card.nextReviewDate
-        state.lastReviewDate = card.lastReviewDate
-        state.reviewCount = card.reviewCount
-        if grade == 1 {
-            state.lapseCount += 1
-        }
-        state.status = card.status
-        state.touch()
+        return ReviewCard(
+            lemma: normalizedLemma,
+            originalWord: normalizedLemma,
+            contextSentence: lexeme?.sampleSentence ?? "Use '\(normalizedLemma)' in a sentence.",
+            definition: lexeme?.basicMeaning,
+            stability: state.stability,
+            difficulty: state.difficulty,
+            retrievability: state.retrievability,
+            nextReviewDate: state.nextReviewDate,
+            lastReviewDate: state.lastReviewDate,
+            reviewCount: state.reviewCount,
+            createdAt: state.createdAt,
+            status: state.status
+        )
     }
 }

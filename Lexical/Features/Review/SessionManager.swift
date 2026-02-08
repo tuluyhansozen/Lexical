@@ -12,6 +12,7 @@ class SessionManager: ObservableObject {
 
     private let modelContext: ModelContext
     private let fsrsEngine: FSRSV4Engine
+    private let reviewCoordinator: ReviewWriteCoordinator
 
     // Track streaks for Brain Boost (consecutive successes in this session).
     @Published var sessionStreaks: [String: Int] = [:]
@@ -19,6 +20,7 @@ class SessionManager: ObservableObject {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         self.fsrsEngine = FSRSV4Engine()
+        self.reviewCoordinator = ReviewWriteCoordinator()
     }
 
     /// Start a new session with due cards.
@@ -57,37 +59,66 @@ class SessionManager: ObservableObject {
         return queue[currentIndex]
     }
 
+    func removeCurrentCardFromDeck() {
+        guard let current = currentCard else { return }
+
+        let normalizedLemma = current.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalizedLemma.isEmpty else { return }
+
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        activeProfile.markIgnored(normalizedLemma)
+
+        let key = UserWordState.makeKey(userId: activeProfile.userId, lemma: normalizedLemma)
+        let descriptor = FetchDescriptor<UserWordState>(
+            predicate: #Predicate { $0.userLemmaKey == key }
+        )
+        let state = (try? modelContext.fetch(descriptor).first) ?? {
+            let created = UserWordState(
+                userId: activeProfile.userId,
+                lemma: normalizedLemma,
+                status: .ignored
+            )
+            modelContext.insert(created)
+            return created
+        }()
+
+        state.status = .ignored
+        state.touch()
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("SessionManager: failed to remove '\(normalizedLemma)' from deck: \(error)")
+        }
+
+        if currentIndex < queue.count {
+            queue.remove(at: currentIndex)
+        }
+        sessionStreaks.removeValue(forKey: normalizedLemma)
+        currentIndex = 0
+        isSessionComplete = queue.isEmpty
+    }
+
     func submitGrade(_ grade: Int) {
-        guard var card = currentCard else { return }
+        guard let card = currentCard else { return }
         let cardKey = card.lemma
 
         Task { @MainActor in
-            let newState = await fsrsEngine.nextState(
-                currentStability: card.stability,
-                currentDifficulty: card.difficulty,
-                recalled: grade >= 3,
-                grade: grade,
-                daysElapsed: max(0, Date().timeIntervalSince(card.lastReviewDate ?? card.createdAt) / 86400)
-            )
-
-            let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
-            let projectedIntervalDays = await fsrsEngine.nextInterval(
-                stability: max(newState.stability, 0.1),
-                requestRetention: 0.9
-            )
-
-            let event = ReviewEvent(
-                userId: activeProfile.userId,
-                lemma: card.lemma,
-                grade: grade,
-                durationMs: 0,
-                scheduledDays: projectedIntervalDays,
-                reviewState: ReviewEvent.reviewState(for: grade)
-            )
-            modelContext.insert(event)
-            print("📝 Logged review for '\(card.lemma)': Grade \(grade)")
-
             if grade < 3 {
+                let projectedIntervalDays = await projectedIntervalDays(for: card, grade: grade)
+                do {
+                    try reviewCoordinator.recordSessionAttempt(
+                        grade: grade,
+                        lemma: card.lemma,
+                        durationMs: 0,
+                        scheduledDays: projectedIntervalDays,
+                        modelContext: modelContext
+                    )
+                    print("📝 Logged review for '\(card.lemma)': Grade \(grade)")
+                } catch {
+                    print("SessionManager: failed to log Brain Boost attempt: \(error)")
+                }
+
                 // FAIL/HARD (1 or 2)
                 print("🧠 Brain Boost: Re-queueing '\(card.lemma)' (Grade \(grade))")
                 sessionStreaks[cardKey] = 0
@@ -98,46 +129,52 @@ class SessionManager: ObservableObject {
                 sessionStreaks[cardKey] = currentStreak
 
                 if currentStreak < 2 {
+                    let projectedIntervalDays = await projectedIntervalDays(for: card, grade: grade)
+                    do {
+                        try reviewCoordinator.recordSessionAttempt(
+                            grade: grade,
+                            lemma: card.lemma,
+                            durationMs: 0,
+                            scheduledDays: projectedIntervalDays,
+                            modelContext: modelContext
+                        )
+                        print("📝 Logged review for '\(card.lemma)': Grade \(grade)")
+                    } catch {
+                        print("SessionManager: failed to log Brain Boost attempt: \(error)")
+                    }
+
                     print("🧠 Good! Streak \(currentStreak)/2. Re-queueing '\(card.lemma)'")
                     reinsertCurrentCard(offset: 5)
                 } else {
                     print("✅ Graduated '\(card.lemma)'")
-                    card = await updateCardState(card, newState: newState)
-                    upsertUserWordState(for: card, userId: activeProfile.userId, grade: grade)
-                    replaceCurrentCardAndAdvance(with: card)
+                    do {
+                        _ = try await reviewCoordinator.recordExplicitReview(
+                            grade: grade,
+                            lemma: card.lemma,
+                            durationMs: 0,
+                            modelContext: modelContext
+                        )
+                        advanceQueue()
+                    } catch {
+                        print("SessionManager: coordinator explicit write failed: \(error)")
+                    }
                 }
             } else {
                 // EASY (4)
                 print("✅ Graduated '\(card.lemma)' (Easy)")
-                card = await updateCardState(card, newState: newState)
-                upsertUserWordState(for: card, userId: activeProfile.userId, grade: grade)
-                replaceCurrentCardAndAdvance(with: card)
-            }
-
-            do {
-                try modelContext.save()
-            } catch {
-                print("SessionManager: failed to save review updates: \(error)")
+                do {
+                    _ = try await reviewCoordinator.recordExplicitReview(
+                        grade: grade,
+                        lemma: card.lemma,
+                        durationMs: 0,
+                        modelContext: modelContext
+                    )
+                    advanceQueue()
+                } catch {
+                    print("SessionManager: coordinator explicit write failed: \(error)")
+                }
             }
         }
-    }
-
-    /// Update the card with final FSRS state/date after graduation.
-    private func updateCardState(_ card: ReviewCard, newState: FSRSV4Engine.FSRSState) async -> ReviewCard {
-        var updated = card
-        updated.stability = max(newState.stability, 0.1)
-        updated.difficulty = newState.difficulty
-        updated.retrievability = newState.retrievability
-        updated.lastReviewDate = Date()
-        updated.reviewCount += 1
-
-        let intervalDays = await fsrsEngine.nextInterval(
-            stability: updated.stability,
-            requestRetention: 0.9
-        )
-        updated.nextReviewDate = Date().addingTimeInterval(intervalDays * 86400)
-        updated.status = statusFor(updated)
-        return updated
     }
 
     /// Move the current card to a later position in the session (Brain Boost).
@@ -148,13 +185,6 @@ class SessionManager: ObservableObject {
         queue.remove(at: currentIndex)
         let newIndex = min(currentIndex + offset, queue.count)
         queue.insert(card, at: newIndex)
-    }
-
-    /// Replace current card snapshot and advance the queue.
-    private func replaceCurrentCardAndAdvance(with card: ReviewCard) {
-        guard currentIndex < queue.count else { return }
-        queue[currentIndex] = card
-        advanceQueue()
     }
 
     /// Advance to the next card in the queue.
@@ -168,6 +198,20 @@ class SessionManager: ObservableObject {
         }
 
         currentIndex = 0
+    }
+
+    private func projectedIntervalDays(for card: ReviewCard, grade: Int) async -> Double {
+        let transition = await fsrsEngine.nextState(
+            currentStability: card.stability,
+            currentDifficulty: card.difficulty,
+            recalled: grade >= 3,
+            grade: grade,
+            daysElapsed: max(0, Date().timeIntervalSince(card.lastReviewDate ?? card.createdAt) / 86400)
+        )
+        return await fsrsEngine.nextInterval(
+            stability: max(transition.stability, 0.1),
+            requestRetention: 0.9
+        )
     }
 
     private func dueCardsFromUserState(userId: String) throws -> [ReviewCard] {
@@ -220,40 +264,4 @@ class SessionManager: ObservableObject {
         )
     }
 
-    private func upsertUserWordState(for card: ReviewCard, userId: String, grade: Int) {
-        let key = UserWordState.makeKey(userId: userId, lemma: card.lemma)
-        let descriptor = FetchDescriptor<UserWordState>(
-            predicate: #Predicate { $0.userLemmaKey == key }
-        )
-
-        let state: UserWordState
-        if let existing = try? modelContext.fetch(descriptor).first {
-            state = existing
-        } else {
-            state = UserWordState(userId: userId, lemma: card.lemma)
-            modelContext.insert(state)
-        }
-
-        state.stability = card.stability
-        state.difficulty = card.difficulty
-        state.retrievability = card.retrievability
-        state.nextReviewDate = card.nextReviewDate
-        state.lastReviewDate = card.lastReviewDate
-        state.reviewCount = card.reviewCount
-        if grade == 1 {
-            state.lapseCount += 1
-        }
-        state.status = statusFor(card)
-        state.touch()
-    }
-
-    private func statusFor(_ card: ReviewCard) -> UserWordStatus {
-        if card.stability >= 90 {
-            return .known
-        }
-        if card.reviewCount > 0 {
-            return .learning
-        }
-        return .new
-    }
 }

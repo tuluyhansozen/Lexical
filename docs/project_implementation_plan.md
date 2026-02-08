@@ -2,7 +2,7 @@
 
 > **Generated:** 2026-01-31
 > **Last Updated:** 2026-02-08
-> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete
+> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 In Progress (Partial)
 
 ---
 
@@ -235,7 +235,7 @@ Replace placeholder screens with functional implementations and restructure navi
 - **ArticleGenerator Pipeline:** Implemented with template-driven prompt construction, evaluator pass, and persistence.
 - **Templates:** `ArticleTemplateBank.json` added and wired into generation prompt selection.
 - **Constraints:** `ArticleConstraintsEvaluator` enforces length/density/readability heuristics.
-- **Persistence:** `ArticleStore` writes/loads generated article JSON artifacts.
+- **Persistence:** `ArticleStore` now uses SwiftData-backed `GeneratedContent` rows with TTL cleanup for unsaved generated content.
 - **UI Integration:** `HomeFeedView` + `ArticlesViewModel` provide user-triggered generation and list display.
 - **Targeting + Provider Hardening:** Replaced static target-word list with FSRS/rank-based targeting and added production HTTP provider wiring with retry/fallback strategy.
 
@@ -267,7 +267,7 @@ Replace placeholder screens with functional implementations and restructure navi
 - [x] `LexicalCore/Services/ArticleGenerator.swift` - Dynamic content generation
 - [x] `Lexical/Resources/ArticleTemplateBank.json` - Prompt templates
 - [x] `LexicalCore/Services/ArticleConstraintsEvaluator.swift` - Quality checks
-- [x] `LexicalCore/Services/ArticleStore.swift` - File-backed article persistence
+- [x] `LexicalCore/Services/ArticleStore.swift` - SwiftData-backed generated-content persistence
 - [x] `Lexical/Features/Home/HomeFeedView.swift` - Personalized feed integration
 - [x] Due/target-word selection from FSRS state (replaces static trigger targets)
 - [x] Production LLM backend integration + retry/fallback strategy
@@ -313,27 +313,59 @@ Implement privacy-first identity, lexical rank calibration, and resilient cross-
 
 ---
 
+## Phase 9A: Post-Review Verification & Hardening
+
+**Status:** ✅ Complete
+
+### Section 1: Objective
+Resolve review-verified documentation drift, expose runtime sync readiness in-product, and close critical test-coverage gaps for Phase 8/9 deliverables.
+
+### Section 2: Key Activities
+- **Tracking Sync:** Align `.agent/tasks.json` and `.agent/memory.md` with implemented Phase 8/9 reality.
+- **Plan Alignment:** Keep this implementation plan in sync with verified repository state.
+- **Sync Visibility:** Surface `CloudKitSyncManager.validateRuntimeEnvironment()` status in Settings instead of static "Local Only".
+- **Test Coverage:** Add focused tests for seeding idempotency, article constraints, and stats calculations.
+- **Runtime Validation:** Run sync resolver tests on iOS simulator toolchain (not host `swift test`) and record outcomes.
+
+### Section 3: Deliverables
+- [x] `.agent/tasks.json` status alignment for completed Phase 8/9 subtasks
+- [x] `.agent/memory.md` refreshed for dual-store + sync completion
+- [x] `SettingsView.swift` sync status bound to runtime environment report
+- [x] `LexicalCoreTests/*` coverage expansion for seeding, article constraints, and stats snapshots
+- [x] iOS simulator test run evidence for sync conflict resolution suite
+
+---
+
 ## Phase 10: Adaptive Acquisition & Engagement Loop
 
-**Status:** 🔲 Not Started
+**Status:** 🟡 In Progress (Core Services + Prompt/Content Runtime Integration Landed)
 
 ### Section 1: Objective
 Operationalize adaptive difficulty loops across articles, matrix, and notifications using lexical-rank feedback from FSRS outcomes.
 
 ### Section 2: Key Activities
-- **Rank-Constrained Prompting:** Generate articles with lexical difficulty bounded by profile `lexicalRank` and target band constraints.
-- **Generated Content Lifecycle:** Keep generated articles ephemeral by default; sync only explicitly saved content.
-- **Adaptive Promotion Logic:** Raise/lower lexical-rank target using rolling Easy/Hard/Again distribution and retention metrics.
-- **Daily Matrix Adaptation:** Maintain static daily root while dynamically selecting rank-appropriate satellites.
-- **Notification Intelligence:** Trigger micro-dose candidates from high-priority rank band with Reveal/Add/Ignore triage.
-- **Implicit Exposure Signal:** Write low-weight review events when target words are successfully consumed in generated content.
+- **Adaptive Promotion Logic (Implemented):** `RankPromotionEngine` computes EWMA-derived easy velocity and retention/hard-again signals, then applies cooldown-gated lexical-rank promotion/demotion within calibration bounds.
+- **Review Write Orchestration (Implemented):** `ReviewWriteCoordinator` now centralizes explicit writes across prompt/intents/session flows and logs short-term Brain Boost attempts via coordinator APIs.
+- **Notification Intelligence (Implemented):** Bandit scheduling includes rank-aware reward boosts and actionable Reveal/Add/Ignore triage with prompt deep-link payloads.
+- **Word Detail Triage Surface (Implemented):** After `Reveal`, prompt/review flows now expose `Info` and `Remove from Deck` actions per requirements (`SingleCardPromptView`, `ReviewSessionView`).
+- **Info Content Contract (Implemented):** Shared `WordDetailSheet` now includes definition, sentence/context examples, synonyms, and pronunciation playback controls.
+- **Adaptive Prompting (Implemented):** `AdaptivePromptBuilder` is wired into `ArticleGenerator` with lexical-rank windows (`lexicalRank` + `easyRatingVelocity`) passed from Home feed generation.
+- **Generated Content Lifecycle (Implemented):** `GeneratedContent` SwiftData model + schema `V4` migration are live; `ArticleStore` now enforces 72h TTL cleanup on unsaved generated rows.
+- **Implicit Exposure Loop (Implemented):** Opening generated articles writes daily-throttled implicit exposure events for article target lemmas; `RankPromotionEngine` now weights implicit exposure signals lower than explicit review events.
+- **Validation Gap:** `xcodebuild` iOS simulator builds pass; `swift test` still fails under host SwiftPM due broader SwiftData availability constraints and scheme test action remains unconfigured.
 
 ### Section 3: Deliverables
-- [ ] `LexicalCore/Services/RankPromotionEngine.swift` - easy-rating velocity and retention-driven rank adjustment
-- [ ] `LexicalCore/Services/AdaptivePromptBuilder.swift` - rank-bounded prompt templates
-- [ ] `LexicalCore/Models/GeneratedContent.swift` - ephemeral content metadata (`isSaved`, `targetRank`, `targetWords`)
-- [ ] `Lexical/Features/Matrix/DailyRootResolver.swift` - deterministic daily root + satellite strategy
-- [ ] `LexicalCore/Services/NotificationTriageService.swift` - candidate selection and triage action routing
+- [x] `LexicalCore/Services/RankPromotionEngine.swift` - easy-rating velocity and retention-driven rank adjustment with cooldown + clamping
+- [x] `LexicalCore/Services/ReviewWriteCoordinator.swift` - explicit and implicit review-write APIs with per-day implicit throttling
+- [x] `Lexical/Services/BanditScheduler.swift` - rank-aware notification policy tuning and actionable triage
+- [x] `LexicalCore/Services/BanditScheduler.swift` - mirrored core implementation for test targeting
+- [x] Post-reveal word detail surface with `Info` and `Remove from Deck` actions wired into prompt/review flows (`SingleCardPromptView`, `ReviewSessionView`)
+- [x] `Info` metadata surface containing definition, sentence/context, synonyms, and pronunciation (IPA + TTS/audio action where available)
+- [x] `LexicalCore/Services/AdaptivePromptBuilder.swift` - rank-bounded prompt templates wired into `ArticleGenerator`
+- [x] `LexicalCore/Models/GeneratedContent.swift` + schema wiring - ephemeral content metadata lifecycle (`LexicalSchemaV4`)
+- [x] App-wide adoption of `ReviewWriteCoordinator` across review/intent flows (`SessionManager`, `SingleCardPromptView`, `SharedIntents`)
+- [x] Low-weight implicit exposure write path wired from generated-content consumption with weighted promotion contribution
+- [ ] Green test baseline (`swift test` and scheme-based tests) after platform-guard and test-action configuration fixes
 
 ---
 
@@ -364,9 +396,9 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 
 | Phase | Priority | Estimated Effort | Key Focus |
 |-------|----------|------------------|-----------|
-| Phase 8 | 🔴 Critical | 1 week | Harden personalization, matrix/notification triage, and rank-aware filtering |
-| Phase 9 | 🔴 Critical | 1.5 weeks | Sign in with Apple, lexical calibration, dual-store migration, CRDT replay |
-| Phase 10 | 🟡 High | 1 week | Adaptive acquisition loops and rank-promotion feedback |
+| Phase 8 | ✅ Complete | - | Personalization, matrix/notification triage, and rank-aware filtering complete |
+| Phase 9 | ✅ Complete | - | Identity, calibration, dual-store migration, and CRDT replay complete |
+| Phase 10 | 🔴 Critical (Active) | 1 week | Wire landed services into runtime and complete adaptive prompting/generated-content lifecycle |
 | Phase 11 | 🟡 Medium | 1 week | Onboarding/accessibility/release preparation |
 
 ---
@@ -377,11 +409,13 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 |--------|---------------|-------------------|
 | Feed (Tab 1) | ✅ Functional (`HomeFeedView` + article generation UI) | Completed |
 | Explore (Tab 2) | ✅ Functional (`ExploreView`) | Completed |
-| Practice (Tab 3) | ✅ Functional | - |
+| Practice (Tab 3) | ✅ Functional with post-reveal `Info` + `Remove from Deck` detail surface | Phase 10 hardening complete |
 | Stats (Tab 4) | ✅ Functional (`StatsService` period snapshots + deterministic heatmap data) | Completed |
 | Profile (Tab 5) | ✅ Functional (`SettingsView` + interest management) | Completed |
 
 ---
 
 ## Next Steps
-1. Start Phase 10 adaptive acquisition loop (`RankPromotionEngine`, `AdaptivePromptBuilder`, notification candidate feedback).
+1. Stabilize test infrastructure so `swift test` is green under host tooling (or run package tests on an iOS-compatible test destination with explicit availability strategy).
+2. Configure and validate Xcode scheme test action for repeatable simulator test execution from `xcodebuild`.
+3. Begin Phase 11 onboarding/accessibility/release-hardening work once test pipeline baseline is stable.

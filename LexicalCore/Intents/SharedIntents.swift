@@ -108,75 +108,16 @@ public struct GradeCardIntent: AppIntent {
         let modelContext = ModelContext(Persistence.sharedModelContainer)
 
         do {
-            let activeUser = UserProfile.resolveActiveProfile(modelContext: modelContext)
-            let key = UserWordState.makeKey(userId: activeUser.userId, lemma: lemma)
-            let stateDescriptor = FetchDescriptor<UserWordState>(
-                predicate: #Predicate { $0.userLemmaKey == key }
-            )
-
-            let state = try modelContext.fetch(stateDescriptor).first ?? {
-                let created = UserWordState(
-                    userId: activeUser.userId,
-                    lemma: lemma,
-                    status: .learning,
-                    nextReviewDate: Date()
-                )
-                modelContext.insert(created)
-                return created
-            }()
-
-            let fsrs = FSRSV4Engine()
-            let lastReview = state.lastReviewDate ?? state.createdAt
-            let elapsedSeconds = Date().timeIntervalSince(lastReview)
-            let daysElapsed = max(0, elapsedSeconds / 86_400.0)
-
-            let newState = await fsrs.nextState(
-                currentStability: max(state.stability, 0.1),
-                currentDifficulty: max(state.difficulty, 0.3),
-                recalled: grade > 1,
+            _ = try await ReviewWriteCoordinator.submitExplicitReview(
                 grade: grade,
-                daysElapsed: daysElapsed
-            )
-
-            let interval = await fsrs.nextInterval(stability: max(newState.stability, 0.1))
-
-            state.stability = max(newState.stability, 0.1)
-            state.difficulty = newState.difficulty
-            state.retrievability = newState.retrievability
-            state.lastReviewDate = Date()
-            state.nextReviewDate = Date().addingTimeInterval(interval * 86_400)
-            state.reviewCount += 1
-            if grade == 1 {
-                state.lapseCount += 1
-            }
-            state.status = statusFor(stability: state.stability, reviewCount: state.reviewCount)
-            state.touch()
-
-            let event = ReviewEvent(
-                userId: activeUser.userId,
                 lemma: lemma,
-                grade: grade,
                 durationMs: 0,
-                scheduledDays: interval,
-                reviewState: ReviewEvent.reviewState(for: grade)
+                modelContext: modelContext
             )
-            modelContext.insert(event)
-
-            try modelContext.save()
         } catch {
             print("GradeCardIntent error: \(error)")
         }
 
         return .result()
-    }
-
-    private func statusFor(stability: Double, reviewCount: Int) -> UserWordStatus {
-        if stability >= 90 {
-            return .known
-        }
-        if reviewCount > 0 {
-            return .learning
-        }
-        return .new
     }
 }

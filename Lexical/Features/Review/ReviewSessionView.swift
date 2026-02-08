@@ -28,8 +28,10 @@ struct SessionContainer: View {
 
 struct SessionContent: View {
     @ObservedObject var manager: SessionManager
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) var dismiss
     @State private var isFlipped = false
+    @State private var infoData: WordDetailData?
     
     var body: some View {
         ZStack {
@@ -80,11 +82,43 @@ struct SessionContent: View {
                     
                     // Grading Controls
                     if isFlipped {
-                        HStack(spacing: 12) {
-                            GradeButton(title: "Again", color: .red) { submit(1) }
-                            GradeButton(title: "Hard", color: .orange) { submit(2) }
-                            GradeButton(title: "Good", color: .blue) { submit(3) }
-                            GradeButton(title: "Easy", color: .green) { submit(4) }
+                        VStack(spacing: 12) {
+                            HStack(spacing: 12) {
+                                Button {
+                                    infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+                                } label: {
+                                    Label("Info", systemImage: "info.circle")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(Color.sonPrimary)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color.sonPrimary.opacity(0.12))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+
+                                Button(role: .destructive) {
+                                    withAnimation(.spring()) {
+                                        manager.removeCurrentCardFromDeck()
+                                        isFlipped = false
+                                    }
+                                } label: {
+                                    Label("Remove from Deck", systemImage: "trash")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color.red.opacity(0.12))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                            }
+
+                            HStack(spacing: 12) {
+                                GradeButton(title: "Again", color: .red) { submit(1) }
+                                GradeButton(title: "Hard", color: .orange) { submit(2) }
+                                GradeButton(title: "Good", color: .blue) { submit(3) }
+                                GradeButton(title: "Easy", color: .green) { submit(4) }
+                            }
                         }
                         .padding(.bottom, 30)
                         .padding(.horizontal)
@@ -101,6 +135,10 @@ struct SessionContent: View {
         }
         .onAppear {
             manager.startSession()
+        }
+        .sheet(item: $infoData) { detail in
+            WordDetailSheet(data: detail)
+                .presentationDetents([.medium, .large])
         }
         .navigationBarTitleDisplayMode(.inline)
     }

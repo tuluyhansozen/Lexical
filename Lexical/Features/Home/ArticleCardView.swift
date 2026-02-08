@@ -1,10 +1,13 @@
 import SwiftUI
+import SwiftData
 import LexicalCore
 
 struct ArticleCardView: View {
     // We now support GeneratedArticle directly
     let article: GeneratedArticle
+    @Environment(\.modelContext) private var modelContext
     @State private var showReader = false
+    private let articleStore = ArticleStore()
     
     // Derived for UI compatibility
     private var categoryColor: Color {
@@ -101,6 +104,7 @@ struct ArticleCardView: View {
                     Spacer()
                     
                     Button {
+                        recordArticleExposure()
                         showReader = true
                     } label: {
                         HStack(spacing: 4) {
@@ -129,6 +133,34 @@ struct ArticleCardView: View {
                             }
                         }
                     }
+            }
+        }
+    }
+
+    @MainActor
+    private func recordArticleExposure() {
+        Task {
+            await articleStore.markViewed(article.id)
+        }
+
+        let uniqueLemmas = Array(
+            Set(
+                article.targetWords
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                    .filter { !$0.isEmpty }
+            )
+        )
+
+        guard !uniqueLemmas.isEmpty else { return }
+
+        for lemma in uniqueLemmas {
+            do {
+                _ = try ReviewWriteCoordinator.submitImplicitExposure(
+                    lemma: lemma,
+                    modelContext: modelContext
+                )
+            } catch {
+                print("ArticleCardView: failed implicit exposure write for '\(lemma)': \(error)")
             }
         }
     }

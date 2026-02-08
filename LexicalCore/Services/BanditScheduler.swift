@@ -2,8 +2,9 @@ import Foundation
 import UserNotifications
 import CoreMotion
 import SwiftData
+#if canImport(UIKit)
 import UIKit
-import LexicalCore
+#endif
 
 public extension Notification.Name {
     static let lexicalOpenPromptCard = Notification.Name("LexicalOpenPromptCard")
@@ -159,6 +160,7 @@ public final class BanditScheduler: NSObject, ObservableObject {
     }
 
     private func setupForegroundScheduling() {
+        #if canImport(UIKit)
         foregroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.willEnterForegroundNotification,
             object: nil,
@@ -166,6 +168,7 @@ public final class BanditScheduler: NSObject, ObservableObject {
         ) { [weak self] _ in
             self?.scheduleNextNotification()
         }
+        #endif
     }
 
     public func scheduleNextNotification() {

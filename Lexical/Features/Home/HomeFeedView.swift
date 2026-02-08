@@ -148,14 +148,20 @@ struct HomeFeedView: View {
     private func triggerGeneration() {
         // Create a temporary profile if one doesn't exist (though SettingsView ensures it does)
         let profile = interestProfiles.first ?? InterestProfile(selectedTags: ["Technology"])
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
 
         let targetService = LexicalTargetingService()
         let targets = targetService.articleTargets(modelContext: modelContext, maxCount: 6)
         let fallbackTargets = ["context", "insight", "derive"]
+        let adaptiveContext = AdaptivePromptContext(
+            lexicalRank: activeProfile.lexicalRank,
+            easyRatingVelocity: activeProfile.easyRatingVelocity
+        )
 
         viewModel.generateNewArticle(
             profile: profile,
-            targetWords: targets.isEmpty ? fallbackTargets : targets
+            targetWords: targets.isEmpty ? fallbackTargets : targets,
+            adaptiveContext: adaptiveContext
         )
     }
 }

@@ -24,15 +24,13 @@
 
 ## Current Placeholder Status
 - **Explore Tab (Tab 1)**: ✅ `ExploreView.swift` (Matrix + Search)
-- **Stats Tab (Tab 3)**: Mock data (hardcoded) - needs real SwiftData queries
+- **Stats Tab (Tab 3)**: ✅ `StatsView.swift` + `StatsService` real period snapshots
 - **Profile (Tab 4)**: ✅ `SettingsView.swift`
 
 ## Completion Phases (8-10)
-- **Phase 8**: Vocabulary Seeding & Personalized Articles
-  - ✅ VocabularySeedService for first-launch seeding
-  - 🟡 Article Personalization (ArticleGenerator, InterestProfile)
-- **Phase 9**: Authentication & Cloud Sync (Sign in with Apple, CloudKit)
-- **Phase 10**: Production Polish & App Store (Onboarding, Privacy Manifests)
+- **Phase 8**: ✅ Navigation, seeding, personalization, and rank-aware targeting completed.
+- **Phase 9**: ✅ Identity, calibration, dual-store migration, and sync foundation completed.
+- **Phase 10**: 🟡 In progress: adaptive prompting/generated-content lifecycle + coordinator adoption landed; test pipeline hardening pending.
 
 ## Environment Notes
 - **MCP Servers**: `ios-simulator`, `filesystem`, `context7` for agentic interactions.
@@ -47,6 +45,6 @@
 - ✅ Phase 5: The Retention Engine (FSRS Review Loop)
 - ✅ Phase 6: Home Screen Offensive (Widgets & Intents)
 - ✅ Phase 7: Intelligent Engagement & Integration
-- 🟡 Phase 8: Vocabulary Seeding & Personalized Articles (Seeding ✅, Articles 🟡)
-- 🔲 Phase 9: Authentication & Cloud Sync
-- 🔲 Phase 10: Production Polish & App Store Release
+- ✅ Phase 8: Navigation, Seeding & Personalization
+- ✅ Phase 9: Identity, Calibration & Sync Foundation
+- 🟡 Phase 10: Adaptive Acquisition & Engagement Loop
