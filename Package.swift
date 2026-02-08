@@ -22,9 +22,6 @@ let package = Package(
                 "Info.plist",
                 "PrivacyInfo.xcprivacy"
             ],
-            resources: [
-                .process("Resources")
-            ],
             linkerSettings: [
                 .unsafeFlags([
                     "-Xlinker", "-sectcreate",

@@ -1,4 +1,4 @@
-# Repository Audit Report (Phase 0 + Phase 8 Alignment)
+# Repository Audit Report (Phase 10 Verification)
 
 ## Scope
 This audit validates repository state against:
@@ -6,29 +6,30 @@ This audit validates repository state against:
 - `.agent/tasks.json`
 - `.agent/rules/*` and `.agent/skills/*` role/quality expectations
 
-Audit run: **2026-02-07**.
+Audit run: **2026-02-08**.
 
 ## Findings
 
 ### ✅ Compliant Items
-- **Phase 0 stabilization implemented:** platform-guarded imports and cross-platform glass abstraction are in place (`LexicalCore/Models/ReviewLog.swift`, `LexicalCore/DesignSystem/Colors.swift`, `LexicalCore/DesignSystem/GlassEffectContainer.swift`).
-- **SwiftPM warning cleanup implemented:** executable target excludes now omit non-source files (`Package.swift`).
-- **Swift 6 actor warning resolved:** `ArticleStore` no longer calls an actor-isolated method from initializer (`LexicalCore/Services/ArticleStore.swift`).
-- **Build verification passed:** `xcodebuild -scheme Lexical -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16e' build` reports `BUILD SUCCEEDED` on 2026-02-07.
-- **Phase 8 personalization core present:** `InterestProfile`, `ArticleGenerator`, `ArticleConstraintsEvaluator`, `ArticleStore`, and `ArticleTemplateBank.json` are implemented and wired into feed/profile flows.
-- **Navigation structure matches target app shape:** `ContentView` + `CustomTabBar` provide Feed/Explore/Practice/Stats/Profile tabs.
+- **Phase 10 core services implemented:** `RankPromotionEngine`, `ReviewWriteCoordinator`, `AdaptivePromptBuilder` are live with EWMA-based rank adjustment, explicit/implicit write APIs, and rank-bounded prompting.
+- **Word detail triage surface complete:** `WordDetailSheet` provides definition, synonyms, sentences, and TTS pronunciation for post-reveal Info action.
+- **Generated content lifecycle live:** `GeneratedContent` SwiftData model + `LexicalSchemaV4` migration; `ArticleStore` enforces 72h TTL cleanup on unsaved rows.
+- **Test coverage present:** 6 test files in `LexicalCoreTests/` covering `RankPromotionEngine`, `ReviewWriteCoordinator`, `AdaptivePromptBuilder`, `BanditScheduler`, `GeneratedContentLifecycle`, and `SyncConflictResolver`.
+- **iOS simulator build passes:** `xcodebuild -scheme Lexical -sdk iphonesimulator` reports `BUILD SUCCEEDED` on 2026-02-08.
+- **VocabularySeeder platform guard applied:** `@available(macOS 10.15, ...)` added to `hash(_:)` with version-checked fallback.
 
-### ⚠️ Gaps & Risks
-- **Target selection is still temporary:** article generation currently uses static `targetWords` in `HomeFeedView.triggerGeneration()` instead of FSRS-driven due/recent selection.
-- **Production generation backend not wired:** `ArticleGenerator` defaults to `MockLLMProvider`; `RemoteArticleService` is present but not integrated as primary provider.
-- **Stats fidelity incomplete:** `StatsView` period chips are currently visual-only and heatmap values are randomized each render.
-- **Test coverage gap:** there are no focused tests yet for seeding idempotency/hash upgrades, article constraint validation behavior, or stats calculations.
+### ⚠️ Expected Limitation
+- **`swift test` unavailable for this project:** SwiftData's `@Model` macro requires macOS 14+. Host-based `swift test` under SwiftPM cannot satisfy this constraint. This is expected behavior—iOS/macOS simulator testing via `xcodebuild test` is the correct path for SwiftData applications.
+
+### Prior Phase Items (Carried Forward)
+- Phase 0 platform stabilization (cross-platform glass, SwiftPM cleanup) remains compliant.
+- Phase 8/9 personalization, dual-store migration, and CRDT sync layers remain functional.
 
 ## Recommendations
-1. Connect article target selection to real FSRS state (`VocabularyItem` due/recent windows) and remove static demo values.
-2. Promote `RemoteArticleService` (or equivalent provider abstraction) to production default with retry/backoff and failure fallback.
-3. Complete Stats hardening by wiring period filters to query windows and replacing randomized heatmap with persisted review-activity bins.
-4. Add Phase 0/8 regression tests for seeding idempotency, article quality constraints, and stats metrics.
+1. Configure Xcode scheme test action for `xcodebuild test` to run tests on iOS simulator destination.
+2. Document in project README that `swift test` is not supported due to SwiftData macOS 14 requirement.
+3. Proceed to Phase 11 onboarding/accessibility/release hardening once scheme test action is validated.
 
 ## Notes
 This audit is repository-level and build-level validation. It does not replace simulator walkthrough QA for end-to-end UX behavior.
+

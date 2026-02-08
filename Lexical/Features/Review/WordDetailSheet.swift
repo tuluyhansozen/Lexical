@@ -144,14 +144,14 @@ private struct SeedLexemeIndex {
     }
 
     private static func seedURL() -> URL? {
+        // Try Seeds subdirectory first (main app bundle layout)
+        if let url = Bundle.main.url(forResource: "seed_data", withExtension: "json", subdirectory: "Seeds") {
+            return url
+        }
+        // Fallback to root of bundle
         if let url = Bundle.main.url(forResource: "seed_data", withExtension: "json") {
             return url
         }
-        #if SWIFT_PACKAGE
-        if let url = Bundle.module.url(forResource: "seed_data", withExtension: "json") {
-            return url
-        }
-        #endif
         return nil
     }
 }

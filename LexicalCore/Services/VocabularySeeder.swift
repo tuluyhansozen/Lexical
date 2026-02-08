@@ -186,7 +186,12 @@ public class VocabularySeeder {
         }
 
         let data = try Data(contentsOf: url)
-        let hash = Self.hash(data)
+        let hash: String
+        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *) {
+            hash = Self.hash(data)
+        } else {
+            hash = "\(data.count)"
+        }
         let decoder = JSONDecoder()
 
         if let items = try? decoder.decode([SeedItem].self, from: data) {
@@ -231,6 +236,7 @@ public class VocabularySeeder {
         return try decoder.decode([RootSeedItem].self, from: data)
     }
 
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     private static func hash(_ data: Data) -> String {
         let digest = SHA256.hash(data: data)
         return digest.map { String(format: "%02x", $0) }.joined()
