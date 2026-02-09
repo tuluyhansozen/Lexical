@@ -132,9 +132,9 @@ Output: Generate lemmas_normalized.csv with the following columns: id, text, ran
    * **Senses:** Extract the top 2 definitions, prioritizing non-archaic uses.
 4. **Extract Collocations (The "Matrix" Data):**
    * **Closed Set Constraint:** Only link to other words that exist within the Top 5000 set.
-   * **Source 1 (Example Scans):** Parse example sentences. If another seed word (e.g., "heavy") appears in the example for "rain", creates an edge.
+   * **Source 1 (Example Scans):** Parse example sentences. If  another seed word (e.g., "heavy") appears in the example for "rain", creates an edge.
    * **Source 2 (Related Terms):** Parse usage notes or "related terms" fields if available.
-   * **Storage:** Store as an adjacency list `collocations: [seed_id, seed_id]`.
+   * **Storage:** Store as an adjacency list `collocations:[seed_id, seed_id]`.
 5. **Augment:** Update the lemma record with the collocations array.
 
 ### **Stage 3: FSRS Initialization**
@@ -169,8 +169,7 @@ Instead of inserting directly into CoreData (which is complex from Python), gene
     "cefr": "A1",
     "pos": "noun",
     "ipa": "/reɪn/",
-    "definition": "Condensed water falling from a cloud.",
-    "collocations": [423, 891], // IDs for "heavy", "fall"
+    "definition": "Condensed water falling from a cloud.","fall"
     "fsrs_initial": {
       "d": 3.4,
       "s": 0.0,
