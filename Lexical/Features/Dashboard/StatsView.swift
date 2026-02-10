@@ -167,7 +167,7 @@ struct StatsView: View {
         .task {
             await loadStats()
         }
-        .onChange(of: selectedPeriod) { _ in
+        .onChange(of: selectedPeriod) {
             Task {
                 await loadStats()
             }

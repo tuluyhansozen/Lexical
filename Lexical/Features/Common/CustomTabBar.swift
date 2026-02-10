@@ -1,53 +1,86 @@
 import SwiftUI
+import LexicalCore
 
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
-    
-    let tabs = [
-        (icon: "book.fill", label: "Feed"),
-        (icon: "network", label: "Explore"),
-        (icon: "graduationcap.fill", label: "Practice"),
-        (icon: "chart.bar.fill", label: "Stats"),
-        (icon: "person.circle", label: "Profile")
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    private let tabs: [(id: Int, icon: String, label: String)] = [
+        (id: 0, icon: "clipboard", label: "Learn"),
+        (id: 1, icon: "safari", label: "Explore"),
+        (id: 2, icon: "menucard", label: "Practice"),
+        (id: 3, icon: "chart.bar.xaxis", label: "Stats"),
+        (id: 4, icon: "person", label: "Profile")
     ]
-    
+
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(0..<tabs.count, id: \.self) { index in
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        selectedTab = index
+            ForEach(tabs, id: \.id) { tab in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        selectedTab = tab.id
                     }
-                }) {
-                    VStack(spacing: 4) {
-                        Image(systemName: tabs[index].icon)
-                            .font(.system(size: 24))
-                            .symbolEffect(.bounce, value: selectedTab == index) // iOS 17+ Symbol Effect
-                        
-                        Text(tabs[index].label)
-                            .font(.caption2)
-                            .fontWeight(.medium)
-                            .fontDesign(.rounded)
+                } label: {
+                    ZStack {
+                        if selectedTab == tab.id {
+                            selectedGlassCircle
+                                .frame(width: 24, height: 24)
+                        }
+
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(
+                                selectedTab == tab.id
+                                ? Color(hex: "0A0A0A")
+                                : Color(hex: "6F747B")
+                            )
+                            .offset(y: -0.5)
                     }
-                    .frame(maxWidth: .infinity)
-                    .foregroundColor(selectedTab == index ? .sonPrimary : .gray.opacity(0.8))
-                    .scaleEffect(selectedTab == index ? 1.05 : 1.0)
+                    .frame(maxWidth: .infinity, minHeight: 31)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tab.label)
             }
         }
-        .padding(.top, 12)
-        .padding(.bottom, 34) // Bottom safe area
-        .background {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea()
-                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: -5)
-        }
-        // Border top
+        .frame(maxWidth: .infinity)
+        .frame(height: 61)
+        .background(Color.white)
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 15, topTrailingRadius: 15))
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(Color.gray.opacity(0.2))
-                .frame(height: 0.5)
+                .fill(Color(hex: "D1D5DC"))
+                .frame(height: 1)
+        }
+        .background(Color.white.ignoresSafeArea(edges: .bottom))
+    }
+
+    @ViewBuilder
+    private var selectedGlassCircle: some View {
+        if reduceTransparency {
+            Circle()
+                .fill(Color.white.opacity(0.94))
+                .overlay(
+                    Circle()
+                        .stroke(Color(hex: "0A0A0A").opacity(0.85), lineWidth: 1)
+                )
+        } else if #available(iOS 26.0, *) {
+            Circle()
+                .fill(.clear)
+                .glassEffect(.regular.tint(Color.white.opacity(0.06)).interactive(), in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(Color(hex: "0A0A0A").opacity(0.88), lineWidth: 1)
+                )
+        } else {
+            GlassEffectContainer(material: .regular) {
+                Circle()
+                    .fill(Color.white.opacity(0.22))
+            }
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(Color(hex: "0A0A0A").opacity(0.88), lineWidth: 1)
+            )
         }
     }
 }

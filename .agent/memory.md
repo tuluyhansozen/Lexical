@@ -30,7 +30,7 @@
 ## Completion Phases (8-10)
 - **Phase 8**: ✅ Navigation, seeding, personalization, and rank-aware targeting completed.
 - **Phase 9**: ✅ Identity, calibration, dual-store migration, and sync foundation completed.
-- **Phase 10**: 🟡 In progress: adaptive prompting/generated-content lifecycle + coordinator adoption landed; test pipeline hardening pending.
+- **Phase 10**: ✅ Completed: adaptive prompting/generated-content lifecycle, daily root resolver extraction, and notification triage service integration verified by simulator test + smoke run.
 
 ## Environment Notes
 - **MCP Servers**: `ios-simulator`, `filesystem`, `context7` for agentic interactions.
@@ -47,4 +47,4 @@
 - ✅ Phase 7: Intelligent Engagement & Integration
 - ✅ Phase 8: Navigation, Seeding & Personalization
 - ✅ Phase 9: Identity, Calibration & Sync Foundation
-- 🟡 Phase 10: Adaptive Acquisition & Engagement Loop
+- ✅ Phase 10: Adaptive Acquisition & Engagement Loop

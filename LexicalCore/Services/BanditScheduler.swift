@@ -83,6 +83,7 @@ public final class BanditScheduler: NSObject, ObservableObject {
 
     private let motionActivityManager = CMMotionActivityManager()
     private var foregroundObserver: NSObjectProtocol?
+    private let triageService = NotificationTriageService()
 
     private struct NotificationCandidate {
         let lemma: String
@@ -398,23 +399,23 @@ public final class BanditScheduler: NSObject, ObservableObject {
 
     public func handleNotificationResponse(_ response: UNNotificationResponse) {
         let userInfo = response.notification.request.content.userInfo
+        let payload = triageService.payload(from: userInfo)
 
         let slot = (userInfo["bandit_slot"] as? String).flatMap(TimeSlot.init(rawValue:))
         let template = (userInfo["bandit_template"] as? String).flatMap(NotificationTemplate.init(rawValue:))
-        let lemma = (userInfo["lemma"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let definition = userInfo["definition"] as? String
+        let lemma = payload.normalizedLemma
+        let definition = payload.definition
 
         if let slot, let template,
            response.actionIdentifier != Self.actionIgnoreIdentifier &&
            response.actionIdentifier != UNNotificationDismissActionIdentifier {
-            let candidateRank = numericUserInfoValue(userInfo["rank"])
             Task { @MainActor in
                 let modelContext = ModelContext(Persistence.sharedModelContainer)
                 let activeUser = UserProfile.resolveActiveProfile(modelContext: modelContext)
                 self.recordSuccess(
                     slot: slot,
                     template: template,
-                    candidateRank: candidateRank,
+                    candidateRank: payload.rank,
                     userRank: activeUser.lexicalRank
                 )
             }
@@ -428,27 +429,34 @@ public final class BanditScheduler: NSObject, ObservableObject {
         case Self.actionAddIdentifier:
             guard let lemma, !lemma.isEmpty else { return }
             Task { @MainActor in
-                self.addToDeck(lemma: lemma, definition: definition)
+                do {
+                    _ = try self.triageService.addToDeck(
+                        NotificationTriagePayload(lemma: lemma, definition: definition, rank: payload.rank),
+                        modelContext: ModelContext(Persistence.sharedModelContainer)
+                    )
+                } catch {
+                    print("BanditScheduler: failed to add '\(lemma)' to deck: \(error)")
+                }
             }
         case Self.actionIgnoreIdentifier:
             guard let lemma, !lemma.isEmpty else { return }
             Task { @MainActor in
-                self.ignoreWord(lemma: lemma)
+                do {
+                    _ = try self.triageService.ignoreWord(
+                        NotificationTriagePayload(lemma: lemma, definition: definition, rank: payload.rank),
+                        modelContext: ModelContext(Persistence.sharedModelContainer)
+                    )
+                } catch {
+                    print("BanditScheduler: failed to ignore '\(lemma)': \(error)")
+                }
             }
             incrementIgnoreStreak()
         case UNNotificationDismissActionIdentifier:
             incrementIgnoreStreak()
         case UNNotificationDefaultActionIdentifier:
             guard let lemma, !lemma.isEmpty else { return }
-            UserDefaults.standard.set(lemma, forKey: "lexical.pending_prompt_lemma")
-            UserDefaults.standard.set(definition ?? "", forKey: "lexical.pending_prompt_definition")
-            NotificationCenter.default.post(
-                name: .lexicalOpenPromptCard,
-                object: nil,
-                userInfo: [
-                    "lemma": lemma,
-                    "definition": definition ?? ""
-                ]
+            triageService.stagePromptRoute(
+                NotificationTriagePayload(lemma: lemma, definition: definition, rank: payload.rank)
             )
         default:
             break
@@ -464,31 +472,20 @@ public final class BanditScheduler: NSObject, ObservableObject {
     ) {
         let key = makeKey(slot, template)
         let baseReward = 1.0
-        let reward: Double
-        if let candidateRank, candidateRank >= 0,
-           let userRank, abs(candidateRank - userRank) <= 500 {
-            reward = baseReward * 1.5
-        } else {
-            reward = baseReward
-        }
+        let reward: Double = {
+            guard let userRank else { return baseReward }
+            let multiplier = triageService.rewardMultiplier(
+                candidateRank: candidateRank,
+                lexicalRank: userRank,
+                tolerance: 500
+            )
+            return baseReward * multiplier
+        }()
 
         successCounts[key, default: 0.0] += reward
         UserDefaults.standard.set(Date(), forKey: lastEngagedKey)
         UserDefaults.standard.set(0, forKey: ignoreStreakKey)
         persist()
-    }
-
-    private func numericUserInfoValue(_ value: Any?) -> Int? {
-        if let intValue = value as? Int {
-            return intValue
-        }
-        if let stringValue = value as? String {
-            return Int(stringValue)
-        }
-        if let numberValue = value as? NSNumber {
-            return numberValue.intValue
-        }
-        return nil
     }
 
     private func scheduleRevealNotification(lemma: String, definition: String?) {
@@ -503,83 +500,6 @@ public final class BanditScheduler: NSObject, ObservableObject {
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1.0, repeats: false)
         )
         UNUserNotificationCenter.current().add(request)
-    }
-
-    @MainActor
-    private func addToDeck(lemma: String, definition: String?) {
-        let modelContext = ModelContext(Persistence.sharedModelContainer)
-        let activeUser = UserProfile.resolveActiveProfile(modelContext: modelContext)
-
-        let normalizedLemma = lemma.lowercased()
-
-        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
-            predicate: #Predicate { $0.lemma == normalizedLemma }
-        )
-        let lexeme = (try? modelContext.fetch(lexemeDescriptor).first) ?? {
-            let created = LexemeDefinition(
-                lemma: normalizedLemma,
-                basicMeaning: definition
-            )
-            modelContext.insert(created)
-            return created
-        }()
-
-        if lexeme.basicMeaning?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true,
-           let definition, !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            lexeme.basicMeaning = definition
-        }
-
-        let key = UserWordState.makeKey(userId: activeUser.userId, lemma: normalizedLemma)
-        let stateDescriptor = FetchDescriptor<UserWordState>(
-            predicate: #Predicate { $0.userLemmaKey == key }
-        )
-        let state = (try? modelContext.fetch(stateDescriptor).first) ?? {
-            let created = UserWordState(userId: activeUser.userId, lemma: normalizedLemma, status: .learning)
-            modelContext.insert(created)
-            return created
-        }()
-
-        state.status = .learning
-        state.nextReviewDate = Date()
-        if state.reviewCount == 0 {
-            state.stability = max(0.2, state.stability)
-            state.difficulty = max(0.3, state.difficulty)
-            state.retrievability = max(0.25, state.retrievability)
-        }
-        state.touch()
-
-        do {
-            try modelContext.save()
-        } catch {
-            print("BanditScheduler: failed to add '\(normalizedLemma)' to deck: \(error)")
-        }
-    }
-
-    @MainActor
-    private func ignoreWord(lemma: String) {
-        let modelContext = ModelContext(Persistence.sharedModelContainer)
-        let activeUser = UserProfile.resolveActiveProfile(modelContext: modelContext)
-        let normalizedLemma = lemma.lowercased()
-
-        activeUser.markIgnored(normalizedLemma)
-
-        let key = UserWordState.makeKey(userId: activeUser.userId, lemma: normalizedLemma)
-        let descriptor = FetchDescriptor<UserWordState>(
-            predicate: #Predicate { $0.userLemmaKey == key }
-        )
-        let state = (try? modelContext.fetch(descriptor).first) ?? {
-            let created = UserWordState(userId: activeUser.userId, lemma: normalizedLemma, status: .ignored)
-            modelContext.insert(created)
-            return created
-        }()
-        state.status = .ignored
-        state.touch()
-
-        do {
-            try modelContext.save()
-        } catch {
-            print("BanditScheduler: failed to ignore '\(normalizedLemma)': \(error)")
-        }
     }
 
     private func incrementIgnoreStreak() {

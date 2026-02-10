@@ -39,6 +39,7 @@ public struct ReviewWriteCoordinator {
         self.calendar = calendar
     }
 
+    @MainActor
     public func recordExplicitReview(
         grade: Int,
         lemma: String,
@@ -54,6 +55,7 @@ public struct ReviewWriteCoordinator {
         )
     }
 
+    @MainActor
     public func recordExplicitReview(
         grade: Int,
         lemma: String,
@@ -70,9 +72,7 @@ public struct ReviewWriteCoordinator {
             throw ReviewWriteCoordinatorError.emptyLemma
         }
 
-        let profile = MainActor.assumeIsolated {
-            UserProfile.resolveActiveProfile(modelContext: modelContext)
-        }
+        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         let userId = profile.userId
         let state = try resolveState(userId: userId, lemma: normalizedLemma, modelContext: modelContext)
         let transition = await explicitTransition(grade: grade, state: state, now: now)
@@ -100,6 +100,7 @@ public struct ReviewWriteCoordinator {
         )
     }
 
+    @MainActor
     public static func submitExplicitReview(
         grade: Int,
         lemma: String,
@@ -115,6 +116,7 @@ public struct ReviewWriteCoordinator {
         )
     }
 
+    @MainActor
     public static func submitExplicitReview(
         grade: Int,
         lemma: String,
@@ -130,6 +132,7 @@ public struct ReviewWriteCoordinator {
         )
     }
 
+    @MainActor
     public func recordImplicitExposure(
         lemma: String,
         modelContext: ModelContext
@@ -137,6 +140,7 @@ public struct ReviewWriteCoordinator {
         try recordImplicitExposure(lemma: lemma, modelContext: modelContext, now: Date())
     }
 
+    @MainActor
     public func recordImplicitExposure(
         lemma: String,
         modelContext: ModelContext,
@@ -147,9 +151,7 @@ public struct ReviewWriteCoordinator {
             throw ReviewWriteCoordinatorError.emptyLemma
         }
 
-        let profile = MainActor.assumeIsolated {
-            UserProfile.resolveActiveProfile(modelContext: modelContext)
-        }
+        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         let userId = profile.userId
         let implicitReviewState = Self.implicitExposureReviewState
 
@@ -185,6 +187,7 @@ public struct ReviewWriteCoordinator {
         return true
     }
 
+    @MainActor
     public static func submitImplicitExposure(
         lemma: String,
         modelContext: ModelContext
@@ -192,6 +195,7 @@ public struct ReviewWriteCoordinator {
         try submitImplicitExposure(lemma: lemma, modelContext: modelContext, coordinator: .init())
     }
 
+    @MainActor
     public static func submitImplicitExposure(
         lemma: String,
         modelContext: ModelContext,
@@ -200,6 +204,7 @@ public struct ReviewWriteCoordinator {
         try coordinator.recordImplicitExposure(lemma: lemma, modelContext: modelContext)
     }
 
+    @MainActor
     public func recordSessionAttempt(
         grade: Int,
         lemma: String,
@@ -216,9 +221,7 @@ public struct ReviewWriteCoordinator {
             throw ReviewWriteCoordinatorError.emptyLemma
         }
 
-        let profile = MainActor.assumeIsolated {
-            UserProfile.resolveActiveProfile(modelContext: modelContext)
-        }
+        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
 
         let event = ReviewEvent(
             userId: profile.userId,
@@ -235,6 +238,7 @@ public struct ReviewWriteCoordinator {
         try modelContext.save()
     }
 
+    @MainActor
     public static func submitSessionAttempt(
         grade: Int,
         lemma: String,
@@ -252,6 +256,7 @@ public struct ReviewWriteCoordinator {
         )
     }
 
+    @MainActor
     public static func submitSessionAttempt(
         grade: Int,
         lemma: String,

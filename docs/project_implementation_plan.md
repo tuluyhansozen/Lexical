@@ -1,8 +1,8 @@
 # Lexical App: Project Implementation Plan
 
 > **Generated:** 2026-01-31
-> **Last Updated:** 2026-02-08
-> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 In Progress (Partial)
+> **Last Updated:** 2026-02-10
+> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Planned
 
 ---
 
@@ -338,7 +338,7 @@ Resolve review-verified documentation drift, expose runtime sync readiness in-pr
 
 ## Phase 10: Adaptive Acquisition & Engagement Loop
 
-**Status:** 🟡 In Progress (Core Services + Prompt/Content Runtime Integration Landed)
+**Status:** ✅ Complete (Phase 10A Service Closure + Simulator Verification)
 
 ### Section 1: Objective
 Operationalize adaptive difficulty loops across articles, matrix, and notifications using lexical-rank feedback from FSRS outcomes.
@@ -352,7 +352,9 @@ Operationalize adaptive difficulty loops across articles, matrix, and notificati
 - **Adaptive Prompting (Implemented):** `AdaptivePromptBuilder` is wired into `ArticleGenerator` with lexical-rank windows (`lexicalRank` + `easyRatingVelocity`) passed from Home feed generation.
 - **Generated Content Lifecycle (Implemented):** `GeneratedContent` SwiftData model + schema `V4` migration are live; `ArticleStore` now enforces 72h TTL cleanup on unsaved generated rows.
 - **Implicit Exposure Loop (Implemented):** Opening generated articles writes daily-throttled implicit exposure events for article target lemmas; `RankPromotionEngine` now weights implicit exposure signals lower than explicit review events.
-- **Validation Gap:** `xcodebuild` iOS simulator builds pass; `swift test` still fails under host SwiftPM due broader SwiftData availability constraints and scheme test action remains unconfigured.
+- **Daily Root Service Closure (Implemented):** Extracted deterministic root + adaptive satellite selection into dedicated `DailyRootResolver` service and wired Explore to the resolver.
+- **Notification Triage Service Closure (Implemented):** Added `NotificationTriageService` and integrated Bandit action handling (`Reveal` / `Add to Deck` / `Ignore`) via service APIs.
+- **Verification (Completed):** `xcodebuild -scheme Lexical-Package -destination 'platform=iOS Simulator,name=iPhone 16e' test` passes (28 tests). Packaged simulator smoke launch with `--lexical-debug-autocycle` succeeded.
 
 ### Section 3: Deliverables
 - [x] `LexicalCore/Services/RankPromotionEngine.swift` - easy-rating velocity and retention-driven rank adjustment with cooldown + clamping
@@ -365,7 +367,43 @@ Operationalize adaptive difficulty loops across articles, matrix, and notificati
 - [x] `LexicalCore/Models/GeneratedContent.swift` + schema wiring - ephemeral content metadata lifecycle (`LexicalSchemaV4`)
 - [x] App-wide adoption of `ReviewWriteCoordinator` across review/intent flows (`SessionManager`, `SingleCardPromptView`, `SharedIntents`)
 - [x] Low-weight implicit exposure write path wired from generated-content consumption with weighted promotion contribution
-- [ ] Green test baseline (`swift test` and scheme-based tests) after platform-guard and test-action configuration fixes
+- [x] `Lexical/Features/Matrix/DailyRootResolver.swift` - extracted deterministic daily-root + adaptive-satellite resolver used by Explore matrix
+- [x] `LexicalCore/Services/NotificationTriageService.swift` - centralized actionable-notification triage behaviors
+- [x] `LexicalCoreTests/NotificationTriageServiceTests.swift` - payload parsing + add/ignore/prompt-route coverage
+- [x] Green simulator test baseline via `xcodebuild` scheme tests (`Lexical-Package`, iPhone 16e)
+- [x] Packaged simulator smoke launch (`com.lexical.Lexical`, debug autocycle argument)
+
+---
+
+## Phase 10B: UI Refinement & Experience Cohesion
+
+**Status:** 🟡 In Progress (Explore iPhone 16-3 redesign parity pass completed on 2026-02-10)
+
+### Section 1: Objective
+Refine end-to-end interface quality and interaction ergonomics using the Liquid Glass style guide, accessibility mandates, and thumb-zone-first interaction rules across all primary screens.
+
+### Section 2: Key Activities
+- **Design Token Hardening:** Align semantic color/typography tokens with `New`, `Learning`, `Known`, high-contrast text, and Dynamic Type scaling across app surfaces.
+- **Glass System Pass:** Normalize glass materials, tint behavior, corner radii, and shadow depth using shared containers with Reduce Transparency fallbacks.
+- **Thumb-Zone Ergonomics:** Keep high-frequency actions (capture, reveal, grade, confirm) in the bottom interaction zone and standardize bottom-sheet detents.
+- **Reader UI Refinement:** Improve vocabulary highlight clarity, line-height/readability, and tap responsiveness in long-form reading flows.
+- **Review UI Refinement:** Polish prompt-to-reveal transitions, grading hierarchy, Brain Boost visual mode, and post-reveal metadata density.
+- **Cross-Screen Consistency:** Unify spacing, card treatments, and navigation affordances across Home, Explore, Stats, and Settings.
+- **Explore Matrix Refinement (Completed):** Reworked `ExploreView` with stable normalized node coordinates, centered `Word Matrix` header/search affordance, right-side map controls, higher-contrast node labels/icons, and Liquid Glass card treatments.
+- **Explore Figma Redesign Pass (Completed):** Rebuilt Explore to match Figma file `explore-screen` (`https://www.figma.com/design/nXNpgm6nKODYjL16rP5UwN/explore-screen?node-id=1-2`) with exact iPhone 16-3 topology constants (root/satellite diameters + coordinates), Figma-aligned `Word Matrix` heading scale/letter-spacing, darker Liquid Glass bubble treatment, and a rounded-top 5-icon bottom navigation treatment; live daily root/satellite content remains dynamic (not hard-locked).
+- **Accessibility + Device QA:** Validate VoiceOver labeling, color-differentiation cues, Dynamic Type breakpoints, Reduce Motion/Transparency behavior, and small-screen layout stability.
+
+### Section 3: Deliverables
+- [ ] `LexicalCore/DesignSystem/Colors.swift` + `LexicalCore/DesignSystem/Typography.swift` - semantic token and scalable typography alignment
+- [ ] `LexicalCore/DesignSystem/GlassEffectContainer.swift` + `LexicalCore/DesignSystem/LiquidBackground.swift` - glass consistency and accessibility fallbacks
+- [x] `Lexical/Features/Common/CustomTabBar.swift` + `Lexical/ContentView.swift` - Explore-focused bottom navigation parity pass (5-icon shell, selected glass ring, rounded top rail)
+- [ ] `Lexical/Features/Reader/ReaderView.swift`, `Lexical/Features/Reader/ReaderTextView.swift`, `Lexical/Features/Reader/WordCaptureSheet.swift` - reader and capture-flow refinement
+- [ ] `Lexical/Features/Review/FlashcardView.swift`, `Lexical/Features/Review/ReviewSessionView.swift`, `Lexical/Features/Review/SingleCardPromptView.swift`, `Lexical/Features/Review/WordDetailSheet.swift` - recall-loop and reveal-state UI polish
+- [x] `Lexical/Features/Explore/ExploreView.swift` - iPhone 16-3 redesign implementation (Figma node `1:2` parity pass: centered radial matrix, six satellite bubbles, root emphasis treatment, accessibility labeling/pattern cues)
+- [x] Explore word interaction update (2026-02-10): tap any matrix word to open an action sheet with `Word Info` and `Add to Deck`, reusing `WordDetailSheet` + `NotificationTriageService` for consistency with notification triage flows.
+- [ ] `Lexical/Features/Home/ArticleCardView.swift`, `Lexical/Features/Dashboard/StatsView.swift`, `Lexical/Features/Settings/SettingsView.swift` - remaining cross-screen visual consistency pass
+- [x] Explore-focused simulator verification (2026-02-10): `xcodebuild -scheme Lexical -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16e' -derivedDataPath build/derived_data build` (`BUILD SUCCEEDED`) + packaged app launch on simulator (`--lexical-debug-open-explore`) + screenshot capture (`/tmp/explore_redesign_elite_v3.png`) for visual parity check.
+- [ ] Full Phase 10B simulator verification notes for iPhone 16e covering portrait/landscape + accessibility configuration checks
 
 ---
 
@@ -398,8 +436,9 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 |-------|----------|------------------|-----------|
 | Phase 8 | ✅ Complete | - | Personalization, matrix/notification triage, and rank-aware filtering complete |
 | Phase 9 | ✅ Complete | - | Identity, calibration, dual-store migration, and CRDT replay complete |
-| Phase 10 | 🔴 Critical (Active) | 1 week | Wire landed services into runtime and complete adaptive prompting/generated-content lifecycle |
-| Phase 11 | 🟡 Medium | 1 week | Onboarding/accessibility/release preparation |
+| Phase 10 | ✅ Complete | - | Adaptive acquisition loop finalized with dedicated daily-root + notification triage services and simulator verification |
+| Phase 10B | 🔴 Critical (Active) | 1 week | UI refinement across design system, reader/review flows, and accessibility ergonomics |
+| Phase 11 | 🟡 Medium | 1 week | Onboarding/compliance/release packaging after UI refinement baseline |
 
 ---
 
@@ -416,6 +455,6 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 ---
 
 ## Next Steps
-1. Stabilize test infrastructure so `swift test` is green under host tooling (or run package tests on an iOS-compatible test destination with explicit availability strategy).
-2. Configure and validate Xcode scheme test action for repeatable simulator test execution from `xcodebuild`.
-3. Begin Phase 11 onboarding/accessibility/release-hardening work once test pipeline baseline is stable.
+1. Start Phase 10B UI refinement in this order: design tokens/glass system, Reader/Review flows, then cross-screen consistency pass.
+2. Run simulator QA sweeps (iPhone 16e portrait/landscape, Dynamic Type, VoiceOver, Reduce Motion/Transparency) and fold fixes into Phase 10B.
+3. Begin Phase 11 onboarding/compliance/release hardening once UI refinement baseline is stable.

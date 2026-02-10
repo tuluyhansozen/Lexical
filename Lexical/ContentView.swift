@@ -96,11 +96,13 @@ struct ContentView: View {
         }
 #if DEBUG
         .overlay(alignment: .topTrailing) {
-            DebugSeedOverlay(
-                wordCount: debugLexemeItems.count
-            )
-            .padding(.top, 12)
-            .padding(.trailing, 12)
+            if ProcessInfo.processInfo.arguments.contains("--lexical-debug-seed-overlay") {
+                DebugSeedOverlay(
+                    wordCount: debugLexemeItems.count
+                )
+                .padding(.top, 12)
+                .padding(.trailing, 12)
+            }
         }
 #endif
         .onOpenURL { url in
@@ -116,6 +118,9 @@ struct ContentView: View {
         }
 #if DEBUG
         .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("--lexical-debug-open-explore") {
+                selectedTab = 1
+            }
             guard !didAutoCycle else { return }
             guard ProcessInfo.processInfo.arguments.contains("--lexical-debug-autocycle") else { return }
             didAutoCycle = true

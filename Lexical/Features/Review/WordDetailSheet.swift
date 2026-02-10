@@ -38,7 +38,6 @@ enum WordDetailDataBuilder {
             if sentenceSet.insert(normalized.lowercased()).inserted {
                 sentences.append(normalized)
             }
-            if sentences.count >= 3 { break }
         }
 
         let synonyms = sanitizeSynonyms(seed?.synonyms ?? [])
@@ -177,6 +176,7 @@ final class PronunciationPlayer: ObservableObject {
 
 struct WordDetailSheet: View {
     let data: WordDetailData
+    var onAddToDeck: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var pronunciationPlayer = PronunciationPlayer()
@@ -189,6 +189,7 @@ struct WordDetailSheet: View {
                     definitionSection
                     sentencesSection
                     synonymsSection
+                    addToDeckSection
                 }
                 .padding(20)
             }
@@ -258,7 +259,7 @@ struct WordDetailSheet: View {
     }
 
     private var sentencesSection: some View {
-        detailCard(title: "Sentences") {
+        detailCard(title: "Examples") {
             if data.sentences.isEmpty {
                 Text("No sentence examples available.")
                     .font(.body)
@@ -272,6 +273,21 @@ struct WordDetailSheet: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var addToDeckSection: some View {
+        if let onAddToDeck {
+            Button(action: onAddToDeck) {
+                Label("Add to Deck", systemImage: "plus.circle.fill")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.sonPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
             }
         }
     }

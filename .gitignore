@@ -28,7 +28,12 @@ test.swift
 test_bin
 validation_*.png
 simulator_verify*.png
+screenshot_*.png
+*.xcresult
+TestResults
 build.log
+design/**/screen.png
+design/**/code.html
 
 # Raw Data
 data/
