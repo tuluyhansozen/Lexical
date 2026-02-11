@@ -13,12 +13,20 @@ public enum GlassMaterial: Sendable {
 }
 
 /// A platform-safe blur container for iOS and macOS builds.
+/// The `spacing` parameter defines the morphing threshold (surface tension)
+/// for child elements within the container — per the Liquid Glass design system.
 public struct GlassEffectContainer<Content: View>: View {
     private let material: GlassMaterial
+    private let spacing: CGFloat
     private let content: Content
 
-    public init(material: GlassMaterial = .ultraThin, @ViewBuilder content: () -> Content) {
+    public init(
+        material: GlassMaterial = .ultraThin,
+        spacing: CGFloat = 20.0,
+        @ViewBuilder content: () -> Content
+    ) {
         self.material = material
+        self.spacing = spacing
         self.content = content()
     }
 
