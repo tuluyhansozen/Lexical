@@ -27,35 +27,30 @@ struct ExploreView: View {
     }
 
     var body: some View {
-        TimelineView(.animation) { context in
-            let time = context.date.timeIntervalSinceReferenceDate
-            let tilt = CGPoint(x: sin(time * 0.5) * 0.5, y: cos(time * 0.3) * 0.5) // Simulated gentle tilt
+        ZStack {
+            Color(hex: "F5F5F7").ignoresSafeArea()
 
-            ZStack {
-                Color(hex: "F5F5F7").ignoresSafeArea()
-
-                VStack(spacing: 0) {
-                    headerView
-                    matrixView(time: time, tilt: tilt)
+            VStack(spacing: 0) {
+                headerView
+                matrixView
+            }
+        }
+        .safeAreaPadding(.bottom, 92)
+        .onAppear(perform: buildMatrix)
+        .onChange(of: roots.count) { buildMatrix() }
+        .onChange(of: lexemes.count) { buildMatrix() }
+        .onChange(of: userStates.count) { buildMatrix() }
+        .sheet(item: $infoData) { detail in
+            WordDetailSheet(
+                data: detail,
+                onAddToDeck: {
+                    addToDeck(lemma: detail.lemma, definition: detail.definition)
                 }
-            }
-            .safeAreaPadding(.bottom, 92)
-            .onAppear(perform: buildMatrix)
-            .onChange(of: roots.count) { buildMatrix() }
-            .onChange(of: lexemes.count) { buildMatrix() }
-            .onChange(of: userStates.count) { buildMatrix() }
-            .sheet(item: $infoData) { detail in
-                WordDetailSheet(
-                    data: detail,
-                    onAddToDeck: {
-                        addToDeck(lemma: detail.lemma, definition: detail.definition)
-                    }
-                )
-                .presentationDetents([.medium, .large])
-            }
-            .alert(item: $actionMessage) { message in
-                Alert(title: Text(message.title), message: Text(message.body), dismissButton: .default(Text("OK")))
-            }
+            )
+            .presentationDetents([.medium, .large])
+        }
+        .alert(item: $actionMessage) { message in
+            Alert(title: Text(message.title), message: Text(message.body), dismissButton: .default(Text("OK")))
         }
     }
 
@@ -75,37 +70,64 @@ struct ExploreView: View {
         .padding(.horizontal, 18 * headerScale)
     }
 
-    private func matrixView(time: TimeInterval, tilt: CGPoint) -> some View {
+    private var matrixView: some View {
         GeometryReader { geometry in
             let figmaScale = matrixScale(for: geometry.size)
             ZStack {
                 edgeLayer(in: geometry.size)
 
                 ForEach(nodes) { node in
-                    ExploreNodeBubbleView(
-                        node: node,
-                        isSelected: selectedNodeID == node.id,
-                        status: nodeStatusByID[node.id],
-                        reduceTransparency: reduceTransparency,
-                        rootMeaning: node.role == .root ? rootMeaning : nil,
-                        scale: figmaScale,
-                        time: time,
-                        tilt: tilt
-                    )
-                    .position(position(for: node, in: geometry.size))
-                    .onTapGesture {
-                        let card = reviewCard(for: node)
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
-                            selectedNodeID = node.id
-                        }
-                        infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
-                    }
+                    nodeButton(for: node, figmaScale: figmaScale, size: geometry.size)
                 }
             }
             .padding(.horizontal, 2)
             .padding(.bottom, 8)
         }
     }
+
+    private func nodeButton(for node: ExploreMatrixNode, figmaScale: CGFloat, size: CGSize) -> some View {
+        LiquidGlassButton(
+            style: node.role == .root ? .root : .leaf,
+            action: {
+                let card = reviewCard(for: node)
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                    selectedNodeID = node.id
+                }
+                infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+            }
+        ) {
+            if node.role == .root {
+                Text(node.label)
+                    .font(.system(size: 18 * figmaScale, weight: .semibold, design: .serif))
+                    .foregroundStyle(Color(hex: "0A0A0A"))
+            } else {
+                VStack(spacing: 2) {
+                    Text(node.label.capitalized)
+                        .font(.system(size: 9 * figmaScale, weight: .regular))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.62)
+                        .padding(.horizontal, 4)
+                }
+                .overlay(
+                    Group {
+                        if let status = nodeStatusByID[node.id], status.isLearned {
+                            Circle()
+                                .stroke(Color.green.opacity(0.6), lineWidth: 2)
+                                .frame(width: node.diameter * figmaScale + 6, height: node.diameter * figmaScale + 6)
+                        }
+                    }
+                )
+            }
+        }
+        .frame(width: node.diameter * figmaScale, height: node.diameter * figmaScale)
+        .scaleEffect(selectedNodeID == node.id ? 1.04 : 1)
+        .position(position(for: node, in: size))
+        .accessibilityLabel(node.label)
+        .accessibilityHint(node.role == .root ? (rootMeaning) : "Double tap for details")
+    }
+
 
     private func edgeLayer(in size: CGSize) -> some View {
         Canvas { context, _ in
@@ -357,344 +379,7 @@ private struct ExploreActionMessage: Identifiable {
     let body: String
 }
 
-private struct ExploreNodeBubbleView: View {
-    let node: ExploreMatrixNode
-    let isSelected: Bool
-    let status: UserWordStatus?
-    let reduceTransparency: Bool
-    let rootMeaning: String?
-    let scale: CGFloat
-    let time: TimeInterval
-    let tilt: CGPoint
 
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        ZStack {
-            if node.role == .root {
-                rootBubble
-            } else {
-                leafBubble
-            }
-        }
-        .scaleEffect(isSelected ? 1.04 : 1)
-        .shadow(
-            color: .black.opacity(colorScheme == .dark ? 0.32 : 0.18),
-            radius: isSelected ? 11 * scale : 8.5 * scale,
-            x: 0,
-            y: isSelected ? 7 * scale : 4.6 * scale
-        )
-        // Apply Metal Liquid Glass Shader (Elite Effect)
-        .layerEffect(
-            ShaderLibrary.liquid_glass_surface(
-                .float(time),
-                .float2(tilt)
-            ),
-            maxSampleOffset: .init(width: 20, height: 20),
-            isEnabled: !reduceTransparency && ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 17
-        )
-        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isSelected)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(accessibilityHint)
-    }
-
-    // MARK: - Root Bubble (Coral Liquid Glass)
-
-    private var rootBubble: some View {
-        let diameter = node.diameter * scale
-
-        return ZStack {
-            // Base glass layer
-            rootGlassBase
-
-            // Specular highlight — radial, centered top-left (Figma: inset 16 16 9 -18 white@0.5)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.white.opacity(reduceTransparency ? 0.15 : 0.38),
-                            .clear
-                        ],
-                        center: .init(x: 0.28, y: 0.22),
-                        startRadius: 0,
-                        endRadius: diameter * 0.55
-                    )
-                )
-
-            // Bottom-right vignette (Figma: inset -12 -12 9 -16 #B3B3B3@0.6)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color(hex: "B3B3B3").opacity(0.28),
-                            .clear
-                        ],
-                        center: .init(x: 0.72, y: 0.78),
-                        startRadius: 0,
-                        endRadius: diameter * 0.45
-                    )
-                )
-
-            // Inner glow (Figma: inset 0 0 22px rgba(242,242,242,0.5))
-            Circle()
-                .stroke(Color(hex: "F2F2F2").opacity(0.45), lineWidth: 10 * scale)
-                .blur(radius: 10 * scale)
-                .clipShape(Circle())
-
-            // Gradient border — white accent top-left fading to transparent bottom-right
-            Circle()
-                .strokeBorder(
-                    AngularGradient(
-                        colors: [
-                            Color.white.opacity(0.72),
-                            Color.white.opacity(0.48),
-                            Color.white.opacity(0.15),
-                            Color.white.opacity(0.08),
-                            Color.white.opacity(0.15),
-                            Color.white.opacity(0.72)
-                        ],
-                        center: .center,
-                        startAngle: .degrees(200),
-                        endAngle: .degrees(560)
-                    ),
-                    lineWidth: 1.2
-                )
-
-            // Labels
-            VStack(spacing: 2) {
-                Text(node.label)
-                    .font(.system(size: 14 * scale, weight: .bold))
-                    .foregroundStyle(.white)
-                    .minimumScaleFactor(0.75)
-                    .lineLimit(1)
-
-                Text("root")
-                    .font(.system(size: 7 * scale, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.92))
-                    .minimumScaleFactor(0.8)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 8)
-        }
-        .frame(width: diameter, height: diameter)
-    }
-
-    @ViewBuilder
-    private var rootGlassBase: some View {
-        if reduceTransparency {
-            // Accessibility: solid opaque coral
-            Circle().fill(Color(hex: "C94A55"))
-        } else if #available(iOS 26.0, *) {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "FF9AA5"),
-                            Color(hex: "F96A78"),
-                            Color(hex: "EE5563")
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .glassEffect(
-                    .regular
-                        .tint(Color(hex: "E85D6C").opacity(0.8))
-                        .interactive(),
-                    in: Circle()
-                )
-        } else {
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "FF9AA5"),
-                                Color(hex: "F96A78"),
-                                Color(hex: "EE5563")
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                Circle()
-                    .fill(Color(hex: "7B0002").opacity(0.35))
-                    .blendMode(.colorBurn)
-
-                Circle()
-                    .fill(.clear)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .opacity(0.35)
-            }
-        }
-    }
-
-    // MARK: - Leaf Bubble (Forest Green Liquid Glass)
-
-    private var leafBubble: some View {
-        let diameter = node.diameter * scale
-
-        return ZStack {
-            // Base glass layer
-            leafGlassBase
-
-            // Specular highlight — radial, top-left (dimmer than root)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.white.opacity(reduceTransparency ? 0.10 : 0.24),
-                            .clear
-                        ],
-                        center: .init(x: 0.28, y: 0.22),
-                        startRadius: 0,
-                        endRadius: diameter * 0.50
-                    )
-                )
-
-            // Bottom-right vignette (Figma: inset -12 -12 6 -14 #B3B3B3)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color(hex: "B3B3B3").opacity(0.22),
-                            .clear
-                        ],
-                        center: .init(x: 0.72, y: 0.78),
-                        startRadius: 0,
-                        endRadius: diameter * 0.40
-                    )
-                )
-
-            // Inner glow (Figma: inset 0 0 22px rgba(242,242,242,0.5))
-            Circle()
-                .stroke(Color(hex: "F2F2F2").opacity(0.35), lineWidth: 8 * scale)
-                .blur(radius: 8 * scale)
-                .clipShape(Circle())
-
-            // Gradient border — angular white accent
-            Circle()
-                .strokeBorder(
-                    AngularGradient(
-                        colors: [
-                            Color.white.opacity(0.50),
-                            Color.white.opacity(0.28),
-                            Color.white.opacity(0.08),
-                            Color.white.opacity(0.05),
-                            Color.white.opacity(0.10),
-                            Color.white.opacity(0.50)
-                        ],
-                        center: .center,
-                        startAngle: .degrees(200),
-                        endAngle: .degrees(560)
-                    ),
-                    lineWidth: 1.0
-                )
-
-            // Selected state — outer ring
-            if isSelected {
-                Circle()
-                    .stroke(Color.white.opacity(0.58), lineWidth: 1.8)
-                    .padding(-2.5)
-            }
-
-            // Label
-            Text(node.label)
-                .font(.system(size: 9 * scale, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.95))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.62)
-                .padding(.horizontal, 8)
-        }
-        .frame(width: diameter, height: diameter)
-    }
-
-    @ViewBuilder
-    private var leafGlassBase: some View {
-        if reduceTransparency {
-            // Accessibility: solid opaque forest green
-            Circle().fill(Color(hex: "2B4735"))
-        } else if #available(iOS 26.0, *) {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "5A765F"),
-                            Color(hex: "36513F"),
-                            Color(hex: "24392C")
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .glassEffect(
-                    .regular
-                        .tint(Color(hex: "2B4735").opacity(0.75))
-                        .interactive(),
-                    in: Circle()
-                )
-        } else {
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "5A765F"),
-                                Color(hex: "36513F"),
-                                Color(hex: "24392C")
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                Circle()
-                    .fill(Color(hex: "021105").opacity(0.45))
-                    .blendMode(.colorBurn)
-
-                Circle()
-                    .fill(.clear)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .opacity(0.28)
-            }
-        }
-    }
-
-    private var accessibilityLabel: String {
-        if node.role == .root {
-            return "\(node.label), root node"
-        }
-
-        if let status {
-            let statusText: String
-            switch status {
-            case .new:
-                statusText = "new"
-            case .learning:
-                statusText = "learning"
-            case .known:
-                statusText = "known"
-            case .ignored:
-                statusText = "ignored"
-            }
-            return "\(node.label), \(statusText)"
-        }
-
-        return node.label
-    }
-
-    private var accessibilityHint: String {
-        if node.role == .root, let rootMeaning, !rootMeaning.isEmpty {
-            return rootMeaning
-        }
-        return "Double tap to focus this matrix node."
-    }
-}
 
 private extension Array {
     subscript(safe index: Int) -> Element? {

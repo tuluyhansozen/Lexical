@@ -28,11 +28,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 struct LexicalApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var banditScheduler = BanditScheduler.shared
+    @StateObject private var motionService = MotionService()
     
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(banditScheduler)
+                .environmentObject(motionService)
         }
         .modelContainer(Persistence.sharedModelContainer)
     }

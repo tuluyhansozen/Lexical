@@ -6,6 +6,10 @@ public enum UserWordStatus: String, Codable, CaseIterable {
     case learning
     case known
     case ignored
+    
+    public var isLearned: Bool {
+        self == .known
+    }
 }
 
 /// Mutable per-user lexical state (FSRS shadow) separated from canonical lexeme data.

@@ -25,12 +25,14 @@ float random(float2 st) {
     SwiftUI::Layer layer,
     float4 bounds,
     float time,
-    float2 motionTilt // x: roll, y: pitch (optional, defaults to 0)
+    float2 motionTilt, // x: roll, y: pitch (optional, defaults to 0)
+    float2 touchPoint, // normalized UV (0..1) of touch
+    float touchStrength // 0..1 intensity of ripple
 ) {
     // 1. Normalized UV coordinates (0..1)
     float2 uv = position / bounds.zw;
     
-    // 2. Surface Undulation (Breathing)
+    // 2. Surface Undulation (Breathing + Ripple)
     // Create a radial wave from the center
     float2 center = float2(0.5, 0.5);
     float dist = distance(uv, center);
@@ -44,6 +46,13 @@ float random(float2 st) {
     // Add time-based surface noise (liquid wobble)
     float wobble = sin(dist * 10.0 - time * 1.5) * 0.02;
     normal.xy += wobble;
+    
+    // Add Touch Ripple
+    // Radial wave from touch point
+    float touchDist = distance(uv, touchPoint);
+    // Propagate wave outwards
+    float ripple = sin(touchDist * 30.0 - time * 15.0) * exp(-touchDist * 4.0) * touchStrength;
+    normal.xy += (uv - touchPoint) * ripple * 2.0;
     
     // Add device tilt (parallax)
     normal.xy += motionTilt * 0.5;
