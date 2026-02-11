@@ -27,15 +27,18 @@ public struct ReviewWriteCoordinator {
 
     private let promotionEngine: RankPromotionEngine
     private let fsrsEngine: FSRSV4Engine
+    private let featureGateService: FeatureGateService
     private let calendar: Calendar
 
     public init(
         promotionEngine: RankPromotionEngine = .init(),
         fsrsEngine: FSRSV4Engine = .init(),
+        featureGateService: FeatureGateService = .init(),
         calendar: Calendar = .current
     ) {
         self.promotionEngine = promotionEngine
         self.fsrsEngine = fsrsEngine
+        self.featureGateService = featureGateService
         self.calendar = calendar
     }
 
@@ -75,7 +78,13 @@ public struct ReviewWriteCoordinator {
         let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         let userId = profile.userId
         let state = try resolveState(userId: userId, lemma: normalizedLemma, modelContext: modelContext)
-        let transition = await explicitTransition(grade: grade, state: state, now: now)
+        let requestRetention = featureGateService.fsrsRequestRetention(for: profile)
+        let transition = await explicitTransition(
+            grade: grade,
+            state: state,
+            now: now,
+            requestRetention: requestRetention
+        )
 
         let explicitEvent = ReviewEvent(
             userId: userId,
@@ -304,7 +313,8 @@ public struct ReviewWriteCoordinator {
     private func explicitTransition(
         grade: Int,
         state: UserWordState,
-        now: Date
+        now: Date,
+        requestRetention: Double
     ) async -> ExplicitTransition {
         let baseDate = state.lastReviewDate ?? state.createdAt
         let daysElapsed = max(0.1, now.timeIntervalSince(baseDate) / 86_400.0)
@@ -321,7 +331,10 @@ public struct ReviewWriteCoordinator {
 
         let stability = max(fsrsState.stability, 0.1)
         let intervalDays = max(
-            await fsrsEngine.nextInterval(stability: stability, requestRetention: 0.9),
+            await fsrsEngine.nextInterval(
+                stability: stability,
+                requestRetention: max(0.8, min(0.98, requestRetention))
+            ),
             0.1
         )
 

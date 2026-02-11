@@ -13,6 +13,8 @@ class SessionManager: ObservableObject {
     private let modelContext: ModelContext
     private let fsrsEngine: FSRSV4Engine
     private let reviewCoordinator: ReviewWriteCoordinator
+    private let featureGateService: FeatureGateService
+    private var requestRetentionTarget: Double = 0.9
 
     // Track streaks for Brain Boost (consecutive successes in this session).
     @Published var sessionStreaks: [String: Int] = [:]
@@ -20,6 +22,7 @@ class SessionManager: ObservableObject {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         self.fsrsEngine = FSRSV4Engine()
+        self.featureGateService = FeatureGateService()
         self.reviewCoordinator = ReviewWriteCoordinator()
     }
 
@@ -27,6 +30,7 @@ class SessionManager: ObservableObject {
     func startSession() {
         do {
             let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+            requestRetentionTarget = featureGateService.fsrsRequestRetention(for: activeProfile)
             let dueCards = try dueCardsFromUserState(userId: activeProfile.userId)
 
             if dueCards.isEmpty {
@@ -210,7 +214,7 @@ class SessionManager: ObservableObject {
         )
         return await fsrsEngine.nextInterval(
             stability: max(transition.stability, 0.1),
-            requestRetention: 0.9
+            requestRetention: requestRetentionTarget
         )
     }
 

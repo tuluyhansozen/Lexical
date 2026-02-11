@@ -104,6 +104,12 @@ final class SyncConflictResolverTests: XCTestCase {
                     ignoredWords: ["ad"],
                     easyRatingVelocity: 0.2,
                     cycleCount: 1,
+                    subscriptionTierRawValue: SubscriptionTier.free.rawValue,
+                    entitlementSourceRawValue: EntitlementSource.localCache.rawValue,
+                    entitlementUpdatedAt: t500,
+                    entitlementExpiresAt: nil,
+                    fsrsParameterModeRawValue: FSRSParameterMode.standard.rawValue,
+                    fsrsRequestRetention: 0.9,
                     stateUpdatedAt: t500,
                     createdAt: t050
                 )
@@ -177,6 +183,12 @@ final class SyncConflictResolverTests: XCTestCase {
                     ignoredWords: ["noise"],
                     easyRatingVelocity: 0.4,
                     cycleCount: 2,
+                    subscriptionTierRawValue: SubscriptionTier.premium.rawValue,
+                    entitlementSourceRawValue: EntitlementSource.appStore.rawValue,
+                    entitlementUpdatedAt: t500,
+                    entitlementExpiresAt: date(900),
+                    fsrsParameterModeRawValue: FSRSParameterMode.personalized.rawValue,
+                    fsrsRequestRetention: 0.93,
                     stateUpdatedAt: t500,
                     createdAt: t070
                 )

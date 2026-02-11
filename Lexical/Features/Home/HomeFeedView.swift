@@ -6,6 +6,10 @@ struct HomeFeedView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = ArticlesViewModel()
     @Query private var interestProfiles: [InterestProfile]
+    @State private var articleQuotaLabel: String?
+    @State private var generationLimitMessage: String?
+
+    private let featureGateService = FeatureGateService()
     
     var body: some View {
         ZStack(alignment: .top) {
@@ -38,7 +42,9 @@ struct HomeFeedView: View {
                         } else {
                             // "Load More" / Generate trigger at bottom
                             Button {
-                                triggerGeneration()
+                                Task { @MainActor in
+                                    await triggerGeneration()
+                                }
                             } label: {
                                 Text("Generate New Article")
                                     .font(.subheadline)
@@ -49,6 +55,13 @@ struct HomeFeedView: View {
                                     .clipShape(Capsule())
                             }
                             .padding(.vertical, 20)
+
+                            if let articleQuotaLabel {
+                                Text(articleQuotaLabel)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
                         }
                         
                         // Bottom spacer for Tab Bar
@@ -61,6 +74,7 @@ struct HomeFeedView: View {
             .scrollIndicators(.hidden)
             .refreshable {
                 viewModel.loadArticles()
+                refreshArticleQuotaLabel()
             }
             
             // Sticky Header
@@ -111,6 +125,22 @@ struct HomeFeedView: View {
         }
         .onAppear {
             viewModel.loadArticles()
+            refreshArticleQuotaLabel()
+        }
+        .alert(
+            "Weekly Article Limit Reached",
+            isPresented: Binding(
+                get: { generationLimitMessage != nil },
+                set: { presented in
+                    if !presented {
+                        generationLimitMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(generationLimitMessage ?? "Free plan limit reached.")
         }
     }
     
@@ -128,7 +158,9 @@ struct HomeFeedView: View {
                 .foregroundStyle(.secondary)
             
             Button {
-                triggerGeneration()
+                Task { @MainActor in
+                    await triggerGeneration()
+                }
             } label: {
                 Text("Generate First Article")
                     .fontWeight(.bold)
@@ -145,10 +177,29 @@ struct HomeFeedView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
     
-    private func triggerGeneration() {
+    @MainActor
+    private func triggerGeneration() async {
         // Create a temporary profile if one doesn't exist (though SettingsView ensures it does)
         let profile = interestProfiles.first ?? InterestProfile(selectedTags: ["Technology"])
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+
+        do {
+            let canGenerate = try featureGateService.canGenerateArticle(
+                for: activeProfile,
+                modelContext: modelContext
+            )
+            guard canGenerate else {
+                let snapshot = try featureGateService.articleQuotaSnapshot(
+                    for: activeProfile,
+                    modelContext: modelContext
+                )
+                generationLimitMessage = articleLimitMessage(from: snapshot)
+                refreshArticleQuotaLabel()
+                return
+            }
+        } catch {
+            print("HomeFeedView: failed to evaluate article quota: \(error)")
+        }
 
         let targetService = LexicalTargetingService()
         let targets = targetService.articleTargets(modelContext: modelContext, maxCount: 6)
@@ -158,10 +209,56 @@ struct HomeFeedView: View {
             easyRatingVelocity: activeProfile.easyRatingVelocity
         )
 
-        viewModel.generateNewArticle(
+        let generated = await viewModel.generateNewArticle(
             profile: profile,
             targetWords: targets.isEmpty ? fallbackTargets : targets,
             adaptiveContext: adaptiveContext
         )
+
+        guard generated else { return }
+
+        do {
+            _ = try featureGateService.recordArticleGeneration(
+                for: activeProfile,
+                modelContext: modelContext
+            )
+        } catch {
+            print("HomeFeedView: failed to record article usage: \(error)")
+        }
+        refreshArticleQuotaLabel()
+    }
+
+    @MainActor
+    private func refreshArticleQuotaLabel() {
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        do {
+            let snapshot = try featureGateService.articleQuotaSnapshot(
+                for: activeProfile,
+                modelContext: modelContext
+            )
+            if snapshot.isUnlimited {
+                articleQuotaLabel = "Premium plan: Unlimited article generation."
+            } else {
+                let limit = snapshot.limit ?? FeatureGateService.freeArticleLimitPerWindow
+                if let windowEnd = snapshot.windowEnd {
+                    articleQuotaLabel = "Free plan: \(snapshot.remaining)/\(limit) weekly article remaining. Resets \(windowEnd.formatted(date: .abbreviated, time: .omitted))."
+                } else {
+                    articleQuotaLabel = "Free plan: \(snapshot.remaining)/\(limit) weekly article remaining."
+                }
+            }
+        } catch {
+            articleQuotaLabel = nil
+        }
+    }
+
+    private func articleLimitMessage(from snapshot: ArticleGenerationQuotaSnapshot) -> String {
+        guard !snapshot.isUnlimited else {
+            return "Your premium plan has unlimited article generation."
+        }
+
+        if let windowEnd = snapshot.windowEnd {
+            return "Free plan limit reached: 1 article per 7 days. Next reset: \(windowEnd.formatted(date: .abbreviated, time: .omitted))."
+        }
+        return "Free plan limit reached: 1 article per 7 days."
     }
 }

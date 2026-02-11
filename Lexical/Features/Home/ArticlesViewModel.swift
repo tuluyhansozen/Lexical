@@ -23,27 +23,28 @@ public class ArticlesViewModel: ObservableObject {
         }
     }
     
+    @discardableResult
     public func generateNewArticle(
         profile: InterestProfile,
         targetWords: [String],
         adaptiveContext: AdaptivePromptContext? = nil
-    ) {
-        guard !isGenerating else { return }
+    ) async -> Bool {
+        guard !isGenerating else { return false }
         isGenerating = true
-        
-        Task {
-            do {
-                let article = try await generator.generateArticle(
-                    profile: profile,
-                    targetWords: targetWords,
-                    adaptiveContext: adaptiveContext
-                )
-                self.articles.insert(article, at: 0)
-                isGenerating = false
-            } catch {
-                print("Failed to generate article: \(error)")
-                isGenerating = false
-            }
+
+        do {
+            let article = try await generator.generateArticle(
+                profile: profile,
+                targetWords: targetWords,
+                adaptiveContext: adaptiveContext
+            )
+            self.articles.insert(article, at: 0)
+            isGenerating = false
+            return true
+        } catch {
+            print("Failed to generate article: \(error)")
+            isGenerating = false
+            return false
         }
     }
 }

@@ -6,7 +6,7 @@ public struct Persistence {
     public static let appGroupIdentifier = "group.com.lexical.Lexical"
     
     public static var sharedModelContainer: ModelContainer = {
-        let schema = Schema(LexicalSchemaV4.models)
+        let schema = Schema(LexicalSchemaV5.models)
 
         let modelConfiguration: ModelConfiguration
         

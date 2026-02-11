@@ -1,8 +1,8 @@
 # Lexical App: Project Implementation Plan
 
 > **Generated:** 2026-01-31
-> **Last Updated:** 2026-02-10
-> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Planned
+> **Last Updated:** 2026-02-11
+> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Active | Monetization Phase Active
 
 ---
 
@@ -407,6 +407,48 @@ Refine end-to-end interface quality and interaction ergonomics using the Liquid 
 
 ---
 
+## Phase 10C: Free & Premium Monetization (StoreKit 2)
+
+**Status:** 🟡 In Progress (tier policy ratified on 2026-02-11)
+
+### Section 1: Objective
+Ship a production-ready Free/Premium model that follows StoreKit 2 best practices, preserves offline-first behavior, and keeps the core learning loop usable for free users while clearly monetizing premium value.
+
+### Section 2: Key Activities
+- **10C.1 Tier Contract + Product Catalog**
+Define a canonical Free vs Premium capability matrix and map each premium capability to explicit StoreKit product IDs (single subscription group, intro/trial policy, upgrade/downgrade behavior).
+- **10C.1A Ratified Baseline Limits (2026-02-11)**
+Enforce Free = 1 generated article per 7-day window, 1 active widget profile, and standard/global FSRS parameters; Premium = unlimited article generation, unlimited widget profiles, and personalized FSRS parameters.
+- **10C.2 Entitlement Engine (StoreKit 2, Context7-aligned)**
+Implement a single entitlement service that loads products with `Product.products(for:)`, handles purchase results (`success`, `pending`, `userCancelled`), observes `Transaction.updates` for live changes, bootstraps access from current entitlements on app launch, processes only verified transactions, and calls `transaction.finish()` after durable processing.
+- **10C.3 Subscription Lifecycle Handling**
+Evaluate entitlement state with transaction + subscription metadata (`revocationDate`, `expirationDate`, `Product.SubscriptionInfo.Status`, renewal info including billing-retry/expiration signals) so the app correctly handles expired, revoked, grace-period, and billing-retry scenarios.
+- **10C.4 Restore + Account Recovery Flow**
+Provide a visible `Restore Purchases` action that calls `AppStore.sync()` only as a user-initiated operation; avoid background/automatic sync abuse and keep normal entitlement refresh passive.
+- **10C.5 Offline Persistence + Cross-Device Consistency**
+Persist a last-known entitlement snapshot locally for offline reads, add premium fields to `UserProfile`, migrate schema safely, and sync entitlement state with existing LWW merge strategy in CloudKit/CRDT flows.
+- **10C.6 Centralized Feature Gating**
+Add a single gate resolver used by Home generation quotas, Stats depth, and premium settings/tools so access logic is deterministic, testable, and not scattered across views.
+- **10C.7 Upgrade Surfaces + Merchandising**
+Use StoreKit views (`SubscriptionStoreView`/`SubscriptionOfferView`) for compliant subscription merchandising, and add contextual upgrade intercepts at premium entry points with graceful fallback UI.
+- **10C.8 Test, Telemetry, and Rollout Safety**
+Create deterministic StoreKit test scenarios (`.storekit` + `SKTestSession`) for purchase/renewal/expire/revoke/restore paths, add entitlement telemetry events, and gate release behind simulator + device verification checklist.
+
+### Section 3: Deliverables
+- [x] `docs/free_premium_matrix.md` - canonical Free vs Premium capability matrix and gating rules
+- [ ] `LexicalCore/Services/SubscriptionEntitlementService.swift` - single source of truth for product load, purchase, `Transaction.updates`, verification, entitlement computation, and restore orchestration
+- [ ] `LexicalCore/Models/UserProfile.swift` + `LexicalCore/Services/LexicalSchemaMigration.swift` - premium entitlement fields (`tier`, entitlement timestamp/source, expiration marker) with non-destructive migration
+- [ ] `LexicalCore/Services/CloudKitSyncManager.swift` + `LexicalCore/Services/SyncConflictResolver.swift` - entitlement payload sync and LWW merge rules for cross-device convergence
+- [x] `LexicalCore/Services/FeatureGateService.swift` - centralized free/premium capability resolver consumed by app features
+- [ ] `Lexical/Features/Settings/SettingsView.swift` + `Lexical/Features/Home/HomeFeedView.swift` + `Lexical/Features/Dashboard/StatsView.swift` - gated experiences, usage limits, and upgrade entry points
+- [ ] `Lexical/Features/Monetization/PremiumOfferView.swift` - dedicated upgrade surface using StoreKit subscription merchandising views
+- [ ] `Lexical/Resources/StoreKit/Lexical.storekit` - local StoreKit configuration for deterministic simulator testing
+- [x] `LexicalCoreTests/FeatureGateServiceTests.swift` - weekly article limit, widget cap, and premium FSRS mode coverage
+- [ ] `LexicalCoreTests/SubscriptionEntitlementServiceTests.swift` + `LexicalCoreTests/SyncConflictResolverTests.swift` + `LexicalCoreTests/FeatureGateServiceTests.swift` - entitlement lifecycle, merge determinism, and gate enforcement coverage
+- [ ] Phase exit checks documented: verified purchase flow, pending flow, cancel flow, restore flow, expiration/revocation handling, billing-retry behavior, and offline entitlement continuity
+
+---
+
 ## Phase 11: Production Polish & App Store Release
 
 **Status:** 🔲 Not Started
@@ -438,7 +480,8 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 | Phase 9 | ✅ Complete | - | Identity, calibration, dual-store migration, and CRDT replay complete |
 | Phase 10 | ✅ Complete | - | Adaptive acquisition loop finalized with dedicated daily-root + notification triage services and simulator verification |
 | Phase 10B | 🔴 Critical (Active) | 1 week | UI refinement across design system, reader/review flows, and accessibility ergonomics |
-| Phase 11 | 🟡 Medium | 1 week | Onboarding/compliance/release packaging after UI refinement baseline |
+| Phase 10C | 🔴 Critical (Active) | 1 week | Free/Premium monetization rollout with StoreKit 2, entitlement sync, and feature gates |
+| Phase 11 | 🟡 Medium | 1 week | Onboarding/compliance/release packaging after UI + monetization baselines |
 
 ---
 
@@ -457,4 +500,5 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 ## Next Steps
 1. Start Phase 10B UI refinement in this order: design tokens/glass system, Reader/Review flows, then cross-screen consistency pass.
 2. Run simulator QA sweeps (iPhone 16e portrait/landscape, Dynamic Type, VoiceOver, Reduce Motion/Transparency) and fold fixes into Phase 10B.
-3. Begin Phase 11 onboarding/compliance/release hardening once UI refinement baseline is stable.
+3. Continue Phase 10C monetization implementation: StoreKit service integration, entitlement sync model updates, and feature-gate wiring.
+4. Begin Phase 11 onboarding/compliance/release hardening once UI + monetization baselines are stable.

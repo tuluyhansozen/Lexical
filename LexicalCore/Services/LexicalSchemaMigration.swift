@@ -63,13 +63,31 @@ public enum LexicalSchemaV4: VersionedSchema {
     }
 }
 
+public enum LexicalSchemaV5: VersionedSchema {
+    public static var versionIdentifier: Schema.Version { .init(5, 0, 0) }
+
+    public static var models: [any PersistentModel.Type] {
+        [
+            LexemeDefinition.self,
+            UserWordState.self,
+            ReviewEvent.self,
+            InterestProfile.self,
+            MorphologicalRoot.self,
+            UserProfile.self,
+            GeneratedContent.self,
+            UsageLedger.self,
+        ]
+    }
+}
+
 public enum LexicalMigrationPlan: SchemaMigrationPlan {
     public static var schemas: [any VersionedSchema.Type] {
         [
             LexicalSchemaV1.self,
             LexicalSchemaV2.self,
             LexicalSchemaV3.self,
-            LexicalSchemaV4.self
+            LexicalSchemaV4.self,
+            LexicalSchemaV5.self
         ]
     }
 
@@ -90,6 +108,10 @@ public enum LexicalMigrationPlan: SchemaMigrationPlan {
             .lightweight(
                 fromVersion: LexicalSchemaV3.self,
                 toVersion: LexicalSchemaV4.self
+            ),
+            .lightweight(
+                fromVersion: LexicalSchemaV4.self,
+                toVersion: LexicalSchemaV5.self
             ),
         ]
     }

@@ -419,6 +419,12 @@ public actor CloudKitSyncManager {
             profile.ignoredWords = payload.ignoredWords
             profile.easyRatingVelocity = payload.easyRatingVelocity
             profile.cycleCount = payload.cycleCount
+            profile.subscriptionTierRawValue = payload.subscriptionTierRawValue
+            profile.entitlementSourceRawValue = payload.entitlementSourceRawValue
+            profile.entitlementUpdatedAt = payload.entitlementUpdatedAt
+            profile.entitlementExpiresAt = payload.entitlementExpiresAt
+            profile.fsrsParameterModeRawValue = payload.fsrsParameterModeRawValue
+            profile.fsrsRequestRetention = payload.fsrsRequestRetention
             profile.stateUpdatedAt = payload.stateUpdatedAt
         }
     }

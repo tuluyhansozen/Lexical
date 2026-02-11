@@ -126,6 +126,12 @@ public struct SyncUserProfile: Codable, Hashable, Sendable {
     public var ignoredWords: [String]
     public var easyRatingVelocity: Double
     public var cycleCount: Int
+    public var subscriptionTierRawValue: String
+    public var entitlementSourceRawValue: String
+    public var entitlementUpdatedAt: Date
+    public var entitlementExpiresAt: Date?
+    public var fsrsParameterModeRawValue: String
+    public var fsrsRequestRetention: Double
     public var stateUpdatedAt: Date
     public var createdAt: Date
 
@@ -138,6 +144,12 @@ public struct SyncUserProfile: Codable, Hashable, Sendable {
         ignoredWords: [String],
         easyRatingVelocity: Double,
         cycleCount: Int,
+        subscriptionTierRawValue: String,
+        entitlementSourceRawValue: String,
+        entitlementUpdatedAt: Date,
+        entitlementExpiresAt: Date?,
+        fsrsParameterModeRawValue: String,
+        fsrsRequestRetention: Double,
         stateUpdatedAt: Date,
         createdAt: Date
     ) {
@@ -149,6 +161,12 @@ public struct SyncUserProfile: Codable, Hashable, Sendable {
         self.ignoredWords = ignoredWords
         self.easyRatingVelocity = easyRatingVelocity
         self.cycleCount = cycleCount
+        self.subscriptionTierRawValue = subscriptionTierRawValue
+        self.entitlementSourceRawValue = entitlementSourceRawValue
+        self.entitlementUpdatedAt = entitlementUpdatedAt
+        self.entitlementExpiresAt = entitlementExpiresAt
+        self.fsrsParameterModeRawValue = fsrsParameterModeRawValue
+        self.fsrsRequestRetention = fsrsRequestRetention
         self.stateUpdatedAt = stateUpdatedAt
         self.createdAt = createdAt
     }
@@ -162,8 +180,81 @@ public struct SyncUserProfile: Codable, Hashable, Sendable {
         self.ignoredWords = profile.ignoredWords
         self.easyRatingVelocity = profile.easyRatingVelocity
         self.cycleCount = profile.cycleCount
+        self.subscriptionTierRawValue = profile.subscriptionTierRawValue
+        self.entitlementSourceRawValue = profile.entitlementSourceRawValue
+        self.entitlementUpdatedAt = profile.entitlementUpdatedAt
+        self.entitlementExpiresAt = profile.entitlementExpiresAt
+        self.fsrsParameterModeRawValue = profile.fsrsParameterModeRawValue
+        self.fsrsRequestRetention = profile.fsrsRequestRetention
         self.stateUpdatedAt = profile.stateUpdatedAt
         self.createdAt = profile.createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case userId
+        case displayName
+        case emailRelay
+        case lexicalRank
+        case interestVector
+        case ignoredWords
+        case easyRatingVelocity
+        case cycleCount
+        case subscriptionTierRawValue
+        case entitlementSourceRawValue
+        case entitlementUpdatedAt
+        case entitlementExpiresAt
+        case fsrsParameterModeRawValue
+        case fsrsRequestRetention
+        case stateUpdatedAt
+        case createdAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        self.userId = try container.decode(String.self, forKey: .userId)
+        self.displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+        self.emailRelay = try container.decodeIfPresent(String.self, forKey: .emailRelay)
+        self.lexicalRank = try container.decode(Int.self, forKey: .lexicalRank)
+        self.interestVector = try container.decodeIfPresent([String: Double].self, forKey: .interestVector) ?? [:]
+        self.ignoredWords = try container.decodeIfPresent([String].self, forKey: .ignoredWords) ?? []
+        self.easyRatingVelocity = try container.decodeIfPresent(Double.self, forKey: .easyRatingVelocity) ?? 0.0
+        self.cycleCount = try container.decodeIfPresent(Int.self, forKey: .cycleCount) ?? 0
+        self.stateUpdatedAt = try container.decodeIfPresent(Date.self, forKey: .stateUpdatedAt) ?? Date()
+        self.createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? stateUpdatedAt
+
+        // Backward-compatible defaults for payloads written before monetization fields existed.
+        self.subscriptionTierRawValue = try container.decodeIfPresent(String.self, forKey: .subscriptionTierRawValue)
+            ?? SubscriptionTier.free.rawValue
+        self.entitlementSourceRawValue = try container.decodeIfPresent(String.self, forKey: .entitlementSourceRawValue)
+            ?? EntitlementSource.localCache.rawValue
+        self.entitlementUpdatedAt = try container.decodeIfPresent(Date.self, forKey: .entitlementUpdatedAt)
+            ?? stateUpdatedAt
+        self.entitlementExpiresAt = try container.decodeIfPresent(Date.self, forKey: .entitlementExpiresAt)
+        self.fsrsParameterModeRawValue = try container.decodeIfPresent(String.self, forKey: .fsrsParameterModeRawValue)
+            ?? FSRSParameterMode.standard.rawValue
+        self.fsrsRequestRetention = try container.decodeIfPresent(Double.self, forKey: .fsrsRequestRetention)
+            ?? 0.9
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(userId, forKey: .userId)
+        try container.encodeIfPresent(displayName, forKey: .displayName)
+        try container.encodeIfPresent(emailRelay, forKey: .emailRelay)
+        try container.encode(lexicalRank, forKey: .lexicalRank)
+        try container.encode(interestVector, forKey: .interestVector)
+        try container.encode(ignoredWords, forKey: .ignoredWords)
+        try container.encode(easyRatingVelocity, forKey: .easyRatingVelocity)
+        try container.encode(cycleCount, forKey: .cycleCount)
+        try container.encode(subscriptionTierRawValue, forKey: .subscriptionTierRawValue)
+        try container.encode(entitlementSourceRawValue, forKey: .entitlementSourceRawValue)
+        try container.encode(entitlementUpdatedAt, forKey: .entitlementUpdatedAt)
+        try container.encodeIfPresent(entitlementExpiresAt, forKey: .entitlementExpiresAt)
+        try container.encode(fsrsParameterModeRawValue, forKey: .fsrsParameterModeRawValue)
+        try container.encode(fsrsRequestRetention, forKey: .fsrsRequestRetention)
+        try container.encode(stateUpdatedAt, forKey: .stateUpdatedAt)
+        try container.encode(createdAt, forKey: .createdAt)
     }
 }
 
@@ -305,6 +396,12 @@ public actor SyncConflictResolver {
                 ignoredWords: mergedIgnored,
                 easyRatingVelocity: max(local.easyRatingVelocity, remote.easyRatingVelocity),
                 cycleCount: max(local.cycleCount, remote.cycleCount),
+                subscriptionTierRawValue: mergedSubscriptionTierRawValue(local: local, remote: remote),
+                entitlementSourceRawValue: maxString(local.entitlementSourceRawValue, remote.entitlementSourceRawValue) ?? EntitlementSource.localCache.rawValue,
+                entitlementUpdatedAt: max(local.entitlementUpdatedAt, remote.entitlementUpdatedAt),
+                entitlementExpiresAt: maxDate(local.entitlementExpiresAt, remote.entitlementExpiresAt),
+                fsrsParameterModeRawValue: mergedFSRSParameterModeRawValue(local: local, remote: remote),
+                fsrsRequestRetention: max(local.fsrsRequestRetention, remote.fsrsRequestRetention),
                 stateUpdatedAt: local.stateUpdatedAt,
                 createdAt: min(local.createdAt, remote.createdAt)
             )
@@ -330,6 +427,12 @@ public actor SyncConflictResolver {
             ignoredWords: mergedIgnored,
             easyRatingVelocity: winner.easyRatingVelocity,
             cycleCount: winner.cycleCount,
+            subscriptionTierRawValue: winner.subscriptionTierRawValue,
+            entitlementSourceRawValue: winner.entitlementSourceRawValue,
+            entitlementUpdatedAt: winner.entitlementUpdatedAt,
+            entitlementExpiresAt: winner.entitlementExpiresAt,
+            fsrsParameterModeRawValue: winner.fsrsParameterModeRawValue,
+            fsrsRequestRetention: winner.fsrsRequestRetention,
             stateUpdatedAt: max(local.stateUpdatedAt, remote.stateUpdatedAt),
             createdAt: min(local.createdAt, remote.createdAt)
         )
@@ -538,6 +641,32 @@ public actor SyncConflictResolver {
         case .learning: return 1
         case .known: return 2
         case .ignored: return 3
+        }
+    }
+
+    private func mergedSubscriptionTierRawValue(local: SyncUserProfile, remote: SyncUserProfile) -> String {
+        let localTier = SubscriptionTier(rawValue: local.subscriptionTierRawValue) ?? .free
+        let remoteTier = SubscriptionTier(rawValue: remote.subscriptionTierRawValue) ?? .free
+        return tierPriority(localTier) >= tierPriority(remoteTier) ? localTier.rawValue : remoteTier.rawValue
+    }
+
+    private func tierPriority(_ tier: SubscriptionTier) -> Int {
+        switch tier {
+        case .free: return 0
+        case .premium: return 1
+        }
+    }
+
+    private func mergedFSRSParameterModeRawValue(local: SyncUserProfile, remote: SyncUserProfile) -> String {
+        let localMode = FSRSParameterMode(rawValue: local.fsrsParameterModeRawValue) ?? .standard
+        let remoteMode = FSRSParameterMode(rawValue: remote.fsrsParameterModeRawValue) ?? .standard
+        return fsrsModePriority(localMode) >= fsrsModePriority(remoteMode) ? localMode.rawValue : remoteMode.rawValue
+    }
+
+    private func fsrsModePriority(_ mode: FSRSParameterMode) -> Int {
+        switch mode {
+        case .standard: return 0
+        case .personalized: return 1
         }
     }
 }
