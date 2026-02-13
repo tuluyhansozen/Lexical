@@ -6,6 +6,7 @@ import CryptoKit
 public class VocabularySeeder {
     public static let shared = VocabularySeeder()
     private static let seedHashKey = "lexical.seed_data.hash"
+    private static let excludedRankRange = 0...200
     
     private init() {}
     
@@ -15,7 +16,6 @@ public class VocabularySeeder {
         
         do {
             let seedPayload = try loadSeedItems()
-            let seedItems = seedPayload.items
             let seedHash = seedPayload.hash
             let rootItems = try loadRootItems()
 
@@ -29,8 +29,18 @@ public class VocabularySeeder {
             var rootCountDescriptor = FetchDescriptor<MorphologicalRoot>()
             rootCountDescriptor.fetchLimit = 1
             let existingRootCount = try context.fetchCount(rootCountDescriptor)
+            var excludedRankDescriptor = FetchDescriptor<LexemeDefinition>(
+                predicate: #Predicate<LexemeDefinition> { lexeme in
+                    (lexeme.rank ?? -1) >= 0 && (lexeme.rank ?? -1) <= 200
+                }
+            )
+            excludedRankDescriptor.fetchLimit = 1
+            let existingExcludedRankCount = try context.fetchCount(excludedRankDescriptor)
 
-            if previousHash == seedHash, existingLexemeCount > 0, existingRootCount > 0 {
+            if previousHash == seedHash,
+               existingLexemeCount > 0,
+               existingRootCount > 0,
+               existingExcludedRankCount == 0 {
                 print("VocabularySeeder: Seed data unchanged. Skipping corpus upsert.")
                 return
             }
@@ -43,10 +53,23 @@ public class VocabularySeeder {
                 print("VocabularySeeder: Seed hash changed. Running non-destructive upsert...")
             }
 
+            let seedItems = seedPayload.items.filter { !Self.shouldExclude(rank: $0.rank) }
+            let excludedByRankCount = seedPayload.items.count - seedItems.count
+            if excludedByRankCount > 0 {
+                print("VocabularySeeder: Excluding \(excludedByRankCount) seed lexemes in rank \(Self.excludedRankRange.lowerBound)...\(Self.excludedRankRange.upperBound).")
+            }
+
             let existingLexemes = try context.fetch(FetchDescriptor<LexemeDefinition>())
+            var deletedExcludedLexemes = 0
+            for existingLexeme in existingLexemes where Self.shouldExclude(rank: existingLexeme.rank) {
+                context.delete(existingLexeme)
+                deletedExcludedLexemes += 1
+            }
+
+            let filteredExistingLexemes = try context.fetch(FetchDescriptor<LexemeDefinition>())
             var lexemeByLemma: [String: LexemeDefinition] = [:]
-            lexemeByLemma.reserveCapacity(existingLexemes.count)
-            for lexeme in existingLexemes {
+            lexemeByLemma.reserveCapacity(filteredExistingLexemes.count)
+            for lexeme in filteredExistingLexemes {
                 lexemeByLemma[lexeme.lemma] = lexeme
             }
 
@@ -155,7 +178,7 @@ public class VocabularySeeder {
 
             print(
                 "VocabularySeeder: Seed sync complete. " +
-                "lexeme(inserted=\(lexemeInserted), updated=\(lexemeUpdated), total=\(seedItems.count)) " +
+                "lexeme(inserted=\(lexemeInserted), updated=\(lexemeUpdated), deletedExcluded=\(deletedExcludedLexemes), total=\(seedItems.count)) " +
                 "roots(inserted=\(rootInserted), updated=\(rootUpdated), total=\(rootItems.count))."
             )
         } catch {
@@ -248,6 +271,11 @@ public class VocabularySeeder {
             return nil
         }
         return trimmed
+    }
+
+    private static func shouldExclude(rank: Int?) -> Bool {
+        guard let rank else { return false }
+        return excludedRankRange.contains(rank)
     }
 }
 
