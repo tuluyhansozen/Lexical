@@ -27,6 +27,8 @@ public class ArticlesViewModel: ObservableObject {
     public func generateNewArticle(
         profile: InterestProfile,
         targetWords: [String],
+        reinforcementWords: [String] = [],
+        stretchWords: [String] = [],
         adaptiveContext: AdaptivePromptContext? = nil
     ) async -> Bool {
         guard !isGenerating else { return false }
@@ -36,6 +38,8 @@ public class ArticlesViewModel: ObservableObject {
             let article = try await generator.generateArticle(
                 profile: profile,
                 targetWords: targetWords,
+                reinforcementWords: reinforcementWords,
+                stretchWords: stretchWords,
                 adaptiveContext: adaptiveContext
             )
             self.articles.insert(article, at: 0)

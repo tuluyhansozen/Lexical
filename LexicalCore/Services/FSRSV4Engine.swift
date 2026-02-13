@@ -7,13 +7,25 @@ public actor FSRSV4Engine {
     public init() {}
 
     // FSRS Constants (Default parameters for optimized performance)
-    private let w: [Double] = [
+    public static let defaultWeights: [Double] = [
         0.40255, 1.18385, 3.173, 15.69105, 
         7.19605, 0.5345, 1.4604, 0.0046, 
         1.54575, 0.1192, 1.01925, 1.9395, 
         0.09615, 0.3246, 1.37885, 0.03105, 
         2.7068
     ]
+
+    public nonisolated static func resolvedWeights(_ weights: [Double]?) -> [Double] {
+        guard let weights, weights.count >= defaultWeights.count else {
+            return defaultWeights
+        }
+
+        let candidate = Array(weights.prefix(defaultWeights.count))
+        return zip(candidate, defaultWeights).map { value, fallback in
+            guard value.isFinite, value > 0 else { return fallback }
+            return value
+        }
+    }
     
     public struct FSRSState: Sendable {
         public let stability: Double
@@ -27,8 +39,10 @@ public actor FSRSV4Engine {
         currentDifficulty: Double,
         recalled: Bool,
         grade: Int,
-        daysElapsed: Double
+        daysElapsed: Double,
+        weights: [Double]? = nil
     ) -> FSRSState {
+        let w = Self.resolvedWeights(weights)
         
         let retention = forgettingCurve(daysElapsed: daysElapsed, stability: currentStability)
         

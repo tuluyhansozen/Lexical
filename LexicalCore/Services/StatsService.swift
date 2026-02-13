@@ -105,9 +105,19 @@ public class StatsService {
         let userId = activeUserID()
 
         do {
-            let events = try modelContext.fetch(FetchDescriptor<ReviewEvent>())
-            let recent = events.filter { $0.userId == userId && $0.reviewDate >= cutoff && $0.grade >= 3 }
-            return Set(recent.map(\.lemma)).count
+            let events = try fetchUserEvents(userId: userId)
+                .sorted { $0.reviewDate < $1.reviewDate }
+
+            var firstSuccessfulAcquisitionByLemma: [String: Date] = [:]
+            firstSuccessfulAcquisitionByLemma.reserveCapacity(events.count / 4)
+
+            for event in events where isDurableAcquisitionSignal(event) {
+                if firstSuccessfulAcquisitionByLemma[event.lemma] == nil {
+                    firstSuccessfulAcquisitionByLemma[event.lemma] = event.reviewDate
+                }
+            }
+
+            return firstSuccessfulAcquisitionByLemma.values.filter { $0 >= cutoff }.count
         } catch {
             return 0
         }
@@ -118,11 +128,28 @@ public class StatsService {
         let userId = activeUserID()
 
         do {
-            let events = try modelContext.fetch(FetchDescriptor<ReviewEvent>())
-            let userEvents = events.filter { $0.userId == userId && $0.reviewDate >= cutoff }
-            guard !userEvents.isEmpty else { return 0.0 }
-            let successful = userEvents.filter { $0.grade > 2 }.count
-            return Double(successful) / Double(userEvents.count)
+            let interactiveEvents = try fetchUserEvents(userId: userId, cutoff: cutoff)
+                .filter(isInteractivePerformanceSignal)
+                .sorted { $0.reviewDate < $1.reviewDate }
+            guard !interactiveEvents.isEmpty else { return 0.0 }
+
+            // Approximate "true retention" with first attempt per lemma/day.
+            let calendar = Calendar.current
+            var firstAttemptByLemmaDay: [String: ReviewEvent] = [:]
+            firstAttemptByLemmaDay.reserveCapacity(interactiveEvents.count)
+
+            for event in interactiveEvents {
+                let day = calendar.startOfDay(for: event.reviewDate).timeIntervalSince1970
+                let key = "\(event.lemma)|\(Int(day))"
+                if firstAttemptByLemmaDay[key] == nil {
+                    firstAttemptByLemmaDay[key] = event
+                }
+            }
+
+            let attempts = Array(firstAttemptByLemmaDay.values)
+            guard !attempts.isEmpty else { return 0.0 }
+            let successful = attempts.filter { $0.grade > 2 }.count
+            return Double(successful) / Double(attempts.count)
         } catch {
             return 0.0
         }
@@ -132,8 +159,8 @@ public class StatsService {
         let userId = activeUserID()
 
         do {
-            let events = try modelContext.fetch(FetchDescriptor<ReviewEvent>())
-            let userEvents = events.filter { $0.userId == userId }
+            let events = try fetchUserEvents(userId: userId)
+            let userEvents = events.filter(isInteractivePerformanceSignal)
             return streak(from: userEvents.map(\.reviewDate))
         } catch {
             return 0
@@ -146,11 +173,15 @@ public class StatsService {
         let userId = activeUserID()
 
         do {
-            let states = try modelContext.fetch(FetchDescriptor<UserWordState>())
-            let reviewedStates = states.filter { $0.userId == userId && $0.reviewCount > 0 }
+            let descriptor = FetchDescriptor<UserWordState>(
+                predicate: #Predicate { state in
+                    state.userId == userId
+                }
+            )
+            let states = try modelContext.fetch(descriptor)
+            let reviewedStates = states.filter { $0.reviewCount > 0 && $0.status != .ignored }
             if reviewedStates.isEmpty { return defaultCurve() }
-            let total = reviewedStates.reduce(0.0) { $0 + $1.stability }
-            avgStability = total / Double(reviewedStates.count)
+            avgStability = reviewedStates.reduce(0.0) { $0 + max($1.stability, 0.1) } / Double(reviewedStates.count)
         } catch {
             return defaultCurve()
         }
@@ -158,8 +189,7 @@ public class StatsService {
         var points: [(Double, Double)] = []
         for i in 0...9 {
             let t = Double(i)
-            let sNorm = max(1.0, avgStability)
-            let retention = 100.0 * exp(-0.5 * t / sNorm)
+            let retention = 100.0 * fsrsForgettingCurve(daysElapsed: t, stability: avgStability)
             points.append((t, retention))
         }
         return points
@@ -174,8 +204,8 @@ public class StatsService {
 
         var dailyCounts: [Date: Int] = [:]
 
-        if let events = try? modelContext.fetch(FetchDescriptor<ReviewEvent>()) {
-            let filteredEvents = events.filter { $0.userId == userId && $0.reviewDate >= cutoff }
+        if let events = try? fetchUserEvents(userId: userId, cutoff: cutoff) {
+            let filteredEvents = events.filter(isInteractivePerformanceSignal)
             for event in filteredEvents {
                 let day = calendar.startOfDay(for: event.reviewDate)
                 dailyCounts[day, default: 0] += 1
@@ -198,6 +228,36 @@ public class StatsService {
 
     private func periodCutoff(_ period: StatsPeriod) -> Date {
         Calendar.current.date(byAdding: .day, value: -period.days, to: Date()) ?? Date()
+    }
+
+    private func fetchUserEvents(userId: String, cutoff: Date? = nil) throws -> [ReviewEvent] {
+        if let cutoff {
+            let descriptor = FetchDescriptor<ReviewEvent>(
+                predicate: #Predicate { event in
+                    event.userId == userId && event.reviewDate >= cutoff
+                }
+            )
+            return try modelContext.fetch(descriptor)
+        }
+
+        let descriptor = FetchDescriptor<ReviewEvent>(
+            predicate: #Predicate { event in
+                event.userId == userId
+            }
+        )
+        return try modelContext.fetch(descriptor)
+    }
+
+    private func isInteractivePerformanceSignal(_ event: ReviewEvent) -> Bool {
+        ReviewEvent.isInteractiveReviewState(event.reviewState) && !ReviewEvent.isImplicitExposureState(event.reviewState)
+    }
+
+    private func isDurableAcquisitionSignal(_ event: ReviewEvent) -> Bool {
+        ReviewEvent.isExplicitReviewState(event.reviewState) && event.grade >= 3
+    }
+
+    private func fsrsForgettingCurve(daysElapsed: Double, stability: Double) -> Double {
+        pow(1 + 19 * daysElapsed / max(stability, 0.1), -1)
     }
 
     private func streak(from reviewDates: [Date]) -> Int {
@@ -224,6 +284,9 @@ public class StatsService {
     }
 
     private func defaultCurve() -> [(Double, Double)] {
-        (0...9).map { (Double($0), 100.0 * exp(-0.3 * Double($0))) }
+        (0...9).map { day in
+            let t = Double(day)
+            return (t, 100.0 * fsrsForgettingCurve(daysElapsed: t, stability: 5.0))
+        }
     }
 }

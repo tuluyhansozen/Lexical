@@ -14,7 +14,9 @@ class SessionManager: ObservableObject {
     private let fsrsEngine: FSRSV4Engine
     private let reviewCoordinator: ReviewWriteCoordinator
     private let featureGateService: FeatureGateService
+    private let fsrsPersonalizationService: FSRSPersonalizationService
     private var requestRetentionTarget: Double = 0.9
+    private var sessionFSRSWeights: [Double]?
 
     // Track streaks for Brain Boost (consecutive successes in this session).
     @Published var sessionStreaks: [String: Int] = [:]
@@ -23,6 +25,7 @@ class SessionManager: ObservableObject {
         self.modelContext = modelContext
         self.fsrsEngine = FSRSV4Engine()
         self.featureGateService = FeatureGateService()
+        self.fsrsPersonalizationService = FSRSPersonalizationService()
         self.reviewCoordinator = ReviewWriteCoordinator()
     }
 
@@ -31,6 +34,10 @@ class SessionManager: ObservableObject {
         do {
             let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
             requestRetentionTarget = featureGateService.fsrsRequestRetention(for: activeProfile)
+            sessionFSRSWeights = try? fsrsPersonalizationService.personalizedWeights(
+                for: activeProfile,
+                modelContext: modelContext
+            )
             let dueCards = try dueCardsFromUserState(userId: activeProfile.userId)
 
             if dueCards.isEmpty {
@@ -210,7 +217,8 @@ class SessionManager: ObservableObject {
             currentDifficulty: card.difficulty,
             recalled: grade >= 3,
             grade: grade,
-            daysElapsed: max(0, Date().timeIntervalSince(card.lastReviewDate ?? card.createdAt) / 86400)
+            daysElapsed: max(0, Date().timeIntervalSince(card.lastReviewDate ?? card.createdAt) / 86400),
+            weights: sessionFSRSWeights
         )
         return await fsrsEngine.nextInterval(
             stability: max(transition.stability, 0.1),

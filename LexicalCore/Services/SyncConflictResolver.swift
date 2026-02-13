@@ -291,16 +291,30 @@ public struct SyncMergeReport: Sendable {
 
 public actor SyncConflictResolver {
     private let fsrsEngine: FSRSV4Engine
+    private let fsrsPersonalizationService: FSRSPersonalizationService
 
-    public init(fsrsEngine: FSRSV4Engine = .init()) {
+    public init(
+        fsrsEngine: FSRSV4Engine = .init(),
+        fsrsPersonalizationService: FSRSPersonalizationService = .init()
+    ) {
         self.fsrsEngine = fsrsEngine
+        self.fsrsPersonalizationService = fsrsPersonalizationService
     }
 
     public func merge(local: SyncSnapshot, remote: SyncSnapshot) async -> (snapshot: SyncSnapshot, report: SyncMergeReport) {
         let mergedEvents = mergeEvents(local.reviewEvents, remote.reviewEvents)
         let mergedProfiles = mergeProfiles(local.userProfiles, remote.userProfiles)
         let mergedStatesLWW = mergeStates(local.userWordStates, remote.userWordStates)
-        let replayedStates = await replayStates(baseStates: mergedStatesLWW, events: mergedEvents)
+        let profileByUserId = Dictionary(
+            uniqueKeysWithValues: mergedProfiles.map { profile in
+                (profile.userId, profile)
+            }
+        )
+        let replayedStates = await replayStates(
+            baseStates: mergedStatesLWW,
+            events: mergedEvents,
+            profilesByUserId: profileByUserId
+        )
 
         let snapshot = SyncSnapshot(
             reviewEvents: mergedEvents.sorted(by: sortEvents),
@@ -492,23 +506,48 @@ public actor SyncConflictResolver {
         )
     }
 
-    private func replayStates(baseStates: [SyncUserWordState], events: [SyncReviewEvent]) async -> [SyncUserWordState] {
+    private func replayStates(
+        baseStates: [SyncUserWordState],
+        events: [SyncReviewEvent],
+        profilesByUserId: [String: SyncUserProfile]
+    ) async -> [SyncUserWordState] {
         var stateByKey: [String: SyncUserWordState] = [:]
         stateByKey.reserveCapacity(baseStates.count)
         for state in baseStates {
             stateByKey[state.userLemmaKey] = state
         }
 
+        let eventsByUser = Dictionary(grouping: events, by: \.userId)
+        var weightsByUserId: [String: [Double]?] = [:]
+        weightsByUserId.reserveCapacity(eventsByUser.count)
+        for (userId, userEvents) in eventsByUser {
+            guard let profile = profilesByUserId[userId] else {
+                weightsByUserId[userId] = nil
+                continue
+            }
+            weightsByUserId[userId] = fsrsPersonalizationService.personalizedWeights(
+                for: profile,
+                events: userEvents
+            )
+        }
+
         let groupedEvents = Dictionary(grouping: events, by: { UserWordState.makeKey(userId: $0.userId, lemma: $0.lemma) })
         for (key, value) in groupedEvents {
             let ordered = value.sorted(by: sortEvents)
             let localState = stateByKey[key]
+            let userId = ordered.first?.userId ?? localState?.userId ?? ""
+            let personalizedWeights = weightsByUserId[userId] ?? nil
 
             if localState?.status == .ignored {
                 continue
             }
 
-            let replayed = await replayState(for: key, seedState: localState, events: ordered)
+            let replayed = await replayState(
+                for: key,
+                seedState: localState,
+                events: ordered,
+                personalizedWeights: personalizedWeights
+            )
             stateByKey[key] = replayed
         }
 
@@ -518,7 +557,8 @@ public actor SyncConflictResolver {
     private func replayState(
         for userLemmaKey: String,
         seedState: SyncUserWordState?,
-        events: [SyncReviewEvent]
+        events: [SyncReviewEvent],
+        personalizedWeights: [Double]?
     ) async -> SyncUserWordState {
         let components = userLemmaKey.split(separator: "|", maxSplits: 1).map(String.init)
         let userId = components.first ?? seedState?.userId ?? ""
@@ -549,7 +589,8 @@ public actor SyncConflictResolver {
                 currentDifficulty: difficulty,
                 recalled: event.grade > 1,
                 grade: event.grade,
-                daysElapsed: daysElapsed
+                daysElapsed: daysElapsed,
+                weights: personalizedWeights
             )
             let interval = await fsrsEngine.nextInterval(
                 stability: max(newState.stability, 0.1),

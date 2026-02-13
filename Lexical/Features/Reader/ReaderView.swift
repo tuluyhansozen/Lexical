@@ -18,11 +18,13 @@ struct ReaderView: View {
     @State private var captureNotice: String?
     
     private let tokenizationActor = TokenizationActor()
+    private let lexemePromotionService = LexemePromotionService()
     
     struct SelectedWord: Identifiable {
         let id = UUID()
         let word: String
         let lemma: String
+        let definition: String?
         let sentence: String
         let range: Range<String.Index>
     }
@@ -96,6 +98,7 @@ struct ReaderView: View {
                 WordCaptureSheetWrapper(
                     word: selected.word,
                     lemma: selected.lemma,
+                    definition: selected.definition,
                     sentence: selected.sentence,
                     onCapture: { handleCapture(lemma: selected.lemma, sentence: selected.sentence) }
                 )
@@ -177,6 +180,10 @@ struct ReaderView: View {
             selectedWord = SelectedWord(
                 word: word,
                 lemma: lemma,
+                definition: fetchDefinition(
+                    for: lemma,
+                    userId: UserProfile.resolveActiveProfile(modelContext: modelContext).userId
+                ),
                 sentence: sentence,
                 range: range
             )
@@ -188,30 +195,26 @@ struct ReaderView: View {
         let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalizedLemma.isEmpty else { return }
 
-        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
-            predicate: #Predicate { $0.lemma == normalizedLemma }
-        )
-        let existingLexeme = try? modelContext.fetch(lexemeDescriptor).first
-        let definition = existingLexeme?.basicMeaning ?? fetchDefinition(for: normalizedLemma)
-
-        if let existingLexeme {
-            if existingLexeme.sampleSentence?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
-                existingLexeme.sampleSentence = sentence
-            }
-            if existingLexeme.basicMeaning?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true,
-               let definition, !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                existingLexeme.basicMeaning = definition
-            }
-        } else {
-            let lexeme = LexemeDefinition(
-                lemma: normalizedLemma,
-                basicMeaning: definition,
-                sampleSentence: sentence
-            )
-            modelContext.insert(lexeme)
-        }
-
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let fallbackDefinition = fetchDefinition(
+            for: normalizedLemma,
+            userId: activeProfile.userId
+        )
+
+        do {
+            let lexeme = try lexemePromotionService.upsertCanonicalLexeme(
+                lemma: normalizedLemma,
+                userId: activeProfile.userId,
+                fallbackDefinition: fallbackDefinition,
+                fallbackSentence: sentence,
+                modelContext: modelContext
+            )
+            if lexeme.sampleSentence?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
+                lexeme.sampleSentence = sentence
+            }
+        } catch {
+            print("ReaderView: failed canonical lexeme upsert for '\(normalizedLemma)': \(error)")
+        }
         let stateKey = UserWordState.makeKey(userId: activeProfile.userId, lemma: normalizedLemma)
         let stateDescriptor = FetchDescriptor<UserWordState>(
             predicate: #Predicate { $0.userLemmaKey == stateKey }
@@ -315,11 +318,21 @@ struct ReaderView: View {
         return filtered
     }
 
-    private func fetchDefinition(for lemma: String) -> String? {
+    private func fetchDefinition(for lemma: String, userId: String) -> String? {
         let descriptor = FetchDescriptor<LexemeDefinition>(
             predicate: #Predicate { $0.lemma == lemma }
         )
-        return (try? modelContext.fetch(descriptor).first)?.basicMeaning
+        if let definition = (try? modelContext.fetch(descriptor).first)?.basicMeaning,
+           !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return definition
+        }
+
+        let discovered = try? lexemePromotionService.discoveredLexeme(
+            lemma: lemma,
+            userId: userId,
+            modelContext: modelContext
+        )
+        return discovered?.definition
     }
     
     // MARK: - Stats
@@ -365,6 +378,7 @@ struct StatBadge: View {
 struct WordCaptureSheetWrapper: View {
     let word: String
     let lemma: String
+    let definition: String?
     let sentence: String
     let onCapture: () -> Void
     
@@ -398,6 +412,22 @@ struct WordCaptureSheetWrapper: View {
                     }
                     
                     Divider()
+
+                    if let definition,
+                       !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("DEFINITION", systemImage: "text.book.closed")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.secondary)
+
+                            Text(definition)
+                                .font(.body)
+                        }
+                        .padding()
+                        .background(Color.adaptiveBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
                     
                     // Context
                     VStack(alignment: .leading, spacing: 8) {

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// Interface for the LLM that generates content.
 public protocol ArticleLLMProvider {
@@ -106,23 +107,28 @@ public actor ArticleGenerator {
     private let evaluator: ArticleConstraintsEvaluator
     private let llmProvider: ArticleLLMProvider
     private let promptBuilder: AdaptivePromptBuilder
+    private let discoveredLexemeIngestionService: DiscoveredLexemeIngestionService
 
     public init(
         store: ArticleStore,
         evaluator: ArticleConstraintsEvaluator = .init(),
         llmProvider: ArticleLLMProvider = MockLLMProvider(),
-        promptBuilder: AdaptivePromptBuilder = .init()
+        promptBuilder: AdaptivePromptBuilder = .init(),
+        discoveredLexemeIngestionService: DiscoveredLexemeIngestionService = .init()
     ) {
         self.store = store
         self.evaluator = evaluator
         self.llmProvider = llmProvider
         self.promptBuilder = promptBuilder
+        self.discoveredLexemeIngestionService = discoveredLexemeIngestionService
     }
 
     /// Generates a new article personalized to the user.
     public func generateArticle(
         profile: InterestProfile,
         targetWords: [String],
+        reinforcementWords: [String] = [],
+        stretchWords: [String] = [],
         adaptiveContext: AdaptivePromptContext? = nil,
         knownWords: [String] = []
     ) async throws -> GeneratedArticle {
@@ -131,13 +137,18 @@ public actor ArticleGenerator {
         let constructedPrompt = constructPrompt(
             theme: theme,
             targets: targetWords,
+            reinforcementWords: reinforcementWords,
+            stretchWords: stretchWords,
             adaptiveContext: adaptiveContext
         )
         let rawResponse = try await llmProvider.generateContent(prompt: constructedPrompt.body)
-        let (title, content) = parseResponse(rawResponse)
+        let parsed = parseResponse(rawResponse)
+        let title = parsed.title
+        let content = parsed.bodyText
 
         let wordCount = content.split(separator: " ").count
-        let containedTargets = targetWords.filter { content.localizedCaseInsensitiveContains($0) }
+        let responseTargets = parsed.declaredFocusWords.isEmpty ? targetWords : parsed.declaredFocusWords
+        let containedTargets = responseTargets.filter { content.localizedCaseInsensitiveContains($0) }
         let validation = evaluator.evaluate(
             text: content,
             newWordCount: containedTargets.count,
@@ -158,6 +169,10 @@ public actor ArticleGenerator {
         )
 
         try await store.save(article)
+        try await ingestDiscoveredLexemes(
+            parsed.discoveredLexemes,
+            sourceArticleId: article.id.uuidString
+        )
         return article
     }
 
@@ -183,9 +198,16 @@ public actor ArticleGenerator {
     private func constructPrompt(
         theme: String,
         targets: [String],
+        reinforcementWords: [String],
+        stretchWords: [String],
         adaptiveContext: AdaptivePromptContext?
     ) -> ConstructedPrompt {
-        let templatePrompt = templatePrompt(theme: theme, targets: targets)
+        let templatePrompt = templatePrompt(
+            theme: theme,
+            targets: targets,
+            reinforcementWords: reinforcementWords,
+            stretchWords: stretchWords
+        )
 
         guard let adaptiveContext else {
             return ConstructedPrompt(
@@ -207,7 +229,15 @@ public actor ArticleGenerator {
         )
     }
 
-    private func templatePrompt(theme: String, targets: [String]) -> String {
+    private func templatePrompt(
+        theme: String,
+        targets: [String],
+        reinforcementWords: [String],
+        stretchWords: [String]
+    ) -> String {
+        let reinforcementText = reinforcementWords.isEmpty ? "none" : reinforcementWords.joined(separator: ", ")
+        let stretchText = stretchWords.isEmpty ? "none" : stretchWords.joined(separator: ", ")
+
         if let url = Bundle.main.url(forResource: "ArticleTemplateBank", withExtension: "json"),
            let data = try? Data(contentsOf: url),
            let bank = try? JSONDecoder().decode([String: [Template]].self, from: data),
@@ -219,7 +249,23 @@ public actor ArticleGenerator {
                 return template.prompt_structure
                     .replacingOccurrences(of: "[THEME]", with: theme)
                     .replacingOccurrences(of: "[TARGETS]", with: targets.joined(separator: ", "))
-                    + "\nOutput JSON with keys: title, body_text."
+                    + """
+
+                    Output STRICT JSON with keys:
+                    - title: string
+                    - body_text: string
+                    - used_reinforcement_words: string[]
+                    - used_stretch_words: string[]
+                    - glossary: array of objects with keys
+                      lemma, definition, part_of_speech, ipa, synonyms, examples, confidence
+
+                    Glossary rules:
+                    - Include all required target lemmas.
+                    - You may add up to 4 additional context words likely useful for learning.
+                    - Keep entries factual and concise.
+                    - Reinforcement words (must be present): \(reinforcementText)
+                    - Stretch words (must be present): \(stretchText)
+                    """
             }
         }
 
@@ -227,25 +273,35 @@ public actor ArticleGenerator {
         Write a short article about \(theme).
         Target constraints:
         - Include these words explicitly: \(targets.joined(separator: ", "))
+        - Reinforcement words (must be present): \(reinforcementText)
+        - Stretch words (must be present): \(stretchText)
         - Length: 150-300 words.
         - Tone: Engaging and educational.
-        - Output JSON with keys "title" and "body_text".
+        - Output strict JSON with keys:
+          "title", "body_text", "used_reinforcement_words", "used_stretch_words", "glossary".
+        - Each glossary item must include:
+          "lemma", "definition", "part_of_speech", "ipa", "synonyms", "examples", "confidence".
         """
     }
 
-    private func parseResponse(_ response: String) -> (String, String) {
+    private func parseResponse(_ response: String) -> ParsedArticleResponse {
         let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if let data = trimmed.data(using: .utf8),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            if let title = json["title"] as? String {
-                let body = (json["body_text"] as? String) ?? (json["body"] as? String) ?? ""
-                if !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    return (title, body)
-                }
-            }
-            if let body = json["content"] as? String {
-                return ("Generated Article", body)
+            let title = normalizedString(json["title"] as? String) ?? "Generated Article"
+            let body = normalizedString(
+                (json["body_text"] as? String) ??
+                (json["body"] as? String) ??
+                (json["content"] as? String)
+            )
+            if let body {
+                return ParsedArticleResponse(
+                    title: title,
+                    bodyText: body,
+                    discoveredLexemes: extractDiscoveredLexemes(from: json),
+                    declaredFocusWords: extractDeclaredFocusWords(from: json)
+                )
             }
         }
 
@@ -258,17 +314,163 @@ public actor ArticleGenerator {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             let bodyStart = normalized.index(after: splitIndex)
             let body = String(normalized[bodyStart...]).trimmingCharacters(in: .whitespacesAndNewlines)
-            return (title.isEmpty ? "Generated Article" : title, body)
+            return ParsedArticleResponse(
+                title: title.isEmpty ? "Generated Article" : title,
+                bodyText: body
+            )
         }
 
         let parts = normalized.components(separatedBy: "\n\n")
         if parts.count >= 2 {
             let title = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
             let body = parts.dropFirst().joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
-            return (title.isEmpty ? "Generated Article" : title, body)
+            return ParsedArticleResponse(
+                title: title.isEmpty ? "Generated Article" : title,
+                bodyText: body
+            )
         }
 
-        return ("Generated Article", normalized)
+        return ParsedArticleResponse(
+            title: "Generated Article",
+            bodyText: normalized
+        )
+    }
+
+    private func extractDeclaredFocusWords(from json: [String: Any]) -> [String] {
+        let buckets = [
+            json["used_reinforcement_words"],
+            json["used_stretch_words"],
+            json["target_words"]
+        ]
+
+        var seen = Set<String>()
+        var words: [String] = []
+        for bucket in buckets {
+            guard let raw = bucket as? [Any] else { continue }
+            for value in raw {
+                guard let text = value as? String else { continue }
+                let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                guard !normalized.isEmpty, seen.insert(normalized).inserted else { continue }
+                words.append(normalized)
+            }
+        }
+        return words
+    }
+
+    private func extractDiscoveredLexemes(from json: [String: Any]) -> [DiscoveredLexemeCandidate] {
+        let rawSources: [[Any]] = [
+            json["glossary"] as? [Any] ?? [],
+            json["discovered_words"] as? [Any] ?? [],
+            json["lexical_items"] as? [Any] ?? []
+        ]
+
+        var candidates: [DiscoveredLexemeCandidate] = []
+
+        for source in rawSources {
+            for item in source {
+                guard let dictionary = item as? [String: Any] else { continue }
+                guard let lemma = normalizedString(
+                    (dictionary["lemma"] as? String) ??
+                    (dictionary["word"] as? String) ??
+                    (dictionary["term"] as? String)
+                ) else { continue }
+
+                let definition = normalizedString(
+                    (dictionary["definition"] as? String) ??
+                    (dictionary["meaning"] as? String) ??
+                    (dictionary["gloss"] as? String)
+                )
+
+                let partOfSpeech = normalizedString(
+                    (dictionary["part_of_speech"] as? String) ??
+                    (dictionary["partOfSpeech"] as? String) ??
+                    (dictionary["pos"] as? String)
+                )
+
+                let ipa = normalizedString(dictionary["ipa"] as? String)
+
+                let synonyms = stringArray(from: dictionary["synonyms"] ?? dictionary["synonym"])
+                let examples = stringArray(
+                    from: dictionary["examples"] ??
+                        dictionary["example_sentences"] ??
+                        dictionary["sentences"]
+                )
+
+                let confidence = numericValue(dictionary["confidence"])
+
+                candidates.append(
+                    DiscoveredLexemeCandidate(
+                        lemma: lemma,
+                        definition: definition,
+                        partOfSpeech: partOfSpeech,
+                        ipa: ipa,
+                        synonyms: synonyms,
+                        exampleSentences: examples,
+                        confidence: confidence
+                    )
+                )
+            }
+        }
+
+        return candidates
+    }
+
+    private func stringArray(from value: Any?) -> [String] {
+        if let array = value as? [String] {
+            return array
+        }
+        if let array = value as? [Any] {
+            return array.compactMap { $0 as? String }
+        }
+        if let scalar = value as? String {
+            return scalar
+                .components(separatedBy: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+        }
+        return []
+    }
+
+    private func numericValue(_ value: Any?) -> Double? {
+        if let number = value as? NSNumber {
+            return number.doubleValue
+        }
+        if let double = value as? Double {
+            return double
+        }
+        if let int = value as? Int {
+            return Double(int)
+        }
+        if let string = value as? String {
+            return Double(string)
+        }
+        return nil
+    }
+
+    private func normalizedString(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func ingestDiscoveredLexemes(
+        _ candidates: [DiscoveredLexemeCandidate],
+        sourceArticleId: String
+    ) async throws {
+        guard !candidates.isEmpty else { return }
+
+        try await MainActor.run {
+            let modelContext = ModelContext(Persistence.sharedModelContainer)
+            let activeUser = UserProfile.resolveActiveProfile(modelContext: modelContext)
+            _ = try discoveredLexemeIngestionService.ingest(
+                candidates: candidates,
+                sourceArticleId: sourceArticleId,
+                modelContext: modelContext,
+                userId: activeUser.userId
+            )
+        }
     }
 }
 
@@ -280,4 +482,23 @@ fileprivate struct Template: Codable {
 private struct ConstructedPrompt {
     let body: String
     let centerRank: Int?
+}
+
+private struct ParsedArticleResponse {
+    let title: String
+    let bodyText: String
+    let discoveredLexemes: [DiscoveredLexemeCandidate]
+    let declaredFocusWords: [String]
+
+    init(
+        title: String,
+        bodyText: String,
+        discoveredLexemes: [DiscoveredLexemeCandidate] = [],
+        declaredFocusWords: [String] = []
+    ) {
+        self.title = title
+        self.bodyText = bodyText
+        self.discoveredLexemes = discoveredLexemes
+        self.declaredFocusWords = declaredFocusWords
+    }
 }

@@ -5,6 +5,7 @@ import LexicalCore
 
 struct WordDetailData: Identifiable, Equatable {
     let lemma: String
+    let partOfSpeech: String?
     let ipa: String?
     let definition: String?
     let synonyms: [String]
@@ -17,21 +18,28 @@ enum WordDetailDataBuilder {
     static func build(for card: ReviewCard, modelContext: ModelContext) -> WordDetailData {
         let normalizedLemma = card.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let lexeme = fetchLexeme(lemma: normalizedLemma, modelContext: modelContext)
+        let defaults = UserDefaults(suiteName: Persistence.appGroupIdentifier) ?? .standard
+        let activeUserId = defaults.string(forKey: UserProfile.activeUserDefaultsKey) ?? UserProfile.fallbackLocalUserID
+        let discovered = fetchDiscovered(
+            lemma: normalizedLemma,
+            userId: activeUserId,
+            modelContext: modelContext
+        )
         let seed = SeedLexemeIndex.lookup(lemma: normalizedLemma)
 
         let definition = firstNonEmpty(
             card.definition,
             lexeme?.basicMeaning,
+            discovered?.definition,
             seed?.definition
         )
 
         var sentenceSet = Set<String>()
         var sentences: [String] = []
 
-        let candidates = [
-            card.contextSentence,
-            lexeme?.sampleSentence
-        ] + (seed?.sentences ?? [])
+        let discoveredSentence = discovered?.exampleSentences.first
+        let seededSentences = seed?.sentences ?? []
+        let candidates = [card.contextSentence, lexeme?.sampleSentence, discoveredSentence].compactMap { $0 } + seededSentences
 
         for candidate in candidates {
             guard let normalized = normalizedSentence(candidate) else { continue }
@@ -40,11 +48,12 @@ enum WordDetailDataBuilder {
             }
         }
 
-        let synonyms = sanitizeSynonyms(seed?.synonyms ?? [])
+        let synonyms = sanitizeSynonyms((discovered?.synonyms ?? []) + (seed?.synonyms ?? []))
 
         return WordDetailData(
             lemma: normalizedLemma,
-            ipa: firstNonEmpty(lexeme?.ipa, seed?.ipa),
+            partOfSpeech: normalizedPartOfSpeech(firstNonEmpty(lexeme?.partOfSpeech, discovered?.partOfSpeech)),
+            ipa: firstNonEmpty(lexeme?.ipa, discovered?.ipa, seed?.ipa),
             definition: definition,
             synonyms: synonyms,
             sentences: sentences
@@ -57,6 +66,18 @@ enum WordDetailDataBuilder {
     ) -> LexemeDefinition? {
         let descriptor = FetchDescriptor<LexemeDefinition>(
             predicate: #Predicate { $0.lemma == lemma }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
+    private static func fetchDiscovered(
+        lemma: String,
+        userId: String,
+        modelContext: ModelContext
+    ) -> DiscoveredLexeme? {
+        let key = DiscoveredLexeme.makeKey(userId: userId, lemma: lemma)
+        let descriptor = FetchDescriptor<DiscoveredLexeme>(
+            predicate: #Predicate { $0.userLemmaKey == key }
         )
         return try? modelContext.fetch(descriptor).first
     }
@@ -75,6 +96,12 @@ enum WordDetailDataBuilder {
         let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !trimmed.isEmpty else { return nil }
         return trimmed
+    }
+
+    private static func normalizedPartOfSpeech(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return nil }
+        return trimmed.lowercased()
     }
 
     private static func sanitizeSynonyms(_ raw: [String]) -> [String] {
@@ -143,11 +170,9 @@ private struct SeedLexemeIndex {
     }
 
     private static func seedURL() -> URL? {
-        // Try Seeds subdirectory first (main app bundle layout)
         if let url = Bundle.main.url(forResource: "seed_data", withExtension: "json", subdirectory: "Seeds") {
             return url
         }
-        // Fallback to root of bundle
         if let url = Bundle.main.url(forResource: "seed_data", withExtension: "json") {
             return url
         }
@@ -178,155 +203,211 @@ struct WordDetailSheet: View {
     let data: WordDetailData
     var onAddToDeck: (() -> Void)? = nil
 
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var pronunciationPlayer = PronunciationPlayer()
 
+    private var visibleSentences: [String] {
+        Array(data.sentences.prefix(3))
+    }
+
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    headerSection
-                    definitionSection
-                    sentencesSection
-                    synonymsSection
-                    addToDeckSection
-                }
-                .padding(20)
-            }
-            .background(Color.adaptiveBackground.ignoresSafeArea())
-            .navigationTitle("Word Info")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
+        ZStack(alignment: .top) {
+            Color(hex: "F5F5F7")
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Capsule()
+                    .fill(Color(hex: "D8DEDC"))
+                    .frame(width: 36, height: 5)
+                    .padding(.top, 9)
+                    .padding(.bottom, 13)
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Word Info")
+                            .font(.system(size: 10, weight: .medium))
+                            .tracking(0.6)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.bottom, 2)
+
+                        wordHeaderCard
+                        definitionCard
+                        examplesCard
+
+                        if !data.synonyms.isEmpty {
+                            synonymsCard
+                        }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 6)
+                    .padding(.bottom, onAddToDeck == nil ? 24 : 116)
                 }
+                .scrollIndicators(.hidden)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if let onAddToDeck {
+                addToDeckFooter(action: onAddToDeck)
             }
         }
     }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(data.lemma.capitalized)
-                    .font(.display(size: 30, weight: .bold))
-                    .foregroundStyle(Color.adaptiveText)
+    private var wordHeaderCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(data.lemma.capitalized)
+                        .font(.system(size: 35, weight: .bold))
+                        .foregroundStyle(Color(hex: "131615"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
 
-                Spacer()
+                    Text((data.partOfSpeech?.isEmpty == false ? data.partOfSpeech! : "noun"))
+                        .font(.system(size: 10, weight: .medium))
+                        .italic()
+                        .foregroundStyle(Color(hex: "4E7366"))
+                        .offset(y: -2)
+                }
+
+                Spacer(minLength: 0)
 
                 Button {
                     pronunciationPlayer.speak(data.lemma)
                 } label: {
-                    Label("Pronounce", systemImage: "speaker.wave.2.fill")
-                        .labelStyle(.iconOnly)
-                        .font(.title3)
-                        .foregroundStyle(Color.sonPrimary)
-                        .padding(10)
-                        .background(Color.sonPrimary.opacity(0.12))
+                    Image(systemName: "speaker.wave.2.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color(hex: "4E7366"))
+                        .frame(width: 26, height: 26)
+                        .background(Color(hex: "4E7366").opacity(0.22))
                         .clipShape(Circle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Play pronunciation")
             }
-
-            if let ipa = data.ipa, !ipa.isEmpty {
-                Text("IPA: \(ipa)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("IPA unavailable")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            .padding(.horizontal, 21)
+            .padding(.top, 10)
+            .padding(.bottom, 10)
         }
-        .padding(16)
-        .background(Color.adaptiveSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .modifier(WordInfoCardStyle())
     }
 
-    private var definitionSection: some View {
-        detailCard(title: "Definition") {
-            if let definition = data.definition, !definition.isEmpty {
-                Text(definition)
-                    .font(.body)
-                    .foregroundStyle(Color.adaptiveText)
-            } else {
-                Text("No definition available.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
+    private var definitionCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeading("Definition")
+
+            Text(data.definition?.isEmpty == false ? data.definition! : "No definition available")
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(Color(hex: "131615"))
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, 21)
+        .padding(.top, 10)
+        .padding(.bottom, 10)
+        .modifier(WordInfoCardStyle())
     }
 
-    private var sentencesSection: some View {
-        detailCard(title: "Examples") {
-            if data.sentences.isEmpty {
-                Text("No sentence examples available.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(Array(data.sentences.enumerated()), id: \.offset) { index, sentence in
-                        Text("\(index + 1). \(sentence)")
-                            .font(.body)
-                            .foregroundStyle(Color.adaptiveText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var addToDeckSection: some View {
-        if let onAddToDeck {
-            Button(action: onAddToDeck) {
-                Label("Add to Deck", systemImage: "plus.circle.fill")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.sonPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-        }
-    }
-
-    private var synonymsSection: some View {
-        detailCard(title: "Synonyms") {
-            if data.synonyms.isEmpty {
-                Text("No synonyms available.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 8)], spacing: 8) {
-                    ForEach(data.synonyms, id: \.self) { synonym in
-                        Text(synonym)
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(Color.sonPrimary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 8)
-                            .background(Color.sonPrimary.opacity(0.14))
-                            .clipShape(Capsule())
-                    }
-                }
-            }
-        }
-    }
-
-    private func detailCard<Content: View>(
-        title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
+    private var examplesCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(Color.adaptiveText)
-            content()
+            HStack(spacing: 8) {
+                Image(systemName: "quote.opening")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color(hex: "6A7C76"))
+                sectionHeading("Examples")
+            }
+
+            if visibleSentences.isEmpty {
+                Text("No sentence examples available")
+                    .font(.system(size: 12, weight: .light))
+                    .foregroundStyle(Color(hex: "131615"))
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(visibleSentences.enumerated()), id: \.offset) { index, sentence in
+                        Text("\(index + 1). ")
+                            .font(.system(size: 12, weight: .light))
+                            .italic()
+                            .foregroundStyle(Color(hex: "131615"))
+                        + Text(highlightedSentence(sentence))
+                    }
+                }
+            }
         }
-        .padding(16)
-        .background(Color.adaptiveSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 21)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
+        .modifier(WordInfoCardStyle())
+    }
+
+    private var synonymsCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeading("Synonyms")
+
+            Text(data.synonyms.joined(separator: ", "))
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(Color(hex: "131615"))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 21)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
+        .modifier(WordInfoCardStyle())
+    }
+
+    private func addToDeckFooter(action: @escaping () -> Void) -> some View {
+        VStack(spacing: 0) {
+            Button(action: action) {
+                HStack(spacing: 8) {
+                    Image(systemName: "bookmark")
+                        .font(.system(size: 17, weight: .semibold))
+                    Text("Add to Deck")
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(Color(hex: "021105").opacity(0.72))
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 11)
+        }
+        .background(Color(hex: "F5F5F7"))
+    }
+
+    private func sectionHeading(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 12, weight: .bold))
+            .tracking(0.6)
+            .foregroundStyle(Color(hex: "6A7C76"))
+            .opacity(0.9)
+    }
+
+    private func highlightedSentence(_ sentence: String) -> AttributedString {
+        var value = AttributedString(sentence)
+        value.foregroundColor = Color(hex: "131615")
+        value.font = .system(size: 12, weight: .light)
+
+        let target = data.lemma.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !target.isEmpty else { return value }
+
+        if let range = value.range(of: target, options: .caseInsensitive) {
+            value[range].foregroundColor = Color(hex: "4E7366")
+            value[range].font = .system(size: 12, weight: .semibold)
+        }
+
+        return value
+    }
+}
+
+private struct WordInfoCardStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: Color.black.opacity(0.12), radius: 2.5, x: 0, y: 1)
     }
 }

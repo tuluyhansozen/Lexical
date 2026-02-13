@@ -15,6 +15,20 @@ public struct LexicalTargetCandidate: Sendable {
     }
 }
 
+public struct ArticleWordPlan: Sendable {
+    public let reinforcementWords: [String]
+    public let stretchWords: [String]
+
+    public var allWords: [String] {
+        reinforcementWords + stretchWords
+    }
+
+    public init(reinforcementWords: [String], stretchWords: [String]) {
+        self.reinforcementWords = reinforcementWords
+        self.stretchWords = stretchWords
+    }
+}
+
 @MainActor
 public struct LexicalTargetingService {
     private let calibrationEngine: LexicalCalibrationEngine
@@ -31,7 +45,35 @@ public struct LexicalTargetingService {
         modelContext: ModelContext,
         maxCount: Int = 6
     ) -> [String] {
-        rankedCandidates(modelContext: modelContext, limit: maxCount).map(\.lemma)
+        let plan = articleWordPlan(
+            modelContext: modelContext,
+            reinforcementCount: max(1, maxCount - 1),
+            stretchCount: 1
+        )
+        return Array(plan.allWords.prefix(maxCount))
+    }
+
+    public func articleWordPlan(
+        modelContext: ModelContext,
+        reinforcementCount: Int,
+        stretchCount: Int
+    ) -> ArticleWordPlan {
+        let reinforcementLemmas = rankedCandidates(
+            modelContext: modelContext,
+            limit: max(0, reinforcementCount)
+        )
+        .map(\.lemma)
+
+        let stretchLemmas = stretchCandidates(
+            modelContext: modelContext,
+            excludedLemmas: Set(reinforcementLemmas),
+            limit: max(0, stretchCount)
+        )
+
+        return ArticleWordPlan(
+            reinforcementWords: reinforcementLemmas,
+            stretchWords: stretchLemmas
+        )
     }
 
     public func notificationCandidate(modelContext: ModelContext) -> LexicalTargetCandidate? {
@@ -168,5 +210,46 @@ public struct LexicalTargetingService {
         }
 
         return results
+    }
+
+    private func stretchCandidates(
+        modelContext: ModelContext,
+        excludedLemmas: Set<String>,
+        limit: Int
+    ) -> [String] {
+        guard limit > 0 else { return [] }
+
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let ignored = Set(activeProfile.ignoredWords.map { $0.lowercased() })
+        let targetRange = proximalRange(for: activeProfile)
+
+        let states = (try? modelContext.fetch(FetchDescriptor<UserWordState>())) ?? []
+        let tracked = Set(
+            states
+                .filter { $0.userId == activeProfile.userId }
+                .map(\.lemma)
+        )
+
+        let lexemes = (try? modelContext.fetch(FetchDescriptor<LexemeDefinition>())) ?? []
+        let upper = targetRange.upperBound
+        let stretchUpperBound = upper + 1_500
+
+        let scored = lexemes
+            .compactMap { lexeme -> (lemma: String, distance: Int)? in
+                guard let rank = lexeme.rank else { return nil }
+                guard rank > upper, rank <= stretchUpperBound else { return nil }
+                guard !tracked.contains(lexeme.lemma) else { return nil }
+                guard !ignored.contains(lexeme.lemma) else { return nil }
+                guard !excludedLemmas.contains(lexeme.lemma) else { return nil }
+                return (lexeme.lemma, rank - upper)
+            }
+            .sorted { lhs, rhs in
+                if lhs.distance != rhs.distance {
+                    return lhs.distance < rhs.distance
+                }
+                return lhs.lemma < rhs.lemma
+            }
+
+        return scored.prefix(limit).map(\.lemma)
     }
 }

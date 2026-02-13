@@ -3,125 +3,63 @@ import SwiftData
 import LexicalCore
 
 struct ArticleCardView: View {
-    // We now support GeneratedArticle directly
     let article: GeneratedArticle
     @Environment(\.modelContext) private var modelContext
     @State private var showReader = false
     private let articleStore = ArticleStore()
-    
-    // Derived for UI compatibility
-    private var categoryColor: Color {
-        switch article.category.lowercased() {
-        case "technology": return .blue.opacity(0.1)
-        case "science": return .green.opacity(0.1)
-        default: return .orange.opacity(0.1)
-        }
-    }
-    
-    private var categoryTextColor: Color {
-        switch article.category.lowercased() {
-        case "technology": return .blue
-        case "science": return .green
-        default: return .orange
-        }
-    }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            
-            // Content Section
-            VStack(alignment: .leading, spacing: 16) {
-                // Meta info
-                 HStack {
-                     Text(article.category.uppercased())
-                         .font(.caption)
-                         .fontWeight(.bold)
-                         .foregroundStyle(categoryTextColor)
-                         .padding(.horizontal, 12)
-                         .padding(.vertical, 6)
-                         .background(categoryColor)
-                         .clipShape(Capsule())
-                     
-                     Spacer()
-                     
-                     Button {
-                         // Bookmark action
-                     } label: {
-                         Image(systemName: "bookmark")
-                             .foregroundStyle(.gray)
-                     }
-                 }
-                
-                // Metadata Row
-                HStack(spacing: 8) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock")
-                        Text("3 min read") // Estimated
-                    }
-                    Text("•")
-                    Text("Generated")
+            HStack(alignment: .center, spacing: 8) {
+                Text(article.category.uppercased())
+                    .font(.system(size: 10, weight: .regular))
+                    .tracking(0.62)
+                    .foregroundStyle(Color(hex: "4A5565"))
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 9, weight: .regular))
+                    Text("3 min read")
+                        .font(.system(size: 10, weight: .regular))
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .opacity(0.8)
-                
-                // Title
-                Text(article.title)
-                    .font(.cardTitle) // Using our custom font extension via DesignSystem
-                    .foregroundStyle(Color.adaptiveText)
-                
-                // Content Snippet
-                Text(article.content)
-                    .font(.bodyText)
-                    .foregroundStyle(Color.adaptiveText.opacity(0.9))
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-                
-                // Target Words (Interactive)
-                if !article.targetWords.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            ForEach(article.targetWords, id: \.self) { word in
-                                Text(word)
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(Color.green)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(Color.green.opacity(0.1))
-                                    .clipShape(Capsule())
-                                    .overlay(Capsule().stroke(Color.green.opacity(0.3), lineWidth: 1))
-                            }
-                        }
-                    }
-                    .padding(.top, 4)
-                }
-                
-                Divider()
-                    .padding(.top, 8)
-                
-                HStack {
-                    Spacer()
-                    
-                    Button {
-                        recordArticleExposure()
-                        showReader = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("Continue Reading")
-                            Image(systemName: "arrow.forward")
-                        }
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.sonPrimary)
-                    }
-                }
+                .foregroundStyle(Color(hex: "4A5565"))
             }
-            .padding(24)
+            .padding(.top, 14)
+
+            Text(article.title)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Color(hex: "0A0A0A"))
+                .lineLimit(2)
+                .minimumScaleFactor(0.9)
+                .padding(.top, 8)
+
+            Text(highlightedExcerpt)
+                .font(.system(size: 14, weight: .regular))
+                .lineSpacing(6)
+                .foregroundStyle(Color(hex: "364153"))
+                .padding(.top, 12)
+                .lineLimit(4)
+
+            Spacer(minLength: 14)
+
+            Button {
+                recordArticleExposure()
+                showReader = true
+            } label: {
+                Text("Continue Reading \u{2192}")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color(hex: "021105").opacity(0.71))
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 25)
         }
-        .background(Color.adaptiveSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 5)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, minHeight: 253, alignment: .topLeading)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.22), radius: 4, x: 0, y: 4)
         .fullScreenCover(isPresented: $showReader) {
             NavigationStack {
                 ReaderView(title: article.title, content: article.content)
@@ -135,6 +73,49 @@ struct ArticleCardView: View {
                     }
             }
         }
+    }
+
+    private var highlightedExcerpt: AttributedString {
+        var value = AttributedString(snippet)
+        let palette: [Color] = [
+            Color(hex: "FFC6F3"),
+            Color(red: 182.0 / 255.0, green: 1.0, blue: 148.0 / 255.0).opacity(0.76),
+            Color(red: 1.0, green: 179.0 / 255.0, blue: 98.0 / 255.0).opacity(0.64),
+            Color(red: 121.0 / 255.0, green: 177.0 / 255.0, blue: 1.0).opacity(0.78)
+        ]
+
+        for (index, word) in article.targetWords.prefix(palette.count).enumerated() {
+            highlight(word: sanitizedToken(word), color: palette[index], in: &value)
+        }
+
+        return value
+    }
+
+    private var snippet: String {
+        let compact = article.content
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let maxLength = 140
+        guard compact.count > maxLength else { return compact }
+
+        let limitIndex = compact.index(compact.startIndex, offsetBy: maxLength)
+        let prefix = compact[..<limitIndex]
+        if let split = prefix.lastIndex(of: " ") {
+            return String(prefix[..<split])
+        }
+        return String(prefix)
+    }
+
+    private func highlight(word: String, color: Color, in text: inout AttributedString) {
+        guard !word.isEmpty else { return }
+        guard let range = text.range(of: word, options: .caseInsensitive) else { return }
+        text[range].backgroundColor = color
+    }
+
+    private func sanitizedToken(_ raw: String) -> String {
+        raw.lowercased()
+            .trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
     }
 
     @MainActor

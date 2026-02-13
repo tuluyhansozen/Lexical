@@ -320,6 +320,7 @@ struct SettingsView: View {
         do {
             try modelContext.delete(model: ReviewEvent.self)
             try modelContext.delete(model: UserWordState.self)
+            try modelContext.delete(model: DiscoveredLexeme.self)
             try modelContext.save()
         } catch {
             print("Error resetting progress: \(error)")

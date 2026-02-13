@@ -23,22 +23,25 @@ private struct ExplicitTransition {
 }
 
 public struct ReviewWriteCoordinator {
-    private static let implicitExposureReviewState = "implicit_exposure"
+    private static let implicitExposureReviewState = ReviewEvent.implicitExposureState
 
     private let promotionEngine: RankPromotionEngine
     private let fsrsEngine: FSRSV4Engine
     private let featureGateService: FeatureGateService
+    private let fsrsPersonalizationService: FSRSPersonalizationService
     private let calendar: Calendar
 
     public init(
         promotionEngine: RankPromotionEngine = .init(),
         fsrsEngine: FSRSV4Engine = .init(),
         featureGateService: FeatureGateService = .init(),
+        fsrsPersonalizationService: FSRSPersonalizationService = .init(),
         calendar: Calendar = .current
     ) {
         self.promotionEngine = promotionEngine
         self.fsrsEngine = fsrsEngine
         self.featureGateService = featureGateService
+        self.fsrsPersonalizationService = fsrsPersonalizationService
         self.calendar = calendar
     }
 
@@ -79,11 +82,17 @@ public struct ReviewWriteCoordinator {
         let userId = profile.userId
         let state = try resolveState(userId: userId, lemma: normalizedLemma, modelContext: modelContext)
         let requestRetention = featureGateService.fsrsRequestRetention(for: profile)
+        let personalizedWeights = try fsrsPersonalizationService.personalizedWeights(
+            for: profile,
+            modelContext: modelContext,
+            now: now
+        )
         let transition = await explicitTransition(
             grade: grade,
             state: state,
             now: now,
-            requestRetention: requestRetention
+            requestRetention: requestRetention,
+            weights: personalizedWeights
         )
 
         let explicitEvent = ReviewEvent(
@@ -239,7 +248,7 @@ public struct ReviewWriteCoordinator {
             reviewDate: Date(),
             durationMs: max(durationMs, 0),
             scheduledDays: max(0.0, scheduledDays),
-            reviewState: ReviewEvent.reviewState(for: grade),
+            reviewState: ReviewEvent.sessionReviewState(for: grade),
             deviceId: nil,
             sourceReviewLogId: nil
         )
@@ -314,7 +323,8 @@ public struct ReviewWriteCoordinator {
         grade: Int,
         state: UserWordState,
         now: Date,
-        requestRetention: Double
+        requestRetention: Double,
+        weights: [Double]?
     ) async -> ExplicitTransition {
         let baseDate = state.lastReviewDate ?? state.createdAt
         let daysElapsed = max(0.1, now.timeIntervalSince(baseDate) / 86_400.0)
@@ -326,7 +336,8 @@ public struct ReviewWriteCoordinator {
             currentDifficulty: currentDifficulty,
             recalled: grade >= 3,
             grade: grade,
-            daysElapsed: daysElapsed
+            daysElapsed: daysElapsed,
+            weights: weights
         )
 
         let stability = max(fsrsState.stability, 0.1)

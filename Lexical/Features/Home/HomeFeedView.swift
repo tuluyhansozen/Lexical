@@ -6,121 +6,53 @@ struct HomeFeedView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = ArticlesViewModel()
     @Query private var interestProfiles: [InterestProfile]
+
     @State private var articleQuotaLabel: String?
     @State private var generationLimitMessage: String?
+    @State private var premiumUpsellMessage: String?
+    @State private var isPremium = false
+    @State private var canGenerateAnotherArticle = false
 
     private let featureGateService = FeatureGateService()
-    
-    var body: some View {
-        ZStack(alignment: .top) {
-            Color.adaptiveBackground.ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Spacer for fixed header
-                    Color.clear.frame(height: 140) 
-                    
-                    VStack(spacing: 24) {
-                        
-                        // Generation Trigger (Temporary for Debugging/Demo)
-                        if viewModel.articles.isEmpty {
-                            emptyStateView
-                        } else {
-                            ForEach(viewModel.articles) { article in
-                                ArticleCardView(article: article)
-                            }
-                        }
-                        
-                        // Loading Indicator
-                        if viewModel.isGenerating {
-                            HStack {
-                                Spacer()
-                                ProgressView("Generating personalized content...")
-                                Spacer()
-                            }
-                            .padding(.vertical, 20)
-                        } else {
-                            // "Load More" / Generate trigger at bottom
-                            Button {
-                                Task { @MainActor in
-                                    await triggerGeneration()
-                                }
-                            } label: {
-                                Text("Generate New Article")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(Color.sonPrimary)
-                                    .padding()
-                                    .background(Color.sonPrimary.opacity(0.1))
-                                    .clipShape(Capsule())
-                            }
-                            .padding(.vertical, 20)
 
-                            if let articleQuotaLabel {
-                                Text(articleQuotaLabel)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
+    var body: some View {
+        ZStack {
+            Color(hex: "F5F5F7").ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    headerView
+
+                    if viewModel.articles.isEmpty {
+                        emptyStateCard
+                    } else {
+                        ForEach(viewModel.articles) { article in
+                            ArticleCardView(article: article)
                         }
-                        
-                        // Bottom spacer for Tab Bar
-                        Color.clear.frame(height: 100)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+
+                    primaryActionButton
+
+                    if let articleQuotaLabel {
+                        Text(articleQuotaLabel)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundStyle(Color(hex: "4A5565"))
+                            .multilineTextAlignment(.leading)
+                            .padding(.top, 2)
+                    }
+
+                    Color.clear.frame(height: 104)
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+            }
+            .safeAreaInset(edge: .top) {
+                Color.clear.frame(height: 10)
             }
             .scrollIndicators(.hidden)
             .refreshable {
                 viewModel.loadArticles()
                 refreshArticleQuotaLabel()
-            }
-            
-            // Sticky Header
-            VStack(spacing: 0) {
-                // Fake Status Bar Background (optional, usually system handles this)
-                Color.clear.frame(height: 44) // approximate top safe area
-                
-                // App Header
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text(Date().formatted(date: .abbreviated, time: .omitted).uppercased())
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .tracking(1)
-                            .foregroundStyle(.secondary)
-                        
-                        Spacer()
-                        
-                        // Profile Button (Navigates to Settings tab via TabView, but here just visual)
-                        NavigationLink(destination: SettingsView()) {
-                            Image(systemName: "person.circle")
-                                .font(.system(size: 24))
-                                .padding(8)
-                                .background(Color.adaptiveSurface)
-                                .clipShape(Circle())
-                                .foregroundStyle(Color.sonPrimary)
-                                .overlay(
-                                    Circle().stroke(Color.gray.opacity(0.1), lineWidth: 1)
-                                )
-                        }
-                    }
-                    
-                    Text("Immersive Reader")
-                        .font(.articleTitle) // Using our custom font extension
-                        .foregroundStyle(Color.adaptiveText)
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 16)
-                .background(
-                    Color.adaptiveBackground
-                        .opacity(0.95)
-                        .blur(radius: 5)
-                )
-                .overlay(alignment: .bottom) {
-                    Divider().opacity(0.5)
-                }
             }
         }
         .onAppear {
@@ -142,44 +74,152 @@ struct HomeFeedView: View {
         } message: {
             Text(generationLimitMessage ?? "Free plan limit reached.")
         }
+        .alert(
+            "Premium",
+            isPresented: Binding(
+                get: { premiumUpsellMessage != nil },
+                set: { presented in
+                    if !presented {
+                        premiumUpsellMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(premiumUpsellMessage ?? "")
+        }
     }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "newspaper")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-            Text("No Articles Yet")
-                .font(.title3)
-                .fontWeight(.bold)
-            Text("Complete your interest profile and generate your first personalized article.")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-            
+
+    private var headerView: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Reading")
+                .font(.system(size: 25, weight: .bold))
+                .foregroundStyle(Color(hex: "0A0A0A"))
+
+            Text("Daily curated articles for you")
+                .font(.system(size: 12, weight: .light))
+                .foregroundStyle(Color.black.opacity(0.8))
+        }
+        .padding(.top, 4)
+        .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private var primaryActionButton: some View {
+        if viewModel.isGenerating {
+            generatingButton
+        } else if canGenerateAnotherArticle {
             Button {
                 Task { @MainActor in
                     await triggerGeneration()
                 }
             } label: {
-                Text("Generate First Article")
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.sonPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(viewModel.articles.isEmpty ? "Generate First Article" : "Generate New Article")
+                        .font(.system(size: 14, weight: .regular))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(Color(hex: "181818"))
+                .clipShape(Capsule())
             }
-            .padding(.top, 8)
+            .buttonStyle(.plain)
+            .padding(.top, 2)
+        } else {
+            Button {
+                premiumUpsellMessage = "Upgrade to Premium to unlock limitless articles, widget profiles, and personalized FSRS parameters."
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("Upgrade for more articles")
+                        .font(.system(size: 12, weight: .regular))
+                }
+                .foregroundStyle(Color(hex: "06071A"))
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .background(
+                    LinearGradient(
+                        colors: [Color(hex: "F4F4F4"), Color(hex: "FEFEFE")],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.white.opacity(0.95), lineWidth: 1.2)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .shadow(color: Color.black.opacity(0.14), radius: 3, x: 0, y: 2)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 10)
+            .padding(.top, 2)
         }
-        .padding(40)
-        .background(Color.adaptiveSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
-    
+
+    private var generatingButton: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .tint(.white)
+            Text("Generating article...")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 40)
+        .background(Color(hex: "181818"))
+        .clipShape(Capsule())
+        .padding(.top, 2)
+    }
+
+    private var emptyStateCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("PSYCHOLOGY")
+                .font(.system(size: 10, weight: .regular))
+                .tracking(0.62)
+                .foregroundStyle(Color(hex: "4A5565"))
+                .padding(.top, 16)
+
+            Text("Your feed is ready")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Color(hex: "0A0A0A"))
+                .padding(.top, 10)
+
+            Text("Generate your first personalized article to start your daily reading loop.")
+                .font(.system(size: 14, weight: .regular))
+                .lineSpacing(6)
+                .foregroundStyle(Color(hex: "364153"))
+                .padding(.top, 14)
+                .lineLimit(4)
+
+            Spacer(minLength: 14)
+
+            Button {
+                Task { @MainActor in
+                    await triggerGeneration()
+                }
+            } label: {
+                Text("Generate First Article \u{2192}")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color(hex: "021105").opacity(0.71))
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 25)
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, minHeight: 253, alignment: .topLeading)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.22), radius: 4, x: 0, y: 4)
+    }
+
     @MainActor
     private func triggerGeneration() async {
-        // Create a temporary profile if one doesn't exist (though SettingsView ensures it does)
         let profile = interestProfiles.first ?? InterestProfile(selectedTags: ["Technology"])
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
 
@@ -202,7 +242,13 @@ struct HomeFeedView: View {
         }
 
         let targetService = LexicalTargetingService()
-        let targets = targetService.articleTargets(modelContext: modelContext, maxCount: 6)
+        let isPremiumTier = activeProfile.subscriptionTier == .premium
+        let plan = targetService.articleWordPlan(
+            modelContext: modelContext,
+            reinforcementCount: isPremiumTier ? 5 : 3,
+            stretchCount: isPremiumTier ? 3 : 1
+        )
+        let targets = plan.allWords
         let fallbackTargets = ["context", "insight", "derive"]
         let adaptiveContext = AdaptivePromptContext(
             lexicalRank: activeProfile.lexicalRank,
@@ -212,6 +258,8 @@ struct HomeFeedView: View {
         let generated = await viewModel.generateNewArticle(
             profile: profile,
             targetWords: targets.isEmpty ? fallbackTargets : targets,
+            reinforcementWords: plan.reinforcementWords,
+            stretchWords: plan.stretchWords,
             adaptiveContext: adaptiveContext
         )
 
@@ -225,28 +273,35 @@ struct HomeFeedView: View {
         } catch {
             print("HomeFeedView: failed to record article usage: \(error)")
         }
+
         refreshArticleQuotaLabel()
     }
 
     @MainActor
     private func refreshArticleQuotaLabel() {
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+
         do {
             let snapshot = try featureGateService.articleQuotaSnapshot(
                 for: activeProfile,
                 modelContext: modelContext
             )
+            isPremium = snapshot.isUnlimited
+            canGenerateAnotherArticle = snapshot.isUnlimited || snapshot.remaining > 0
+
             if snapshot.isUnlimited {
-                articleQuotaLabel = "Premium plan: Unlimited article generation."
+                articleQuotaLabel = "Premium: Unlimited article generation."
             } else {
                 let limit = snapshot.limit ?? FeatureGateService.freeArticleLimitPerWindow
                 if let windowEnd = snapshot.windowEnd {
-                    articleQuotaLabel = "Free plan: \(snapshot.remaining)/\(limit) weekly article remaining. Resets \(windowEnd.formatted(date: .abbreviated, time: .omitted))."
+                    articleQuotaLabel = "Free: \(snapshot.remaining)/\(limit) weekly article left. Resets \(windowEnd.formatted(date: .abbreviated, time: .omitted))."
                 } else {
-                    articleQuotaLabel = "Free plan: \(snapshot.remaining)/\(limit) weekly article remaining."
+                    articleQuotaLabel = "Free: \(snapshot.remaining)/\(limit) weekly article left."
                 }
             }
         } catch {
+            isPremium = false
+            canGenerateAnotherArticle = false
             articleQuotaLabel = nil
         }
     }
@@ -259,6 +314,7 @@ struct HomeFeedView: View {
         if let windowEnd = snapshot.windowEnd {
             return "Free plan limit reached: 1 article per 7 days. Next reset: \(windowEnd.formatted(date: .abbreviated, time: .omitted))."
         }
+
         return "Free plan limit reached: 1 article per 7 days."
     }
 }

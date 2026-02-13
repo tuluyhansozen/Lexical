@@ -6,6 +6,9 @@ import UIKit
 
 @Model
 public final class ReviewEvent {
+    public static let implicitExposureState = "implicit_exposure"
+    public static let sessionStatePrefix = "session_"
+
     @Attribute(.unique) public var eventId: String
 
     public var userId: String
@@ -50,6 +53,31 @@ public final class ReviewEvent {
         case 4: return "easy"
         default: return "unknown"
         }
+    }
+
+    public static func sessionReviewState(for grade: Int) -> String {
+        "\(sessionStatePrefix)\(reviewState(for: grade))"
+    }
+
+    public static func isExplicitReviewState(_ reviewState: String) -> Bool {
+        switch reviewState.lowercased() {
+        case "again", "hard", "good", "easy":
+            return true
+        default:
+            return false
+        }
+    }
+
+    public static func isSessionReviewState(_ reviewState: String) -> Bool {
+        reviewState.lowercased().hasPrefix(sessionStatePrefix)
+    }
+
+    public static func isImplicitExposureState(_ reviewState: String) -> Bool {
+        reviewState.lowercased() == implicitExposureState
+    }
+
+    public static func isInteractiveReviewState(_ reviewState: String) -> Bool {
+        isExplicitReviewState(reviewState) || isSessionReviewState(reviewState)
     }
 
     private static var currentDeviceId: String {

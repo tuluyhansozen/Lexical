@@ -73,21 +73,13 @@ public struct NotificationTriageService {
         guard let lemma = payload.normalizedLemma else { return nil }
 
         let activeUser = UserProfile.resolveActiveProfile(modelContext: modelContext)
-
-        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
-            predicate: #Predicate { $0.lemma == lemma }
+        let promotionService = LexemePromotionService()
+        _ = try promotionService.upsertCanonicalLexeme(
+            lemma: lemma,
+            userId: activeUser.userId,
+            fallbackDefinition: payload.definition,
+            modelContext: modelContext
         )
-        let lexeme = (try modelContext.fetch(lexemeDescriptor).first) ?? {
-            let created = LexemeDefinition(lemma: lemma, basicMeaning: payload.definition)
-            modelContext.insert(created)
-            return created
-        }()
-
-        if lexeme.basicMeaning?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true,
-           let definition = payload.definition,
-           !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            lexeme.basicMeaning = definition
-        }
 
         let key = UserWordState.makeKey(userId: activeUser.userId, lemma: lemma)
         let stateDescriptor = FetchDescriptor<UserWordState>(

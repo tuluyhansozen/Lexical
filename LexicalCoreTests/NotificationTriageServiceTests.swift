@@ -122,7 +122,7 @@ final class NotificationTriageServiceTests: XCTestCase {
     }
 
     private func makeInMemoryContainer() throws -> ModelContainer {
-        let schema = Schema(LexicalSchemaV3.models)
+        let schema = Schema(LexicalSchemaV6.models)
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [configuration])
     }
