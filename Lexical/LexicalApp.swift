@@ -41,11 +41,19 @@ struct LexicalApp: App {
 }
 
 private struct RootView: View {
-    @Environment(\.modelContext) private var modelContext
     @State private var didRunBootstrapTasks = false
+    @AppStorage(OnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
 
     var body: some View {
-        ContentView()
+        Group {
+            if hasCompletedOnboarding {
+                ContentView()
+            } else {
+                OnboardingFlowView {
+                    hasCompletedOnboarding = true
+                }
+            }
+        }
             .task {
                 guard !didRunBootstrapTasks else { return }
                 didRunBootstrapTasks = true

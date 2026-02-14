@@ -16,6 +16,7 @@
 - **Bandit Scheduler**: Epsilon-Greedy MAB for notification timing optimization.
 - **Collocation Matrix**: Force-directed graph visualization of semantic connections.
 - **Vocabulary Seeding**: `VocabularySeedService` + `vocab_seed.json` first-launch seeding.
+- **Onboarding Coordinator**: First-run phase flow (welcome, FSRS primer, interests, reading primer, notification opt-in, completion) with resumable progress.
 - **Debug Verification**: Seed count overlay (DEBUG) + `--lexical-debug-autocycle` tab cycling for simulator checks.
 
 ## SwiftData Models
@@ -31,6 +32,7 @@
 - **Phase 8**: ✅ Navigation, seeding, personalization, and rank-aware targeting completed.
 - **Phase 9**: ✅ Identity, calibration, dual-store migration, and sync foundation completed.
 - **Phase 10**: ✅ Completed: adaptive prompting/generated-content lifecycle, daily root resolver extraction, and notification triage service integration verified by simulator test + smoke run.
+- **Phase 11**: 🟡 In progress: onboarding v1 integrated at app root; notification permission is now contextual (not launch-time).
 
 ## Environment Notes
 - **MCP Servers**: `ios-simulator`, `filesystem`, `context7` for agentic interactions.
@@ -48,3 +50,4 @@
 - ✅ Phase 8: Navigation, Seeding & Personalization
 - ✅ Phase 9: Identity, Calibration & Sync Foundation
 - ✅ Phase 10: Adaptive Acquisition & Engagement Loop
+- 🟡 Phase 11: Production Polish & App Store Release (Onboarding v1 landed)

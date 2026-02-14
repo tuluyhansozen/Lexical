@@ -451,20 +451,28 @@ Create deterministic StoreKit test scenarios (`.storekit` + `SKTestSession`) for
 
 ## Phase 11: Production Polish & App Store Release
 
-**Status:** 🔲 Not Started
+**Status:** 🟡 In Progress (Onboarding v1 integrated on 2026-02-14)
 
 ### Section 1: Objective
 Complete onboarding UX/accessibility hardening and prepare release artifacts for App Store and TestFlight.
 
 ### Section 2: Key Activities
-- **Onboarding Flow:** Create first-run flow with value proposition, permissions, interest selection, and calibration entry point.
+- **Onboarding Flow (Implemented v1):** Ship first-run, phase-gated flow with value proposition, FSRS/forgetting-curve primer, interest selection, reading-loop primer, contextual notification opt-in, and completion handoff.
+- **Onboarding State Persistence (Implemented):** Persist onboarding completion and resumable step index with `AppStorage` keys; wire root app gate to onboarding completion state.
+- **Contextual Notification Permission (Implemented):** Move notification authorization out of app-launch init and trigger from onboarding "Enable Smart Nudges" action only.
+- **Replay Support (Implemented):** Add profile/settings action to replay onboarding for QA, iteration, and user re-entry.
+- **Onboarding Flow:** Continue with permission hardening (motion/extension/widget coaching) and calibration entry point when those in-app setup surfaces are available.
 - **Accessibility Audit:** Ensure VoiceOver support, Dynamic Type, and Reduce Motion compliance.
 - **Performance Optimization:** Profile with Instruments, keep reader and graph views smooth under realistic dataset size.
 - **Privacy/Compliance:** Finalize `PrivacyInfo.xcprivacy` and data collection disclosures.
 - **Release Assets:** Generate App Store screenshots, metadata, and TestFlight validation checklist.
 
 ### Section 3: Deliverables
-- [ ] `OnboardingView.swift` - First-run experience
+- [x] `Lexical/Features/Onboarding/OnboardingFlowView.swift` - First-run phase-gated onboarding experience
+- [x] `Lexical/Features/Onboarding/OnboardingStorage.swift` - Onboarding completion/progress key contract
+- [x] `Lexical/LexicalApp.swift` - Root-level onboarding gate integration
+- [x] `Lexical/Services/BanditScheduler.swift` - Explicit notification authorization API (no launch-time permission prompt)
+- [x] `Lexical/Features/Settings/SettingsView.swift` - Replay onboarding entry point
 - [ ] `PrivacyInfo.xcprivacy` - Privacy manifest
 - [ ] App Store Connect metadata (description, keywords, categories)
 - [ ] Screenshot set for all required device sizes
@@ -481,7 +489,7 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 | Phase 10 | ✅ Complete | - | Adaptive acquisition loop finalized with dedicated daily-root + notification triage services and simulator verification |
 | Phase 10B | 🔴 Critical (Active) | 1 week | UI refinement across design system, reader/review flows, and accessibility ergonomics |
 | Phase 10C | 🔴 Critical (Active) | 1 week | Free/Premium monetization rollout with StoreKit 2, entitlement sync, and feature gates |
-| Phase 11 | 🟡 Medium | 1 week | Onboarding/compliance/release packaging after UI + monetization baselines |
+| Phase 11 | 🔴 Critical (Active) | 1 week | Onboarding hardening + compliance/release packaging after UI + monetization baselines |
 
 ---
 
@@ -501,4 +509,4 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 1. Start Phase 10B UI refinement in this order: design tokens/glass system, Reader/Review flows, then cross-screen consistency pass.
 2. Run simulator QA sweeps (iPhone 16e portrait/landscape, Dynamic Type, VoiceOver, Reduce Motion/Transparency) and fold fixes into Phase 10B.
 3. Continue Phase 10C monetization implementation: StoreKit service integration, entitlement sync model updates, and feature-gate wiring.
-4. Begin Phase 11 onboarding/compliance/release hardening once UI + monetization baselines are stable.
+4. Continue Phase 11 onboarding hardening: add guided widget/extension setup and motion permission priming, then complete compliance/release packaging.

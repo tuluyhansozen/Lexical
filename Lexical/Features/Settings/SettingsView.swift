@@ -16,6 +16,8 @@ struct SettingsView: View {
     @AppStorage("darkModeEnabled") private var darkModeEnabled: Bool = false
     @AppStorage("notificationsEnabled") private var notificationsEnabled: Bool = true
     @AppStorage("userName") private var userName: String = "Learner"
+    @AppStorage(OnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
+    @AppStorage(OnboardingStorageKeys.currentStep) private var onboardingStep = 0
     
     @State private var showingExportSheet = false
     @State private var showingResetAlert = false
@@ -283,6 +285,21 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Label("Privacy Policy", systemImage: "hand.raised.fill")
+                        .foregroundStyle(Color.adaptiveText)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.tertiary)
+                }
+            }
+
+            Divider()
+
+            Button {
+                onboardingStep = 0
+                hasCompletedOnboarding = false
+            } label: {
+                HStack {
+                    Label("Replay Onboarding", systemImage: "sparkles.rectangle.stack")
                         .foregroundStyle(Color.adaptiveText)
                     Spacer()
                     Image(systemName: "chevron.right")

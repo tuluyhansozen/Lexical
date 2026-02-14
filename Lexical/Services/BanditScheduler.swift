@@ -127,14 +127,6 @@ public final class BanditScheduler: NSObject, ObservableObject {
         }
 
         let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
-            if granted {
-                print("BanditScheduler: notifications authorized.")
-            } else {
-                print("BanditScheduler: notifications denied.")
-            }
-        }
-
         let reveal = UNNotificationAction(
             identifier: Self.actionRevealIdentifier,
             title: "Reveal",
@@ -157,6 +149,27 @@ public final class BanditScheduler: NSObject, ObservableObject {
             options: []
         )
         center.setNotificationCategories([category])
+    }
+
+    public func requestNotificationAuthorization() async -> Bool {
+        do {
+            let granted = try await UNUserNotificationCenter.current().requestAuthorization(
+                options: [.alert, .sound, .badge]
+            )
+            print("BanditScheduler: notification authorization granted=\(granted)")
+            return granted
+        } catch {
+            print("BanditScheduler: notification authorization request failed: \(error)")
+            return false
+        }
+    }
+
+    public func notificationAuthorizationStatus() async -> UNAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                continuation.resume(returning: settings.authorizationStatus)
+            }
+        }
     }
 
     private func setupForegroundScheduling() {
