@@ -5,12 +5,12 @@ struct CustomTabBar: View {
     @Binding var selectedTab: Int
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
-    private let tabs: [(id: Int, icon: String, label: String)] = [
-        (id: 0, icon: "clipboard", label: "Learn"),
-        (id: 1, icon: "safari", label: "Explore"),
-        (id: 2, icon: "menucard", label: "Practice"),
-        (id: 3, icon: "chart.bar.xaxis", label: "Stats"),
-        (id: 4, icon: "person", label: "Profile")
+    private let tabs: [(id: Int, icon: String, label: String, testID: String)] = [
+        (id: 0, icon: "clipboard", label: "Learn", testID: "tab.learn"),
+        (id: 1, icon: "safari", label: "Explore", testID: "tab.explore"),
+        (id: 2, icon: "menucard", label: "Practice", testID: "tab.review"),
+        (id: 3, icon: "chart.bar.xaxis", label: "Stats", testID: "tab.stats"),
+        (id: 4, icon: "person", label: "Profile", testID: "tab.profile")
     ]
 
     var body: some View {
@@ -40,6 +40,7 @@ struct CustomTabBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tab.label)
+                .accessibilityIdentifier(tab.testID)
             }
         }
         .frame(maxWidth: .infinity)

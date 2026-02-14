@@ -35,6 +35,7 @@ struct StatsView: View {
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundStyle(Color.adaptiveText)
+                        .accessibilityIdentifier("stats.title")
 
                     Spacer()
 

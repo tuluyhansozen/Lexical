@@ -29,6 +29,10 @@ struct LexicalApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var banditScheduler = BanditScheduler.shared
     @StateObject private var motionService = MotionService()
+
+    init() {
+        E2ETestLaunchConfigurator.configureIfNeeded()
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -57,6 +61,10 @@ private struct RootView: View {
             .task {
                 guard !didRunBootstrapTasks else { return }
                 didRunBootstrapTasks = true
+
+                if E2ETestLaunchConfigurator.shouldSkipBootstrapTasks {
+                    return
+                }
 
                 // Use new VocabularySeeder for 5000-entry seed_data.json
                 await VocabularySeeder.shared.seed(modelContainer: Persistence.sharedModelContainer)

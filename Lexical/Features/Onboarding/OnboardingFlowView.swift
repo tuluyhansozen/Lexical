@@ -64,6 +64,7 @@ struct OnboardingFlowView: View {
             Text("Lexical Onboarding")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color(hex: "4A5565"))
+                .accessibilityIdentifier("onboarding.title")
 
             Spacer()
 
@@ -73,6 +74,7 @@ struct OnboardingFlowView: View {
                 }
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color.sonPrimary)
+                .accessibilityIdentifier("onboarding.skipButton")
             }
         }
         .padding(.horizontal, 20)
@@ -108,6 +110,7 @@ struct OnboardingFlowView: View {
                         .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
                 )
                 .disabled(selectedStep == 0)
+                .accessibilityIdentifier("onboarding.backButton")
 
                 Button {
                     advanceOrComplete()
@@ -122,6 +125,7 @@ struct OnboardingFlowView: View {
                 .background(canAdvanceCurrentStep ? Color.sonPrimary : Color(hex: "AAB7AE"))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .disabled(!canAdvanceCurrentStep)
+                .accessibilityIdentifier("onboarding.primaryButton")
             }
         }
         .padding(.horizontal, 20)
@@ -140,6 +144,7 @@ struct OnboardingFlowView: View {
                 Text("Build your reading fluency with retrieval-first learning.")
                     .font(.display(size: 34, weight: .bold))
                     .foregroundStyle(Color(hex: "0A0A0A"))
+                    .accessibilityIdentifier("onboarding.welcomeHeadline")
 
                 Text("Lexical combines Reading, Review, and Word Matrix into one daily loop tuned for intermediate learners.")
                     .font(.system(size: 16, weight: .regular))
@@ -161,6 +166,7 @@ struct OnboardingFlowView: View {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
                         )
+                        .accessibilityIdentifier("onboarding.nameField")
                 }
 
                 VStack(alignment: .leading, spacing: 10) {

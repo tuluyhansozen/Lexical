@@ -39,6 +39,7 @@ struct HomeFeedView: View {
                             .foregroundStyle(Color(hex: "4A5565"))
                             .multilineTextAlignment(.leading)
                             .padding(.top, 2)
+                            .accessibilityIdentifier("reading.quotaLabel")
                     }
 
                     Color.clear.frame(height: 104)
@@ -96,6 +97,7 @@ struct HomeFeedView: View {
             Text("Reading")
                 .font(.system(size: 25, weight: .bold))
                 .foregroundStyle(Color(hex: "0A0A0A"))
+                .accessibilityIdentifier("reading.headerTitle")
 
             Text("Daily curated articles for you")
                 .font(.system(size: 12, weight: .light))
@@ -129,6 +131,7 @@ struct HomeFeedView: View {
             }
             .buttonStyle(.plain)
             .padding(.top, 2)
+            .accessibilityIdentifier("reading.generateButton")
         } else {
             Button {
                 premiumUpsellMessage = "Upgrade to Premium to unlock limitless articles, widget profiles, and personalized FSRS parameters."
@@ -159,6 +162,7 @@ struct HomeFeedView: View {
             .buttonStyle(.plain)
             .padding(.horizontal, 10)
             .padding(.top, 2)
+            .accessibilityIdentifier("reading.upgradeButton")
         }
     }
 
@@ -175,6 +179,7 @@ struct HomeFeedView: View {
         .background(Color(hex: "181818"))
         .clipShape(Capsule())
         .padding(.top, 2)
+        .accessibilityIdentifier("reading.generatingButton")
     }
 
     private var emptyStateCard: some View {
@@ -210,6 +215,7 @@ struct HomeFeedView: View {
             }
             .buttonStyle(.plain)
             .padding(.bottom, 25)
+            .accessibilityIdentifier("reading.generateFirstButton")
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, minHeight: 253, alignment: .topLeading)

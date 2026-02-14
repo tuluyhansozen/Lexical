@@ -47,6 +47,7 @@ struct SingleCardPromptView: View {
                         Text("Prompt Card")
                             .font(.headline)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("prompt.title")
                         Spacer()
                     }
                     .padding(.horizontal, 24)

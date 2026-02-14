@@ -463,6 +463,8 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 - **Replay Support (Implemented):** Add profile/settings action to replay onboarding for QA, iteration, and user re-entry.
 - **Onboarding Flow:** Continue with permission hardening (motion/extension/widget coaching) and calibration entry point when those in-app setup surfaces are available.
 - **Accessibility Audit:** Ensure VoiceOver support, Dynamic Type, and Reduce Motion compliance.
+- **E2E Harness (Implemented):** Add simulator black-box automation (`simctl` + sqlite/plist assertions + screenshots) for first-run onboarding, free/premium gate state checks, and pending prompt deep-link consumption.
+- **True UI Automation (Implemented):** Add `idb ui`-driven interaction tests (real taps + accessibility assertions) covering onboarding, free/premium feed states, and prompt-route open/close behavior.
 - **Performance Optimization:** Profile with Instruments, keep reader and graph views smooth under realistic dataset size.
 - **Privacy/Compliance:** Finalize `PrivacyInfo.xcprivacy` and data collection disclosures.
 - **Release Assets:** Generate App Store screenshots, metadata, and TestFlight validation checklist.
@@ -477,6 +479,9 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 - [ ] App Store Connect metadata (description, keywords, categories)
 - [ ] Screenshot set for all required device sizes
 - [ ] TestFlight build uploaded and distributed
+- [x] `scripts/e2e/run.sh` - deterministic simulator E2E harness with screenshot artifacts and state assertions
+- [x] `scripts/ui_automation/run_true_ui.sh` - true simulator UI automation with interactive taps and accessibility assertions across 5 core flows
+- [x] `docs/e2e_testing.md` - E2E harness usage and artifact contract
 
 ---
 

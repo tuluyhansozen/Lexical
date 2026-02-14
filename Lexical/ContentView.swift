@@ -33,6 +33,7 @@ struct ContentView: View {
                     Text("Ready to Review?")
                         .font(.display(size: 32, weight: .bold))
                         .foregroundStyle(Color.adaptiveText)
+                        .accessibilityIdentifier("review.readyTitle")
                     
                     Text("Your retention engine is primed.")
                         .font(.bodyText)
@@ -47,6 +48,7 @@ struct ContentView: View {
                     .frame(maxWidth: 200)
                     .background(Color.sonPrimary)
                     .cornerRadius(16)
+                    .accessibilityIdentifier("review.startSessionButton")
                     
                     #if DEBUG
                     Button("Trigger Notification (Bandit)") {
@@ -90,6 +92,7 @@ struct ContentView: View {
                         Button("Close") {
                             promptRoute = nil
                         }
+                        .accessibilityIdentifier("prompt.closeButton")
                     }
                 }
             }

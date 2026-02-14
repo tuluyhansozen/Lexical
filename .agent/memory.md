@@ -17,6 +17,7 @@
 - **Collocation Matrix**: Force-directed graph visualization of semantic connections.
 - **Vocabulary Seeding**: `VocabularySeedService` + `vocab_seed.json` first-launch seeding.
 - **Onboarding Coordinator**: First-run phase flow (welcome, FSRS primer, interests, reading primer, notification opt-in, completion) with resumable progress.
+- **E2E Harness**: `scripts/e2e/run.sh` black-box simulator flow plus `scripts/ui_automation/run_true_ui.sh` true UI automation (`idb` taps + accessibility assertions) for onboarding, free/premium reading states, and prompt-route behavior.
 - **Debug Verification**: Seed count overlay (DEBUG) + `--lexical-debug-autocycle` tab cycling for simulator checks.
 
 ## SwiftData Models
@@ -32,7 +33,7 @@
 - **Phase 8**: ✅ Navigation, seeding, personalization, and rank-aware targeting completed.
 - **Phase 9**: ✅ Identity, calibration, dual-store migration, and sync foundation completed.
 - **Phase 10**: ✅ Completed: adaptive prompting/generated-content lifecycle, daily root resolver extraction, and notification triage service integration verified by simulator test + smoke run.
-- **Phase 11**: 🟡 In progress: onboarding v1 integrated at app root; notification permission is now contextual (not launch-time).
+- **Phase 11**: 🟡 In progress: onboarding v1 integrated at app root; notification permission is now contextual (not launch-time); true UI automation harness added for 5 core user flows.
 
 ## Environment Notes
 - **MCP Servers**: `ios-simulator`, `filesystem`, `context7` for agentic interactions.
