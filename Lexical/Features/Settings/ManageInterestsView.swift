@@ -5,9 +5,7 @@ import LexicalCore
 struct ManageInterestsView: View {
     @Bindable var profile: InterestProfile
     @State private var newTag: String = ""
-    
-    let suggestedTags = ["Science", "Technology", "Business", "Health", "Politics", "Arts", "Sports", "Nature"]
-    
+
     var body: some View {
         Form {
             Section("Current Interests") {
@@ -28,33 +26,44 @@ struct ManageInterestsView: View {
                 HStack {
                     TextField("New Interest", text: $newTag)
                     Button("Add") {
-                        if !newTag.isEmpty && !profile.selectedTags.contains(newTag) {
-                            profile.selectedTags.append(newTag)
+                        let normalized = newTag.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !normalized.isEmpty && !profile.selectedTags.contains(normalized) {
+                            profile.selectedTags.append(normalized)
+                            profile.selectedTags.sort()
                             newTag = ""
                         }
                     }
                     .disabled(newTag.isEmpty)
                 }
             }
-            
-            Section("Suggestions") {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ForEach(suggestedTags, id: \.self) { tag in
-                            if !profile.selectedTags.contains(tag) {
-                                Button {
-                                    profile.selectedTags.append(tag)
-                                } label: {
-                                    Text(tag)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.blue.opacity(0.1))
-                                        .clipShape(Capsule())
+
+            Section("Browse By Group") {
+                ForEach(InterestCatalog.groups) { group in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(group.title)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                ForEach(group.options) { option in
+                                    if !profile.selectedTags.contains(option.title) {
+                                        Button {
+                                            profile.selectedTags.append(option.title)
+                                            profile.selectedTags.sort()
+                                        } label: {
+                                            Text(option.chipLabel)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(Color.blue.opacity(0.1))
+                                                .clipShape(Capsule())
+                                        }
+                                    }
                                 }
                             }
+                            .padding(.vertical, 4)
                         }
                     }
-                    .padding(.vertical, 4)
                 }
             }
         }

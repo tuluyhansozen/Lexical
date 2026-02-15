@@ -6,6 +6,7 @@ import LexicalCore
 struct ReaderView: View {
     let title: String
     let content: String
+    let focusLemmas: [String]
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -14,11 +15,18 @@ struct ReaderView: View {
     @State private var lemmaStates: [String: VocabularyState] = [:]
     @State private var isLoading = true
     @State private var selectedWord: SelectedWord?
-    @State private var showCaptureSheet = false
-    @State private var captureNotice: String?
+    @State private var infoData: WordDetailData?
     
     private let tokenizationActor = TokenizationActor()
     private let lexemePromotionService = LexemePromotionService()
+
+    private var normalizedFocusLemmaSet: Set<String> {
+        Set(
+            focusLemmas
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                .filter { !$0.isEmpty }
+        )
+    }
     
     struct SelectedWord: Identifiable {
         let id = UUID()
@@ -93,33 +101,15 @@ struct ReaderView: View {
                 }
             }
         }
-        .sheet(isPresented: $showCaptureSheet) {
-            if let selected = selectedWord {
-                WordCaptureSheetWrapper(
-                    word: selected.word,
-                    lemma: selected.lemma,
-                    definition: selected.definition,
-                    sentence: selected.sentence,
-                    onCapture: { handleCapture(lemma: selected.lemma, sentence: selected.sentence) }
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            }
-        }
-        .alert(
-            "Word Selection",
-            isPresented: Binding(
-                get: { captureNotice != nil },
-                set: { newValue in
-                    if !newValue {
-                        captureNotice = nil
-                    }
+        .sheet(item: $infoData) { detail in
+            WordDetailSheet(
+                data: detail,
+                onAddToDeck: {
+                    handleCapture(lemma: detail.lemma, sentence: selectedWord?.sentence ?? "")
+                    infoData = nil
                 }
             )
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(captureNotice ?? "")
+            .presentationDetents([.medium, .large])
         }
         .task {
             await analyzeText()
@@ -145,7 +135,11 @@ struct ReaderView: View {
         
         // Map tokens to highlights using their ORIGINAL RANGES
         // This fixes the lemma-to-surface mismatch bug!
+        let focusSet = normalizedFocusLemmaSet
         tokenHighlights = tokens.compactMap { token in
+            if !focusSet.isEmpty, !focusSet.contains(token.lemma) {
+                return nil
+            }
             guard let state = states[token.lemma], state != .known else { return nil }
             return TokenHighlight(range: token.range, state: state)
         }
@@ -160,23 +154,6 @@ struct ReaderView: View {
             let tokens = await tokenizationActor.tokenize(word)
             let lemma = tokens.first?.lemma ?? word.lowercased()
 
-            switch captureEligibility(for: lemma) {
-            case .allowed:
-                break
-            case .alreadyTracked:
-                captureNotice = "'\(lemma)' is already in your learning queue."
-                return
-            case .ignored:
-                captureNotice = "'\(lemma)' is in your ignored words list."
-                return
-            case let .tooEasy(rank):
-                captureNotice = "'\(lemma)' is below your target band (rank \(rank))."
-                return
-            case let .tooHard(rank):
-                captureNotice = "'\(lemma)' is above your current target band (rank \(rank))."
-                return
-            }
-            
             selectedWord = SelectedWord(
                 word: word,
                 lemma: lemma,
@@ -187,7 +164,15 @@ struct ReaderView: View {
                 sentence: sentence,
                 range: range
             )
-            showCaptureSheet = true
+
+            guard isHighlightedTap(lemma: lemma, range: range) else {
+                return
+            }
+
+            infoData = WordDetailDataBuilder.build(
+                for: makeReviewCardForDetail(lemma: lemma, originalWord: word, sentence: sentence),
+                modelContext: modelContext
+            )
         }
     }
     
@@ -238,44 +223,54 @@ struct ReaderView: View {
         }
 
         lemmaStates[normalizedLemma] = .learning
-        showCaptureSheet = false
     }
 
-    private enum CaptureEligibility {
-        case allowed
-        case alreadyTracked
-        case ignored
-        case tooEasy(rank: Int)
-        case tooHard(rank: Int)
-    }
-
-    private func captureEligibility(for lemma: String) -> CaptureEligibility {
+    private func isHighlightedTap(
+        lemma: String,
+        range: Range<String.Index>
+    ) -> Bool {
         let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-
-        if let state = lemmaStates[normalizedLemma], state == .learning || state == .known {
-            return .alreadyTracked
+        guard let state = lemmaStates[normalizedLemma], state != .known else {
+            return false
         }
 
-        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
-        let ignored = Set(profile.ignoredWords.map { $0.lowercased() })
-        if ignored.contains(normalizedLemma) {
-            return .ignored
+        guard tokenHighlights.contains(where: { $0.range.overlaps(range) }) else {
+            return false
         }
 
-        let rankDescriptor = FetchDescriptor<LexemeDefinition>(
-            predicate: #Predicate { $0.lemma == normalizedLemma }
+        if !normalizedFocusLemmaSet.isEmpty {
+            return normalizedFocusLemmaSet.contains(normalizedLemma)
+        }
+        return true
+    }
+
+    private func makeReviewCardForDetail(
+        lemma: String,
+        originalWord: String,
+        sentence: String
+    ) -> ReviewCard {
+        let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let stateKey = UserWordState.makeKey(userId: activeProfile.userId, lemma: normalizedLemma)
+        let stateDescriptor = FetchDescriptor<UserWordState>(
+            predicate: #Predicate { $0.userLemmaKey == stateKey }
         )
-        let rank = (try? modelContext.fetch(rankDescriptor).first)?.rank
-        guard let rank else { return .allowed }
+        let state = try? modelContext.fetch(stateDescriptor).first
 
-        let range = LexicalCalibrationEngine().proximalRange(for: profile.lexicalRank)
-        if rank < range.lowerBound {
-            return .tooEasy(rank: rank)
-        }
-        if rank > range.upperBound {
-            return .tooHard(rank: rank)
-        }
-        return .allowed
+        return ReviewCard(
+            lemma: normalizedLemma,
+            originalWord: originalWord,
+            contextSentence: sentence,
+            definition: fetchDefinition(for: normalizedLemma, userId: activeProfile.userId),
+            stability: state?.stability ?? 0.0,
+            difficulty: state?.difficulty ?? 0.3,
+            retrievability: state?.retrievability ?? 1.0,
+            nextReviewDate: state?.nextReviewDate,
+            lastReviewDate: state?.lastReviewDate,
+            reviewCount: state?.reviewCount ?? 0,
+            createdAt: state?.createdAt ?? Date(),
+            status: state?.status ?? .learning
+        )
     }
 
     private func applyRankFiltering(
@@ -342,11 +337,19 @@ struct ReaderView: View {
     }
     
     private func countNewWords() -> Int {
-        lemmaStates.values.filter { $0 == .new }.count
+        let focusSet = normalizedFocusLemmaSet
+        if focusSet.isEmpty {
+            return lemmaStates.values.filter { $0 == .new }.count
+        }
+        return focusSet.filter { lemmaStates[$0] == .new }.count
     }
     
     private func countLearningWords() -> Int {
-        lemmaStates.values.filter { $0 == .learning }.count
+        let focusSet = normalizedFocusLemmaSet
+        if focusSet.isEmpty {
+            return lemmaStates.values.filter { $0 == .learning }.count
+        }
+        return focusSet.filter { lemmaStates[$0] == .learning }.count
     }
 }
 
@@ -481,7 +484,8 @@ struct WordCaptureSheetWrapper: View {
             
             Serendipity often plays a role in language acquisition. Unexpected encounters with native \
             speakers or stumbling upon compelling content can accelerate the learning process dramatically.
-            """
+            """,
+            focusLemmas: ["serendipity", "nuanced", "immersion"]
         )
     }
 }

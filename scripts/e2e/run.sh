@@ -310,6 +310,44 @@ test_pending_prompt_route_consumption() {
   assert_empty "$remaining_definition" "Pending prompt definition consumed"
 }
 
+test_regular_usage_day28_burst_perspective() {
+  log "Running test_regular_usage_day28_burst_perspective"
+  install_fresh
+
+  launch_app --lexical-ui-tests --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-e2e-scenario-regular-2words-day28-articles4
+  sleep 4
+  screenshot "06_regular_usage_day28_reading"
+  terminate_app
+
+  ensure_app_data_files
+
+  local articles
+  local states
+  local events
+  local acquired_approx
+  local unique_days
+
+  articles="$(sqlite_query "SELECT COUNT(*) FROM ZGENERATEDCONTENT;")"
+  states="$(sqlite_query "SELECT COUNT(*) FROM ZUSERWORDSTATE;")"
+  events="$(sqlite_query "SELECT COUNT(*) FROM ZREVIEWEVENT;")"
+  acquired_approx="$(sqlite_query "SELECT COUNT(DISTINCT ZLEMMA) FROM ZREVIEWEVENT WHERE ZGRADE >= 3 AND lower(ZREVIEWSTATE) IN ('again','hard','good','easy');")"
+  unique_days="$(sqlite_query "SELECT COUNT(DISTINCT date(datetime(ZREVIEWDATE + 978307200, 'unixepoch', 'localtime'))) FROM ZREVIEWEVENT WHERE lower(ZREVIEWSTATE) LIKE 'session_%' OR lower(ZREVIEWSTATE) IN ('again','hard','good','easy');")"
+
+  assert_eq "4" "$articles" "Day-28 burst articles"
+  assert_eq "56" "$states" "Two-word-per-day state rows over 28 days"
+  assert_eq "56" "$acquired_approx" "Acquired-word estimate for scenario"
+  assert_eq "28" "$unique_days" "Active review days in scenario"
+  if [[ "$events" -lt 56 ]]; then
+    fail "Expected at least 56 review events, found $events"
+  fi
+  log "[PASS] Review event volume looks realistic => $events"
+
+  launch_app --lexical-ui-tests --lexical-e2e-complete-onboarding --lexical-e2e-scenario-regular-2words-day28-articles4 --lexical-debug-open-stats
+  sleep 4
+  screenshot "07_regular_usage_day28_stats"
+  terminate_app
+}
+
 main() {
   log "Artifacts directory: $ARTIFACT_DIR"
   boot_simulator
@@ -319,6 +357,7 @@ main() {
   test_onboarding_gate
   test_free_and_premium_gate_state
   test_pending_prompt_route_consumption
+  test_regular_usage_day28_burst_perspective
 
   log "E2E run completed successfully"
   log "Report: $REPORT_FILE"

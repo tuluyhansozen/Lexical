@@ -1,8 +1,8 @@
 # Lexical App: Project Implementation Plan
 
 > **Generated:** 2026-01-31
-> **Last Updated:** 2026-02-11
-> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Active | Monetization Phase Active
+> **Last Updated:** 2026-02-15
+> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Active | Monetization Phase Active | Content Diversity Phase Active
 
 ---
 
@@ -449,15 +449,45 @@ Create deterministic StoreKit test scenarios (`.storekit` + `SKTestSession`) for
 
 ---
 
+## Phase 10D: Article Planning & Content Diversity Engine
+
+**Status:** 🟡 In Progress (planner + prompt hardening scaffold implemented on 2026-02-15)
+
+### Section 1: Objective
+Produce consistently interesting, informative, and non-repetitive generated articles by adding explicit topic/angle planning, novelty memory, and quality-focused prompt constraints before LLM generation.
+
+### Section 2: Key Activities
+- **10D.1 Topic Planner Service:** Build a planner that selects a concrete topic from user interests (minimum four selected interests expected), not just broad categories.
+- **10D.2 Angle Rotation:** Add reusable angle blueprints (trade-off, case study, myth-vs-reality, decision framework, postmortem) and rotate based on recent usage.
+- **10D.3 Prompt Memory:** Persist recent topic/angle usage in lightweight local memory to avoid immediate repeats across generations.
+- **10D.4 Prompt Composition Hardening:** Enforce a structured prompt block containing topic, angle directive, opening hook, freshness constraints, and factuality rules.
+- **10D.5 Novelty Constraints:** Inject recent-title and recent-topic exclusions into prompt instructions to reduce near-duplicate outputs.
+- **10D.6 Target Integration:** Keep reinforcement/stretch target words in the same prompt contract while requiring natural in-context usage (no list stuffing, no placeholder tokens).
+- **10D.7 Regression Coverage:** Add tests validating planner output shape, rotation behavior, and required prompt sections.
+
+### Section 3: Deliverables
+- [x] `LexicalCore/Services/ArticlePromptPlanner.swift` - topic + angle planning, novelty scoring, and prompt-memory persistence
+- [x] `LexicalCore/Services/ArticleGenerator.swift` - planner integration and hardened prompt composition with freshness/quality constraints
+- [x] `Lexical/Features/Home/ArticlesViewModel.swift` + `Lexical/Features/Home/HomeFeedView.swift` - pass active user identity into generation for user-scoped prompt memory
+- [x] `LexicalCoreTests/ArticlePromptPlannerTests.swift` - planner output and rotation behavior tests
+- [x] `LexicalCoreTests/ArticleGeneratorPromptTests.swift` - prompt includes topic/angle/freshness sections
+- [ ] Add embedding/similarity-based novelty scoring (beyond lexical overlap heuristic)
+- [ ] Add post-generation quality gate + retry loop (structure/factuality/novelty checks)
+- [ ] Expand category/topic bank coverage for custom niche interests selected in onboarding
+
+---
+
 ## Phase 11: Production Polish & App Store Release
 
-**Status:** 🟡 In Progress (Onboarding v1 integrated on 2026-02-14)
+**Status:** 🟡 In Progress (Onboarding v1.3 integrated on 2026-02-15)
 
 ### Section 1: Objective
 Complete onboarding UX/accessibility hardening and prepare release artifacts for App Store and TestFlight.
 
 ### Section 2: Key Activities
 - **Onboarding Flow (Implemented v1):** Ship first-run, phase-gated flow with value proposition, FSRS/forgetting-curve primer, interest selection, reading-loop primer, contextual notification opt-in, and completion handoff.
+- **Onboarding Personalization (Implemented v1.2):** Expand interest selector to Bumble-style grouped interest sections (70+ tags) and add article-style preference capture (Balanced / Informative / Fun / Fresh Angle) so early content generation reflects user taste.
+- **Onboarding Rank Calibration (Implemented v1.3):** Add a practical 10-question lexical check (8 real words + 2 control distractors) and map responses through `LexicalCalibrationEngine` to initialize `UserProfile.lexicalRank` with confidence capture.
 - **Onboarding State Persistence (Implemented):** Persist onboarding completion and resumable step index with `AppStorage` keys; wire root app gate to onboarding completion state.
 - **Contextual Notification Permission (Implemented):** Move notification authorization out of app-launch init and trigger from onboarding "Enable Smart Nudges" action only.
 - **Replay Support (Implemented):** Add profile/settings action to replay onboarding for QA, iteration, and user re-entry.
@@ -471,10 +501,13 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 
 ### Section 3: Deliverables
 - [x] `Lexical/Features/Onboarding/OnboardingFlowView.swift` - First-run phase-gated onboarding experience
+- [x] `Lexical/Features/Onboarding/InterestCatalog.swift` - 50-interest onboarding selection catalog
+- [x] `LexicalCore/Services/OnboardingRankAssessmentService.swift` - 10-question calibration packet builder + answer-to-rank evaluation
 - [x] `Lexical/Features/Onboarding/OnboardingStorage.swift` - Onboarding completion/progress key contract
 - [x] `Lexical/LexicalApp.swift` - Root-level onboarding gate integration
 - [x] `Lexical/Services/BanditScheduler.swift` - Explicit notification authorization API (no launch-time permission prompt)
 - [x] `Lexical/Features/Settings/SettingsView.swift` - Replay onboarding entry point
+- [x] `LexicalCoreTests/OnboardingRankAssessmentServiceTests.swift` - onboarding calibration packet shape and rank-estimation behavior coverage
 - [ ] `PrivacyInfo.xcprivacy` - Privacy manifest
 - [ ] App Store Connect metadata (description, keywords, categories)
 - [ ] Screenshot set for all required device sizes
@@ -494,6 +527,7 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 | Phase 10 | ✅ Complete | - | Adaptive acquisition loop finalized with dedicated daily-root + notification triage services and simulator verification |
 | Phase 10B | 🔴 Critical (Active) | 1 week | UI refinement across design system, reader/review flows, and accessibility ergonomics |
 | Phase 10C | 🔴 Critical (Active) | 1 week | Free/Premium monetization rollout with StoreKit 2, entitlement sync, and feature gates |
+| Phase 10D | 🔴 Critical (Active) | 1 week | Topic/angle planning, novelty memory, and article quality diversity enforcement |
 | Phase 11 | 🔴 Critical (Active) | 1 week | Onboarding hardening + compliance/release packaging after UI + monetization baselines |
 
 ---
@@ -514,4 +548,5 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 1. Start Phase 10B UI refinement in this order: design tokens/glass system, Reader/Review flows, then cross-screen consistency pass.
 2. Run simulator QA sweeps (iPhone 16e portrait/landscape, Dynamic Type, VoiceOver, Reduce Motion/Transparency) and fold fixes into Phase 10B.
 3. Continue Phase 10C monetization implementation: StoreKit service integration, entitlement sync model updates, and feature-gate wiring.
-4. Continue Phase 11 onboarding hardening: add guided widget/extension setup and motion permission priming, then complete compliance/release packaging.
+4. Continue Phase 10D content engine hardening: add post-generation quality gate + retry and extend topic-bank coverage for niche interests.
+5. Continue Phase 11 onboarding hardening: add guided widget/extension setup and motion permission priming, then complete compliance/release packaging.

@@ -6,10 +6,12 @@ struct HomeFeedView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = ArticlesViewModel()
     @Query private var interestProfiles: [InterestProfile]
+    @AppStorage(OnboardingStorageKeys.articleStylePreference) private var articleStylePreferenceRaw: String = ArticleStylePreference.balanced.rawValue
 
     @State private var articleQuotaLabel: String?
     @State private var generationLimitMessage: String?
     @State private var premiumUpsellMessage: String?
+    @State private var generationUnavailableMessage: String?
     @State private var isPremium = false
     @State private var canGenerateAnotherArticle = false
 
@@ -89,6 +91,21 @@ struct HomeFeedView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(premiumUpsellMessage ?? "")
+        }
+        .alert(
+            "Article Generation Unavailable",
+            isPresented: Binding(
+                get: { generationUnavailableMessage != nil },
+                set: { presented in
+                    if !presented {
+                        generationUnavailableMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(generationUnavailableMessage ?? "")
         }
     }
 
@@ -228,6 +245,7 @@ struct HomeFeedView: View {
     private func triggerGeneration() async {
         let profile = interestProfiles.first ?? InterestProfile(selectedTags: ["Technology"])
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let articleStylePreference = ArticleStylePreference(rawValue: articleStylePreferenceRaw) ?? .balanced
 
         do {
             let canGenerate = try featureGateService.canGenerateArticle(
@@ -255,7 +273,10 @@ struct HomeFeedView: View {
             stretchCount: isPremiumTier ? 3 : 1
         )
         let targets = plan.allWords
-        let fallbackTargets = ["context", "insight", "derive"]
+        guard !targets.isEmpty else {
+            generationUnavailableMessage = "No eligible lexemes with rank and definition are ready yet. Please try again after vocabulary data finishes loading."
+            return
+        }
         let adaptiveContext = AdaptivePromptContext(
             lexicalRank: activeProfile.lexicalRank,
             easyRatingVelocity: activeProfile.easyRatingVelocity
@@ -263,10 +284,12 @@ struct HomeFeedView: View {
 
         let generated = await viewModel.generateNewArticle(
             profile: profile,
-            targetWords: targets.isEmpty ? fallbackTargets : targets,
+            targetWords: targets,
             reinforcementWords: plan.reinforcementWords,
             stretchWords: plan.stretchWords,
-            adaptiveContext: adaptiveContext
+            adaptiveContext: adaptiveContext,
+            userId: activeProfile.userId,
+            articleStylePreference: articleStylePreference.rawValue
         )
 
         guard generated else { return }

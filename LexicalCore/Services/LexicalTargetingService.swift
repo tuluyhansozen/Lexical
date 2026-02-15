@@ -134,13 +134,14 @@ public struct LexicalTargetingService {
 
         for state in userStates {
             let lemma = state.lemma
-            let lexeme = lexemeByLemma[lemma]
-            let rank = lexeme?.rank
-            guard rank.map(targetRange.contains) ?? true else { continue }
+            guard let lexeme = lexemeByLemma[lemma] else { continue }
+            let rank = lexeme.rank
+            let definition = lexeme.basicMeaning
+            guard isPromptEligibleLexeme(lemma: lemma, rank: rank, definition: definition) else { continue }
+            guard let rank, targetRange.contains(rank) else { continue }
 
             let isDue = (state.nextReviewDate ?? now) <= now
-            let definition = lexeme?.basicMeaning
-            let context = lexeme?.sampleSentence
+            let context = lexeme.sampleSentence
 
             scored.append(
                 ScoredCandidate(
@@ -181,10 +182,20 @@ public struct LexicalTargetingService {
             }
         }
 
-        let fallbackLexemes = lexemes
+        let eligibleFallbackLexemes = lexemes
+            .filter { lexeme in
+                guard isPromptEligibleLexeme(
+                    lemma: lexeme.lemma,
+                    rank: lexeme.rank,
+                    definition: lexeme.basicMeaning
+                ) else { return false }
+                return !ignored.contains(lexeme.lemma) && !seen.contains(lexeme.lemma)
+            }
+
+        let inRangeFallback = eligibleFallbackLexemes
             .filter { lexeme in
                 guard let rank = lexeme.rank else { return false }
-                return targetRange.contains(rank) && !ignored.contains(lexeme.lemma) && !seen.contains(lexeme.lemma)
+                return targetRange.contains(rank)
             }
             .sorted { lhs, rhs in
                 let lhsDistance = distanceScore(for: lhs.rank)
@@ -195,7 +206,35 @@ public struct LexicalTargetingService {
                 return lhs.lemma < rhs.lemma
             }
 
-        for lexeme in fallbackLexemes {
+        for lexeme in inRangeFallback {
+            results.append(
+                LexicalTargetCandidate(
+                    lemma: lexeme.lemma,
+                    rank: lexeme.rank,
+                    definition: lexeme.basicMeaning,
+                    contextSentence: lexeme.sampleSentence
+                )
+            )
+            if results.count >= limit {
+                return results
+            }
+        }
+
+        let outOfRangeFallback = eligibleFallbackLexemes
+            .filter { lexeme in
+                guard let rank = lexeme.rank else { return false }
+                return !targetRange.contains(rank)
+            }
+            .sorted { lhs, rhs in
+                let lhsDistance = distanceScore(for: lhs.rank)
+                let rhsDistance = distanceScore(for: rhs.rank)
+                if lhsDistance != rhsDistance {
+                    return lhsDistance < rhsDistance
+                }
+                return lhs.lemma < rhs.lemma
+            }
+
+        for lexeme in outOfRangeFallback {
             results.append(
                 LexicalTargetCandidate(
                     lemma: lexeme.lemma,
@@ -236,6 +275,11 @@ public struct LexicalTargetingService {
 
         let scored = lexemes
             .compactMap { lexeme -> (lemma: String, distance: Int)? in
+                guard isPromptEligibleLexeme(
+                    lemma: lexeme.lemma,
+                    rank: lexeme.rank,
+                    definition: lexeme.basicMeaning
+                ) else { return nil }
                 guard let rank = lexeme.rank else { return nil }
                 guard rank > upper, rank <= stretchUpperBound else { return nil }
                 guard !tracked.contains(lexeme.lemma) else { return nil }
@@ -251,5 +295,23 @@ public struct LexicalTargetingService {
             }
 
         return scored.prefix(limit).map(\.lemma)
+    }
+
+    private func isPromptEligibleLexeme(
+        lemma: String,
+        rank: Int?,
+        definition: String?
+    ) -> Bool {
+        guard let rank else { return false }
+        guard (calibrationEngine.minRank...calibrationEngine.maxRank).contains(rank) else { return false }
+
+        let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalizedLemma.isEmpty else { return false }
+        guard normalizedLemma.range(of: "^[a-z][a-z-]*$", options: .regularExpression) != nil else {
+            return false
+        }
+
+        let normalizedDefinition = definition?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !normalizedDefinition.isEmpty
     }
 }

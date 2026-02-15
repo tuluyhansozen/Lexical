@@ -10,20 +10,23 @@ struct OnboardingFlowView: View {
     @AppStorage(OnboardingStorageKeys.currentStep) private var persistedStep: Int = 0
     @AppStorage(OnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
     @AppStorage(OnboardingStorageKeys.notificationPrompted) private var hasPromptedNotifications = false
+    @AppStorage(OnboardingStorageKeys.articleStylePreference) private var articleStylePreferenceRaw: String = ArticleStylePreference.balanced.rawValue
+    @AppStorage(OnboardingStorageKeys.calibrationRank) private var persistedCalibrationRank: Int = 0
+    @AppStorage(OnboardingStorageKeys.calibrationConfidence) private var persistedCalibrationConfidence: Double = 0.0
     @AppStorage("userName") private var userName: String = "Learner"
 
     @State private var selectedStep: Int = 0
     @State private var selectedInterests: Set<String> = []
     @State private var customInterest: String = ""
+    @State private var calibrationQuestions: [OnboardingCalibrationQuestion] = []
+    @State private var calibrationAnswers: [String: OnboardingCalibrationAnswer] = [:]
+    @State private var calibrationQuestionIndex: Int = 0
+    @State private var calibrationResultPreview: LexicalCalibrationResult?
     @State private var hasPlayedCurveDemo = false
     @State private var isRequestingNotificationPermission = false
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     let onComplete: () -> Void
-
-    private let suggestedInterests = [
-        "Technology", "Science", "Business", "Health", "Arts", "Psychology", "History", "Design"
-    ]
 
     var body: some View {
         ZStack {
@@ -35,7 +38,9 @@ struct OnboardingFlowView: View {
                 TabView(selection: $selectedStep) {
                     welcomeStep.tag(OnboardingStep.welcome.rawValue)
                     fsrsPrimerStep.tag(OnboardingStep.fsrsPrimer.rawValue)
+                    rankCalibrationStep.tag(OnboardingStep.rankCalibration.rawValue)
                     interestsStep.tag(OnboardingStep.interests.rawValue)
+                    articleStyleStep.tag(OnboardingStep.articleStyle.rawValue)
                     readingPrimerStep.tag(OnboardingStep.readingPrimer.rawValue)
                     notificationsStep.tag(OnboardingStep.notifications.rawValue)
                     completionStep.tag(OnboardingStep.completion.rawValue)
@@ -51,7 +56,11 @@ struct OnboardingFlowView: View {
             ensureInterestProfileExists()
             selectedStep = clampedStepIndex(persistedStep)
             selectedInterests = Set(interestProfiles.first?.selectedTags ?? [])
+            if ArticleStylePreference(rawValue: articleStylePreferenceRaw) == nil {
+                articleStylePreferenceRaw = ArticleStylePreference.balanced.rawValue
+            }
             normalizeUserName()
+            prepareCalibrationQuestionsIfNeeded()
             Task { await refreshNotificationStatus() }
         }
         .onChange(of: selectedStep) { _, newValue in
@@ -223,6 +232,120 @@ struct OnboardingFlowView: View {
         }
     }
 
+    private var rankCalibrationStep: some View {
+        stepContainer {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Set your starting rank in 10 quick checks.")
+                    .font(.display(size: 31, weight: .bold))
+                    .foregroundStyle(Color(hex: "0A0A0A"))
+                    .accessibilityIdentifier("onboarding.calibrationHeadline")
+
+                Text("Tap the option that matches your confidence. A couple of control words are included to keep rank estimation honest.")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(Color(hex: "364153"))
+                    .lineSpacing(4)
+
+                if calibrationQuestions.isEmpty {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("Preparing rank check...")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color(hex: "4A5565"))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
+                    )
+                } else if let question = currentCalibrationQuestion {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Question \(calibrationQuestionIndex + 1) of \(calibrationQuestions.count)")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color(hex: "4A5565"))
+                            Spacer()
+                            Text("Answered \(calibrationAnswers.count)/\(calibrationQuestions.count)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(Color(hex: "6D7788"))
+                        }
+
+                        ProgressView(
+                            value: Double(calibrationQuestionIndex + 1),
+                            total: Double(max(calibrationQuestions.count, 1))
+                        )
+                        .tint(Color.sonPrimary)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            if question.isDistractor {
+                                Text("CONTROL ITEM")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color(hex: "D97706"))
+                            }
+
+                            Text(question.lemma.capitalized)
+                                .font(.display(size: 30, weight: .bold))
+                                .foregroundStyle(Color(hex: "121722"))
+
+                            Text(question.promptHint)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundStyle(Color(hex: "4A5565"))
+                                .lineSpacing(3)
+                        }
+                        .padding(14)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
+                        )
+
+                        VStack(spacing: 10) {
+                            ForEach(OnboardingCalibrationAnswer.allCases, id: \.rawValue) { answer in
+                                calibrationAnswerButton(answer, for: question)
+                            }
+                        }
+
+                        HStack(spacing: 10) {
+                            Button("Previous Word") {
+                                calibrationQuestionIndex = max(0, calibrationQuestionIndex - 1)
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(calibrationQuestionIndex == 0 ? Color(hex: "9EA3AD") : Color.sonPrimary)
+                            .disabled(calibrationQuestionIndex == 0)
+
+                            Spacer()
+
+                            Button(calibrationQuestionIndex + 1 >= calibrationQuestions.count ? "Finish Check" : "Next Word") {
+                                calibrationQuestionIndex = min(calibrationQuestions.count - 1, calibrationQuestionIndex + 1)
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.sonPrimary)
+                        }
+                    }
+                }
+
+                if let result = calibrationResultPreview,
+                   calibrationAnswers.count == calibrationQuestions.count,
+                   !calibrationQuestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Estimated start rank: \(result.estimatedRank)")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color(hex: "1E2938"))
+                        Text("Confidence: \(formattedCalibrationConfidence(result.confidence))")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundStyle(Color(hex: "4A5565"))
+                    }
+                    .padding(12)
+                    .background(Color(hex: "EAF3ED"))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
+        }
+    }
+
     private var interestsStep: some View {
         stepContainer {
             VStack(alignment: .leading, spacing: 18) {
@@ -230,34 +353,50 @@ struct OnboardingFlowView: View {
                     .font(.display(size: 31, weight: .bold))
                     .foregroundStyle(Color(hex: "0A0A0A"))
 
-                Text("We use these to generate articles and keep your daily reading loop meaningful.")
+                Text("Select at least two. Grouped like Bumble-style tags so users can quickly express identity and taste.")
                     .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(Color(hex: "364153"))
                     .lineSpacing(4)
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 10)], spacing: 10) {
-                    ForEach(suggestedInterests, id: \.self) { tag in
-                        let isSelected = selectedInterests.contains(tag)
-                        Button {
-                            if isSelected {
-                                selectedInterests.remove(tag)
-                            } else {
-                                selectedInterests.insert(tag)
+                LazyVStack(alignment: .leading, spacing: 18) {
+                    ForEach(InterestCatalog.groups) { group in
+                        VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(group.title)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color(hex: "1E2938"))
+                                Text(group.subtitle)
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundStyle(Color(hex: "6D7788"))
                             }
-                        } label: {
-                            Text(tag)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(isSelected ? .white : Color(hex: "364153"))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 38)
-                                .background(isSelected ? Color.sonPrimary : Color.white)
-                                .clipShape(Capsule())
-                                .overlay(
-                                    Capsule()
-                                        .stroke(isSelected ? Color.sonPrimary : Color(hex: "DDE1E8"), lineWidth: 1)
-                                )
+
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: 10)], spacing: 10) {
+                                ForEach(group.options) { option in
+                                    let tag = option.title
+                                    let isSelected = selectedInterests.contains(tag)
+                                    Button {
+                                        if isSelected {
+                                            selectedInterests.remove(tag)
+                                        } else {
+                                            selectedInterests.insert(tag)
+                                        }
+                                    } label: {
+                                        Text(option.chipLabel)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(isSelected ? .white : Color(hex: "364153"))
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 38)
+                                            .background(isSelected ? Color.sonPrimary : Color.white)
+                                            .clipShape(Capsule())
+                                            .overlay(
+                                                Capsule()
+                                                    .stroke(isSelected ? Color.sonPrimary : Color(hex: "DDE1E8"), lineWidth: 1)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
                         }
-                        .buttonStyle(.plain)
                     }
                 }
 
@@ -287,9 +426,60 @@ struct OnboardingFlowView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
 
-                Text("Select at least one interest to continue.")
+                Text("Selected: \(selectedInterests.count)/\(InterestCatalog.all.count)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(hex: "4A5565"))
+
+                Text("Select at least two interests to continue.")
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(Color(hex: "6D7788"))
+            }
+        }
+    }
+
+    private var articleStyleStep: some View {
+        stepContainer {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("What kind of articles do you want?")
+                    .font(.display(size: 31, weight: .bold))
+                    .foregroundStyle(Color(hex: "0A0A0A"))
+
+                Text("Choose your default style. We will still rotate topics and angles, but this sets the main writing flavor.")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(Color(hex: "364153"))
+                    .lineSpacing(4)
+
+                VStack(spacing: 10) {
+                    ForEach(ArticleStylePreference.allCases, id: \.rawValue) { style in
+                        let isSelected = selectedArticleStyle == style
+                        Button {
+                            articleStylePreferenceRaw = style.rawValue
+                        } label: {
+                            HStack(alignment: .center, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(style.title)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(Color(hex: "1A1A1A"))
+                                    Text(style.subtitle)
+                                        .font(.system(size: 13, weight: .regular))
+                                        .foregroundStyle(Color(hex: "4A5565"))
+                                }
+                                Spacer()
+                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(isSelected ? Color.sonPrimary : Color(hex: "A8AFBC"))
+                            }
+                            .padding(14)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(isSelected ? Color.sonPrimary : Color(hex: "E0E3E8"), lineWidth: 1.5)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("onboarding.articleStyle.\(style.rawValue)")
+                    }
+                }
             }
         }
     }
@@ -425,6 +615,8 @@ struct OnboardingFlowView: View {
                     summaryRow("Free", value: "\(FeatureGateService.freeArticleLimitPerWindow) article / \(FeatureGateService.freeArticleWindowDays) days")
                     summaryRow("Widgets", value: "\(FeatureGateService.freeWidgetProfileLimit) active profile on Free")
                     summaryRow("FSRS", value: "Standard (Free) / Personalized (Premium)")
+                    summaryRow("Start rank", value: startRankSummary)
+                    summaryRow("Article style", value: selectedArticleStyle.title)
                 }
                 .padding(14)
                 .background(Color.white)
@@ -439,11 +631,31 @@ struct OnboardingFlowView: View {
 
     private var canAdvanceCurrentStep: Bool {
         switch OnboardingStep(rawValue: selectedStep) ?? .welcome {
+        case .rankCalibration:
+            return calibrationQuestions.count == 10 && calibrationAnswers.count == calibrationQuestions.count
         case .interests:
-            return !selectedInterests.isEmpty
+            return selectedInterests.count >= 2
         default:
             return true
         }
+    }
+
+    private var currentCalibrationQuestion: OnboardingCalibrationQuestion? {
+        guard !calibrationQuestions.isEmpty else { return nil }
+        let index = min(max(calibrationQuestionIndex, 0), calibrationQuestions.count - 1)
+        return calibrationQuestions[index]
+    }
+
+    private var startRankSummary: String {
+        guard persistedCalibrationRank > 0 else { return "Default rank (2500)" }
+        if persistedCalibrationConfidence > 0 {
+            return "\(persistedCalibrationRank) (\(formattedCalibrationConfidence(persistedCalibrationConfidence)))"
+        }
+        return "\(persistedCalibrationRank)"
+    }
+
+    private var selectedArticleStyle: ArticleStylePreference {
+        ArticleStylePreference(rawValue: articleStylePreferenceRaw) ?? .balanced
     }
 
     private var notificationStatusDescription: String {
@@ -521,6 +733,78 @@ struct OnboardingFlowView: View {
         }
     }
 
+    private func calibrationAnswerButton(
+        _ answer: OnboardingCalibrationAnswer,
+        for question: OnboardingCalibrationQuestion
+    ) -> some View {
+        let isSelected = calibrationAnswers[question.id] == answer
+        return Button {
+            recordCalibrationAnswer(answer, for: question)
+        } label: {
+            Text(calibrationAnswerTitle(answer))
+                .font(.system(size: 14, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .foregroundStyle(isSelected ? .white : Color(hex: "364153"))
+                .background(isSelected ? Color.sonPrimary : Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(isSelected ? Color.sonPrimary : Color(hex: "DDE1E8"), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func calibrationAnswerTitle(_ answer: OnboardingCalibrationAnswer) -> String {
+        switch answer {
+        case .know:
+            return "I know this word"
+        case .unsure:
+            return "Not sure"
+        case .dontKnow:
+            return "I don't know this"
+        }
+    }
+
+    private func formattedCalibrationConfidence(_ confidence: Double) -> String {
+        let percent = Int((max(0, min(1, confidence)) * 100.0).rounded())
+        return "\(percent)%"
+    }
+
+    private func prepareCalibrationQuestionsIfNeeded() {
+        guard calibrationQuestions.isEmpty else { return }
+        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>()
+        let lexemes = (try? modelContext.fetch(lexemeDescriptor)) ?? []
+        let service = OnboardingRankAssessmentService()
+
+        calibrationQuestions = service.buildQuestions(from: lexemes, questionCount: 10)
+        calibrationQuestionIndex = min(
+            calibrationQuestionIndex,
+            max(0, calibrationQuestions.count - 1)
+        )
+        refreshCalibrationResultPreview()
+    }
+
+    private func recordCalibrationAnswer(
+        _ answer: OnboardingCalibrationAnswer,
+        for question: OnboardingCalibrationQuestion
+    ) {
+        calibrationAnswers[question.id] = answer
+        if calibrationQuestionIndex + 1 < calibrationQuestions.count {
+            calibrationQuestionIndex += 1
+        }
+        refreshCalibrationResultPreview()
+    }
+
+    private func refreshCalibrationResultPreview() {
+        let service = OnboardingRankAssessmentService()
+        calibrationResultPreview = service.evaluate(
+            questions: calibrationQuestions,
+            answers: calibrationAnswers
+        )
+    }
+
     private func ensureInterestProfileExists() {
         if interestProfiles.isEmpty {
             let profile = InterestProfile()
@@ -556,6 +840,7 @@ struct OnboardingFlowView: View {
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         let trimmedName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
         activeProfile.displayName = trimmedName.isEmpty ? "Learner" : trimmedName
+        applyCalibrationResultIfAvailable(to: activeProfile)
 
         let profile = interestProfiles.first ?? {
             let created = InterestProfile()
@@ -565,6 +850,20 @@ struct OnboardingFlowView: View {
         profile.selectedTags = selectedInterests.sorted()
 
         try? modelContext.save()
+    }
+
+    private func applyCalibrationResultIfAvailable(to activeProfile: UserProfile) {
+        guard calibrationQuestions.count == 10 else { return }
+        let service = OnboardingRankAssessmentService()
+        guard let result = service.evaluate(
+            questions: calibrationQuestions,
+            answers: calibrationAnswers
+        ) else { return }
+
+        activeProfile.lexicalRank = result.estimatedRank
+        activeProfile.stateUpdatedAt = Date()
+        persistedCalibrationRank = result.estimatedRank
+        persistedCalibrationConfidence = result.confidence
     }
 
     private func finalizeOnboarding() {
@@ -597,7 +896,9 @@ struct OnboardingFlowView: View {
 private enum OnboardingStep: Int, CaseIterable {
     case welcome = 0
     case fsrsPrimer
+    case rankCalibration
     case interests
+    case articleStyle
     case readingPrimer
     case notifications
     case completion

@@ -29,7 +29,9 @@ public class ArticlesViewModel: ObservableObject {
         targetWords: [String],
         reinforcementWords: [String] = [],
         stretchWords: [String] = [],
-        adaptiveContext: AdaptivePromptContext? = nil
+        adaptiveContext: AdaptivePromptContext? = nil,
+        userId: String? = nil,
+        articleStylePreference: String? = nil
     ) async -> Bool {
         guard !isGenerating else { return false }
         isGenerating = true
@@ -40,7 +42,9 @@ public class ArticlesViewModel: ObservableObject {
                 targetWords: targetWords,
                 reinforcementWords: reinforcementWords,
                 stretchWords: stretchWords,
-                adaptiveContext: adaptiveContext
+                adaptiveContext: adaptiveContext,
+                userId: userId,
+                articleStylePreference: articleStylePreference
             )
             self.articles.insert(article, at: 0)
             isGenerating = false

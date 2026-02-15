@@ -21,7 +21,7 @@ struct ArticleCardView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.system(size: 9, weight: .regular))
-                    Text("3 min read")
+                    Text(estimatedReadTimeLabel)
                         .font(.system(size: 10, weight: .regular))
                 }
                 .foregroundStyle(Color(hex: "4A5565"))
@@ -62,7 +62,11 @@ struct ArticleCardView: View {
         .shadow(color: Color.black.opacity(0.22), radius: 4, x: 0, y: 4)
         .fullScreenCover(isPresented: $showReader) {
             NavigationStack {
-                ReaderView(title: article.title, content: article.content)
+                ReaderView(
+                    title: article.title,
+                    content: article.content,
+                    focusLemmas: article.targetWords
+                )
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
@@ -105,6 +109,16 @@ struct ArticleCardView: View {
             return String(prefix[..<split])
         }
         return String(prefix)
+    }
+
+    private var estimatedReadTimeLabel: String {
+        let wordCount = max(1, article.content.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count)
+        let fastMinutes = max(1, Int(ceil(Double(wordCount) / 140.0)))
+        let slowMinutes = max(fastMinutes, Int(ceil(Double(wordCount) / 110.0)))
+        if fastMinutes == slowMinutes {
+            return "\(fastMinutes) min read"
+        }
+        return "\(fastMinutes)-\(slowMinutes) min read"
     }
 
     private func highlight(word: String, color: Color, in text: inout AttributedString) {

@@ -123,6 +123,8 @@ struct ContentView: View {
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("--lexical-debug-open-explore") {
                 selectedTab = 1
+            } else if ProcessInfo.processInfo.arguments.contains("--lexical-debug-open-stats") {
+                selectedTab = 3
             }
             guard !didAutoCycle else { return }
             guard ProcessInfo.processInfo.arguments.contains("--lexical-debug-autocycle") else { return }
