@@ -10,10 +10,10 @@ struct HomeFeedView: View {
 
     @State private var articleQuotaLabel: String?
     @State private var generationLimitMessage: String?
-    @State private var premiumUpsellMessage: String?
     @State private var generationUnavailableMessage: String?
     @State private var isPremium = false
     @State private var canGenerateAnotherArticle = false
+    @State private var showingPremiumOffer = false
 
     private let featureGateService = FeatureGateService()
 
@@ -78,21 +78,6 @@ struct HomeFeedView: View {
             Text(generationLimitMessage ?? "Free plan limit reached.")
         }
         .alert(
-            "Premium",
-            isPresented: Binding(
-                get: { premiumUpsellMessage != nil },
-                set: { presented in
-                    if !presented {
-                        premiumUpsellMessage = nil
-                    }
-                }
-            )
-        ) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(premiumUpsellMessage ?? "")
-        }
-        .alert(
             "Article Generation Unavailable",
             isPresented: Binding(
                 get: { generationUnavailableMessage != nil },
@@ -106,6 +91,16 @@ struct HomeFeedView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(generationUnavailableMessage ?? "")
+        }
+        .sheet(isPresented: $showingPremiumOffer, onDismiss: {
+            refreshArticleQuotaLabel()
+        }) {
+            PremiumOfferView(
+                productIDs: SubscriptionEntitlementService.configuredProductIDs(),
+                onEntitlementChanged: {
+                    refreshArticleQuotaLabel()
+                }
+            )
         }
     }
 
@@ -151,7 +146,7 @@ struct HomeFeedView: View {
             .accessibilityIdentifier("reading.generateButton")
         } else {
             Button {
-                premiumUpsellMessage = "Upgrade to Premium to unlock limitless articles, widget profiles, and personalized FSRS parameters."
+                showingPremiumOffer = true
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "plus")
@@ -246,27 +241,28 @@ struct HomeFeedView: View {
         let profile = interestProfiles.first ?? InterestProfile(selectedTags: ["Technology"])
         let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         let articleStylePreference = ArticleStylePreference(rawValue: articleStylePreferenceRaw) ?? .balanced
+        let quotaSnapshot: ArticleGenerationQuotaSnapshot
 
         do {
-            let canGenerate = try featureGateService.canGenerateArticle(
+            quotaSnapshot = try featureGateService.articleQuotaSnapshot(
                 for: activeProfile,
                 modelContext: modelContext
             )
+            let canGenerate = quotaSnapshot.isUnlimited || quotaSnapshot.remaining > 0
             guard canGenerate else {
-                let snapshot = try featureGateService.articleQuotaSnapshot(
-                    for: activeProfile,
-                    modelContext: modelContext
-                )
-                generationLimitMessage = articleLimitMessage(from: snapshot)
+                generationLimitMessage = articleLimitMessage(from: quotaSnapshot)
                 refreshArticleQuotaLabel()
                 return
             }
         } catch {
-            print("HomeFeedView: failed to evaluate article quota: \(error)")
+            print("HomeFeedView: failed to evaluate article quota: \(error).")
+            generationUnavailableMessage = "Article generation is temporarily unavailable. Please try again."
+            refreshArticleQuotaLabel()
+            return
         }
 
         let targetService = LexicalTargetingService()
-        let isPremiumTier = activeProfile.subscriptionTier == .premium
+        let isPremiumTier = quotaSnapshot.isUnlimited
         let plan = targetService.articleWordPlan(
             modelContext: modelContext,
             reinforcementCount: isPremiumTier ? 5 : 3,

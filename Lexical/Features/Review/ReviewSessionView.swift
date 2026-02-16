@@ -41,19 +41,21 @@ struct SessionContent: View {
             
             if manager.isSessionComplete {
                 VStack(spacing: 24) {
-                    Image(systemName: "checkmark.seal.fill")
+                    Image(systemName: manager.hadDueCardsAtSessionStart ? "checkmark.seal.fill" : "clock.badge.exclamationmark")
                         .font(.system(size: 80))
                         .foregroundStyle(Color.sonPrimary)
                     
-                    Text("Session Complete!")
+                    Text(manager.hadDueCardsAtSessionStart ? "Session Complete!" : "No Cards Due")
                         .font(.display(size: 32, weight: .bold))
                         .foregroundStyle(Color.adaptiveText)
                     
-                    Text("You've reviewed all due words.")
+                    Text(manager.hadDueCardsAtSessionStart ? "You've reviewed all due words." : "Your due queue is empty right now. Come back later or read a new article.")
                         .font(.bodyText)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
                     
-                    Button("Home") {
+                    Button(manager.hadDueCardsAtSessionStart ? "Home" : "Go to Reading") {
                         dismiss()
                     }
                     .font(.headline)
@@ -65,7 +67,10 @@ struct SessionContent: View {
             } else if let card = manager.currentCard {
                 VStack {
                     // Progress Bar
-                    ProgressBar(value: Double(manager.queue.count), total: 10 + Double(manager.queue.count))
+                    ProgressBar(
+                        value: Double(manager.completedCount),
+                        total: Double(max(manager.initialQueueCount, 1))
+                    )
                         .padding()
                     
                     Spacer()
@@ -180,6 +185,7 @@ struct ProgressBar: View {
     
     var body: some View {
         GeometryReader { geometry in
+            let progress = total > 0 ? min(max(value / total, 0), 1) : 0
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color.gray.opacity(0.2))
@@ -187,7 +193,7 @@ struct ProgressBar: View {
                 
                 Capsule()
                     .fill(Color.sonPrimary)
-                    .frame(width: max(0, geometry.size.width * 0.5), height: 6) // Placeholder logic
+                    .frame(width: max(0, geometry.size.width * progress), height: 6)
             }
         }
         .frame(height: 6)

@@ -5,6 +5,7 @@ import Foundation
 
 struct ContentView: View {
     @EnvironmentObject var banditScheduler: BanditScheduler
+    @AppStorage("darkModeEnabled") private var darkModeEnabled: Bool = false
     @State private var selectedTab: Int = 0
     @State private var showSession: Bool = false
     @State private var promptRoute: PromptCardRoute?
@@ -80,7 +81,7 @@ struct ContentView: View {
             // Custom Tab Bar Overlay (matches design: "Feed", "Search", "Practice", "Stats", "Settings")
             CustomTabBar(selectedTab: $selectedTab)
         }
-        .preferredColorScheme(.light) // Force light mode default to match initial view, but better to handle both
+        .preferredColorScheme(darkModeEnabled ? .dark : .light)
         .fullScreenCover(item: $promptRoute) { route in
             NavigationStack {
                 SingleCardPromptView(

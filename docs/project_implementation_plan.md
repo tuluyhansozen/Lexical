@@ -1,8 +1,8 @@
 # Lexical App: Project Implementation Plan
 
 > **Generated:** 2026-01-31
-> **Last Updated:** 2026-02-15
-> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Active | Monetization Phase Active | Content Diversity Phase Active
+> **Last Updated:** 2026-02-16
+> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Active | Monetization Phase Active | Content Diversity Phase Active | Audit Remediation Phase Active
 
 ---
 
@@ -436,15 +436,15 @@ Create deterministic StoreKit test scenarios (`.storekit` + `SKTestSession`) for
 
 ### Section 3: Deliverables
 - [x] `docs/free_premium_matrix.md` - canonical Free vs Premium capability matrix and gating rules
-- [ ] `LexicalCore/Services/SubscriptionEntitlementService.swift` - single source of truth for product load, purchase, `Transaction.updates`, verification, entitlement computation, and restore orchestration
+- [x] `LexicalCore/Services/SubscriptionEntitlementService.swift` - single source of truth for product load, purchase, `Transaction.updates`, verification, entitlement computation, and restore orchestration
 - [ ] `LexicalCore/Models/UserProfile.swift` + `LexicalCore/Services/LexicalSchemaMigration.swift` - premium entitlement fields (`tier`, entitlement timestamp/source, expiration marker) with non-destructive migration
 - [ ] `LexicalCore/Services/CloudKitSyncManager.swift` + `LexicalCore/Services/SyncConflictResolver.swift` - entitlement payload sync and LWW merge rules for cross-device convergence
 - [x] `LexicalCore/Services/FeatureGateService.swift` - centralized free/premium capability resolver consumed by app features
 - [ ] `Lexical/Features/Settings/SettingsView.swift` + `Lexical/Features/Home/HomeFeedView.swift` + `Lexical/Features/Dashboard/StatsView.swift` - gated experiences, usage limits, and upgrade entry points
-- [ ] `Lexical/Features/Monetization/PremiumOfferView.swift` - dedicated upgrade surface using StoreKit subscription merchandising views
-- [ ] `Lexical/Resources/StoreKit/Lexical.storekit` - local StoreKit configuration for deterministic simulator testing
+- [x] `Lexical/Features/Monetization/PremiumOfferView.swift` - dedicated upgrade surface using StoreKit subscription merchandising views
+- [x] `Lexical/Resources/StoreKit/Lexical.storekit` - local StoreKit configuration for deterministic simulator testing
 - [x] `LexicalCoreTests/FeatureGateServiceTests.swift` - weekly article limit, widget cap, and premium FSRS mode coverage
-- [ ] `LexicalCoreTests/SubscriptionEntitlementServiceTests.swift` + `LexicalCoreTests/SyncConflictResolverTests.swift` + `LexicalCoreTests/FeatureGateServiceTests.swift` - entitlement lifecycle, merge determinism, and gate enforcement coverage
+- [x] `LexicalCoreTests/SubscriptionEntitlementServiceTests.swift` + `LexicalCoreTests/SyncConflictResolverTests.swift` + `LexicalCoreTests/FeatureGateServiceTests.swift` - entitlement lifecycle, merge determinism, and gate enforcement coverage
 - [ ] Phase exit checks documented: verified purchase flow, pending flow, cancel flow, restore flow, expiration/revocation handling, billing-retry behavior, and offline entitlement continuity
 
 ---
@@ -474,6 +474,33 @@ Produce consistently interesting, informative, and non-repetitive generated arti
 - [ ] Add embedding/similarity-based novelty scoring (beyond lexical overlap heuristic)
 - [ ] Add post-generation quality gate + retry loop (structure/factuality/novelty checks)
 - [ ] Expand category/topic bank coverage for custom niche interests selected in onboarding
+
+---
+
+## Phase 10E: Audit Remediation & Production Hardening
+
+**Status:** 🟡 In Progress (repository review remediation initiated on 2026-02-16)
+
+### Section 1: Objective
+Close high-impact gaps identified in `report.md` by hardening safety, review correctness, performance hot paths, and free/premium gate behavior before release polish.
+
+### Section 2: Key Activities
+- **10E.1 Safety Guardrails:** Sanitize/validate seed fallback content so unsafe examples do not surface in reader/review detail flows.
+- **10E.2 Review Correctness:** Keep default review sessions due-only; avoid writing FSRS outcomes for non-due fallback queues.
+- **10E.3 Quota Integrity:** Fail closed when quota checks cannot be evaluated; avoid continuing generation on gate errors.
+- **10E.4 Tier Resolution Consistency:** Drive premium branching through centralized entitlement-aware feature gates.
+- **10E.5 UX Trust Fixes:** Replace placeholder review progress UI with real queue progress and align dark-mode setting behavior with app-level color scheme.
+- **10E.6 Performance Hot-Path Reduction:** Remove avoidable full-table fetches and synchronous heavy work on interaction paths.
+- **10E.7 Monetization Closure Prep:** Keep StoreKit 2 entitlement service and merchandising deliverables tracked as remaining critical work under Phase 10C.
+
+### Section 3: Deliverables
+- [x] `LexicalCore/Services/ContentSafetyService.swift` - centralized lexical content safety filtering utilities
+- [x] `LexicalCore/Services/VocabularySeeder.swift` + `Lexical/Features/Review/WordDetailSheet.swift` - safe sentence selection and non-blocking seed fallback index prewarming
+- [x] `Lexical/Features/Review/SessionManager.swift` + `Lexical/Features/Review/ReviewSessionView.swift` - due-only session policy and accurate progress display
+- [x] `Lexical/Features/Home/HomeFeedView.swift` - fail-closed gate checks and entitlement-aware premium targeting branch
+- [x] `Lexical/ContentView.swift` + `Lexical/Features/Settings/SettingsView.swift` - dark mode preference behavior consistency
+- [x] `LexicalCore/Services/LemmaResolver.swift` + `Lexical/Features/Reader/ReaderView.swift` + `LexicalCore/Services/CloudKitSyncManager.swift` - scoped fetch optimizations for high-traffic paths
+- [x] Validation pass: `xcodebuild` simulator build + `LexicalCoreTests` suite
 
 ---
 
@@ -528,6 +555,7 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 | Phase 10B | 🔴 Critical (Active) | 1 week | UI refinement across design system, reader/review flows, and accessibility ergonomics |
 | Phase 10C | 🔴 Critical (Active) | 1 week | Free/Premium monetization rollout with StoreKit 2, entitlement sync, and feature gates |
 | Phase 10D | 🔴 Critical (Active) | 1 week | Topic/angle planning, novelty memory, and article quality diversity enforcement |
+| Phase 10E | 🔴 Critical (Active) | 3-4 days | Post-audit safety, correctness, and performance hardening |
 | Phase 11 | 🔴 Critical (Active) | 1 week | Onboarding hardening + compliance/release packaging after UI + monetization baselines |
 
 ---
@@ -549,4 +577,5 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 2. Run simulator QA sweeps (iPhone 16e portrait/landscape, Dynamic Type, VoiceOver, Reduce Motion/Transparency) and fold fixes into Phase 10B.
 3. Continue Phase 10C monetization implementation: StoreKit service integration, entitlement sync model updates, and feature-gate wiring.
 4. Continue Phase 10D content engine hardening: add post-generation quality gate + retry and extend topic-bank coverage for niche interests.
-5. Continue Phase 11 onboarding hardening: add guided widget/extension setup and motion permission priming, then complete compliance/release packaging.
+5. Execute Phase 10E remediation checklist to close audit findings before release freeze.
+6. Continue Phase 11 onboarding hardening: add guided widget/extension setup and motion permission priming, then complete compliance/release packaging.

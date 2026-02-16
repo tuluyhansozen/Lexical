@@ -276,11 +276,18 @@ struct ReaderView: View {
     private func applyRankFiltering(
         to baseStates: [String: VocabularyState]
     ) -> [String: VocabularyState] {
+        guard !baseStates.isEmpty else { return baseStates }
         let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         let ignored = Set(profile.ignoredWords.map { $0.lowercased() })
         let range = LexicalCalibrationEngine().proximalRange(for: profile.lexicalRank)
 
-        let lexemes = (try? modelContext.fetch(FetchDescriptor<LexemeDefinition>())) ?? []
+        let candidateLemmas = Array(baseStates.keys)
+        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
+            predicate: #Predicate { lexeme in
+                candidateLemmas.contains(lexeme.lemma)
+            }
+        )
+        let lexemes = (try? modelContext.fetch(lexemeDescriptor)) ?? []
         var rankByLemma: [String: Int] = [:]
         rankByLemma.reserveCapacity(lexemes.count)
         for lexeme in lexemes {

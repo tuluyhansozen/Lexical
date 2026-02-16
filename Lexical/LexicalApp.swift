@@ -66,8 +66,15 @@ private struct RootView: View {
                     return
                 }
 
+                let premiumProductIDs = SubscriptionEntitlementService.configuredProductIDs()
+                _ = await SubscriptionEntitlementService.shared.bootstrap(
+                    modelContainer: Persistence.sharedModelContainer,
+                    productIDs: premiumProductIDs
+                )
+
                 // Use new VocabularySeeder for 5000-entry seed_data.json
                 await VocabularySeeder.shared.seed(modelContainer: Persistence.sharedModelContainer)
+                SeedLexemeIndex.prewarm()
 
                 let report = await CloudKitSyncManager.shared.synchronize(
                     modelContainer: Persistence.sharedModelContainer

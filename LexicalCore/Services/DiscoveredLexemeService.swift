@@ -215,6 +215,7 @@ public struct DiscoveredLexemeIngestionService {
 
         for value in values {
             guard let term = normalizedString(value) else { continue }
+            guard ContentSafetyService.isSafeText(term) else { continue }
             let key = term.lowercased()
             guard key != lemma, !seen.contains(key) else { continue }
             seen.insert(key)
@@ -231,6 +232,7 @@ public struct DiscoveredLexemeIngestionService {
 
         for value in values {
             guard let sentence = normalizedString(value) else { continue }
+            guard ContentSafetyService.isSafeText(sentence) else { continue }
             let key = sentence.lowercased()
             guard !seen.contains(key) else { continue }
             seen.insert(key)

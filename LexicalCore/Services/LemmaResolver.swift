@@ -35,9 +35,14 @@ public final class LemmaResolver {
 
         do {
             let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+            let activeUserId = activeProfile.userId
             let ignored = Set(activeProfile.ignoredWords.map { $0.lowercased() })
-            let states = try modelContext.fetch(FetchDescriptor<UserWordState>())
-                .filter { $0.userId == activeProfile.userId }
+            let stateDescriptor = FetchDescriptor<UserWordState>(
+                predicate: #Predicate { state in
+                    state.userId == activeUserId
+                }
+            )
+            let states = try modelContext.fetch(stateDescriptor)
 
             var stateByLemma: [String: UserWordState] = [:]
             stateByLemma.reserveCapacity(states.count)

@@ -87,7 +87,11 @@ public class VocabularySeeder {
 
             for seed in seedItems {
                 let lemma = seed.lemma.lowercased()
-                let firstSentence = normalizedString(seed.sentences?.first?.text)
+                let safeSentences = ContentSafetyService.sanitizeSentences(
+                    seed.sentences?.compactMap(\.text) ?? [],
+                    maxCount: 3
+                )
+                let firstSentence = normalizedString(safeSentences.first)
                 let definition = normalizedString(seed.definition)
 
                 if let existingLexeme = lexemeByLemma[lemma] {

@@ -1,0 +1,89 @@
+{
+  "identifier" : "A2C85BB2-6FA2-4A96-8DE4-53A30A2D8A51",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "AEC6F4D4-4A7D-4206-BD74-6A91520AB6E9",
+    "_developerTeamID" : "LEXICALTEAM",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_suggestedPricePoints" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "6E3CEBCB-AB49-48B9-BD76-53EBE14E418A",
+      "localizations" : [
+        {
+          "description" : "Unlimited generated articles and widget profiles with personalized FSRS scheduling.",
+          "displayName" : "Lexical Premium",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Lexical Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "8B7A2BC8-31A0-4AF7-888E-0AA37CA2E87D",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Monthly premium access with unlimited articles and personalized FSRS.",
+              "displayName" : "Premium Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lexical.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Lexical Premium Monthly",
+          "subscriptionGroupID" : "6E3CEBCB-AB49-48B9-BD76-53EBE14E418A",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "9D57F7B7-8068-4C0D-9956-9D213B565ADF",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Annual premium access with unlimited articles and personalized FSRS.",
+              "displayName" : "Premium Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lexical.premium.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Lexical Premium Yearly",
+          "subscriptionGroupID" : "6E3CEBCB-AB49-48B9-BD76-53EBE14E418A",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

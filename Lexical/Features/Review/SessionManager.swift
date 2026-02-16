@@ -9,6 +9,8 @@ class SessionManager: ObservableObject {
     @Published var queue: [ReviewCard] = []
     @Published var currentIndex: Int = 0
     @Published var isSessionComplete: Bool = false
+    @Published var hadDueCardsAtSessionStart: Bool = false
+    @Published var initialQueueCount: Int = 0
 
     private let modelContext: ModelContext
     private let fsrsEngine: FSRSV4Engine
@@ -20,6 +22,10 @@ class SessionManager: ObservableObject {
 
     // Track streaks for Brain Boost (consecutive successes in this session).
     @Published var sessionStreaks: [String: Int] = [:]
+
+    var completedCount: Int {
+        max(0, initialQueueCount - queue.count)
+    }
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -39,19 +45,9 @@ class SessionManager: ObservableObject {
                 modelContext: modelContext
             )
             let dueCards = try dueCardsFromUserState(userId: activeProfile.userId)
-
-            if dueCards.isEmpty {
-                let allStates = try modelContext.fetch(FetchDescriptor<UserWordState>())
-                    .filter { $0.userId == activeProfile.userId && $0.status != .ignored }
-                    .sorted { ($0.nextReviewDate ?? Date.distantFuture) < ($1.nextReviewDate ?? Date.distantFuture) }
-
-                let lexemeByLemma = try fetchLexemeMap()
-                self.queue = allStates.prefix(20).map { state in
-                    makeCard(from: state, lexemeByLemma: lexemeByLemma)
-                }
-            } else {
-                self.queue = dueCards
-            }
+            self.queue = dueCards
+            self.hadDueCardsAtSessionStart = !dueCards.isEmpty
+            self.initialQueueCount = dueCards.count
 
             self.currentIndex = 0
             self.isSessionComplete = queue.isEmpty
@@ -61,6 +57,8 @@ class SessionManager: ObservableObject {
             self.queue = []
             self.currentIndex = 0
             self.isSessionComplete = true
+            self.hadDueCardsAtSessionStart = false
+            self.initialQueueCount = 0
         }
     }
 

@@ -213,13 +213,19 @@ public actor CloudKitSyncManager {
 
     @MainActor
     private func localSnapshot(modelContext: ModelContext, userId: String) throws -> SyncSnapshot {
-        let events = try modelContext.fetch(FetchDescriptor<ReviewEvent>())
-            .filter { $0.userId == userId }
-            .map(SyncReviewEvent.init(from:))
+        let eventsDescriptor = FetchDescriptor<ReviewEvent>(
+            predicate: #Predicate { event in
+                event.userId == userId
+            }
+        )
+        let events = try modelContext.fetch(eventsDescriptor).map(SyncReviewEvent.init(from:))
 
-        let states = try modelContext.fetch(FetchDescriptor<UserWordState>())
-            .filter { $0.userId == userId }
-            .map(SyncUserWordState.init(from:))
+        let statesDescriptor = FetchDescriptor<UserWordState>(
+            predicate: #Predicate { state in
+                state.userId == userId
+            }
+        )
+        let states = try modelContext.fetch(statesDescriptor).map(SyncUserWordState.init(from:))
 
         let profileDescriptor = FetchDescriptor<UserProfile>(
             predicate: #Predicate { $0.userId == userId }

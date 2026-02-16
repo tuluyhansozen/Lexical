@@ -72,7 +72,9 @@ struct FlashcardView: View {
         // In production, use range-based replacement to preserve case of surrounding text
         // For now, replacing the target word with a distinct placeholder
         let pattern = "(?i)\\b\(NSRegularExpression.escapedPattern(for: target))\\b"
-        let regex = try! NSRegularExpression(pattern: pattern)
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return LocalizedStringKey(sentence)
+        }
         let range = NSRange(sentence.startIndex..., in: sentence)
         let modified = regex.stringByReplacingMatches(
             in: sentence,

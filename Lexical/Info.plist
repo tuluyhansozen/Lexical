@@ -14,6 +14,11 @@
     <string>1.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>LexicalPremiumProductIDs</key>
+    <array>
+        <string>com.lexical.premium.monthly</string>
+        <string>com.lexical.premium.yearly</string>
+    </array>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>UILaunchScreen</key>

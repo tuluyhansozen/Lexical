@@ -21,6 +21,9 @@ struct SettingsView: View {
     
     @State private var showingExportSheet = false
     @State private var showingResetAlert = false
+    @State private var restorePurchasesMessage: String?
+    @State private var isRestoringPurchases = false
+    @State private var showingPremiumOffer = false
     
     private var activeUserId: String {
         userProfiles.first?.userId ?? UserProfile.fallbackLocalUserID
@@ -73,6 +76,26 @@ struct SettingsView: View {
             }
         } message: {
             Text("This will delete all your vocabulary and review history. This cannot be undone.")
+        }
+        .alert(
+            "Restore Purchases",
+            isPresented: Binding(
+                get: { restorePurchasesMessage != nil },
+                set: { presented in
+                    if !presented {
+                        restorePurchasesMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(restorePurchasesMessage ?? "")
+        }
+        .sheet(isPresented: $showingPremiumOffer) {
+            PremiumOfferView(
+                productIDs: SubscriptionEntitlementService.configuredProductIDs()
+            )
         }
     }
     
@@ -239,6 +262,34 @@ struct SettingsView: View {
             }
             
             Divider()
+
+            Button {
+                showingPremiumOffer = true
+            } label: {
+                HStack {
+                    Label("View Premium Plans", systemImage: "crown.fill")
+                        .foregroundStyle(Color.adaptiveText)
+                    Spacer()
+                }
+            }
+
+            Divider()
+
+            Button {
+                restorePurchases()
+            } label: {
+                HStack {
+                    Label(
+                        isRestoringPurchases ? "Restoring..." : "Restore Purchases",
+                        systemImage: "arrow.clockwise.circle"
+                    )
+                    .foregroundStyle(Color.adaptiveText)
+                    Spacer()
+                }
+            }
+            .disabled(isRestoringPurchases)
+
+            Divider()
             
             // Sync Status
             HStack {
@@ -341,6 +392,29 @@ struct SettingsView: View {
             try modelContext.save()
         } catch {
             print("Error resetting progress: \(error)")
+        }
+    }
+
+    private func restorePurchases() {
+        guard !isRestoringPurchases else { return }
+        isRestoringPurchases = true
+
+        Task { @MainActor in
+            defer { isRestoringPurchases = false }
+            do {
+                let snapshot = try await SubscriptionEntitlementService.shared.restorePurchases(
+                    modelContainer: Persistence.sharedModelContainer,
+                    productIDs: SubscriptionEntitlementService.configuredProductIDs()
+                )
+
+                if snapshot.tier == .premium {
+                    restorePurchasesMessage = "Premium access restored successfully."
+                } else {
+                    restorePurchasesMessage = "No active premium subscription was found for this Apple ID."
+                }
+            } catch {
+                restorePurchasesMessage = "Restore failed: \(error.localizedDescription)"
+            }
         }
     }
 }

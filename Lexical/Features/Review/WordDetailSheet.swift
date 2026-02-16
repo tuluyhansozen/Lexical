@@ -94,7 +94,7 @@ enum WordDetailDataBuilder {
 
     private static func normalizedSentence(_ value: String?) -> String? {
         let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !trimmed.isEmpty else { return nil }
+        guard !trimmed.isEmpty, ContentSafetyService.isSafeText(trimmed) else { return nil }
         return trimmed
     }
 
@@ -111,7 +111,7 @@ enum WordDetailDataBuilder {
 
         for value in raw {
             let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !normalized.isEmpty else { continue }
+            guard !normalized.isEmpty, ContentSafetyService.isSafeText(normalized) else { continue }
             let key = normalized.lowercased()
             guard seen.insert(key).inserted else { continue }
             result.append(normalized)
@@ -121,7 +121,7 @@ enum WordDetailDataBuilder {
     }
 }
 
-private struct SeedLexemeIndex {
+enum SeedLexemeIndex {
     struct Snapshot {
         let ipa: String?
         let definition: String?
@@ -141,13 +141,17 @@ private struct SeedLexemeIndex {
         let text: String
     }
 
-    private static let byLemma: [String: Snapshot] = load()
+    private static let cache = SeedLexemeIndexCache()
 
     static func lookup(lemma: String) -> Snapshot? {
-        byLemma[lemma]
+        cache.lookup(lemma: lemma)
     }
 
-    private static func load() -> [String: Snapshot] {
+    static func prewarm() {
+        cache.startLoadingIfNeeded()
+    }
+
+    fileprivate static func loadFromDisk() -> [String: Snapshot] {
         guard let url = seedURL() else { return [:] }
         guard let data = try? Data(contentsOf: url) else { return [:] }
         guard let entries = try? JSONDecoder().decode([Entry].self, from: data) else { return [:] }
@@ -158,11 +162,15 @@ private struct SeedLexemeIndex {
         for entry in entries {
             let lemma = entry.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             guard !lemma.isEmpty else { continue }
-            let sentences = (entry.sentences ?? []).map(\.text)
+            let synonyms = ContentSafetyService.sanitizeTerms(entry.synonym ?? [], maxCount: 8)
+            let sentences = ContentSafetyService.sanitizeSentences(
+                (entry.sentences ?? []).map(\.text),
+                maxCount: 3
+            )
             map[lemma] = Snapshot(
                 ipa: entry.ipa,
                 definition: entry.definition,
-                synonyms: entry.synonym ?? [],
+                synonyms: synonyms,
                 sentences: sentences
             )
         }
@@ -177,6 +185,50 @@ private struct SeedLexemeIndex {
             return url
         }
         return nil
+    }
+}
+
+private final class SeedLexemeIndexCache {
+    private enum State {
+        case idle
+        case loading
+        case loaded
+    }
+
+    private let lock = NSLock()
+    private var state: State = .idle
+    private var byLemma: [String: SeedLexemeIndex.Snapshot] = [:]
+
+    func startLoadingIfNeeded() {
+        let shouldStartLoad: Bool = lock.withLock {
+            guard state == .idle else { return false }
+            state = .loading
+            return true
+        }
+
+        guard shouldStartLoad else { return }
+
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let loaded = SeedLexemeIndex.loadFromDisk()
+            self?.lock.withLock {
+                self?.byLemma = loaded
+                self?.state = .loaded
+            }
+        }
+    }
+
+    func lookup(lemma: String) -> SeedLexemeIndex.Snapshot? {
+        startLoadingIfNeeded()
+        let normalized = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return lock.withLock { byLemma[normalized] }
+    }
+}
+
+private extension NSLock {
+    func withLock<T>(_ operation: () -> T) -> T {
+        lock()
+        defer { unlock() }
+        return operation()
     }
 }
 
