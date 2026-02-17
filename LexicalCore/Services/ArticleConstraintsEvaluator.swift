@@ -8,6 +8,10 @@ public struct ArticleConstraintsEvaluator {
         case vocabularyDensityTooHigh(actual: Double, limit: Double)
         case vocabularyDensityTooLow(actual: Double, limit: Double)
         case unreadable
+        case insufficientParagraphs(actual: Int, min: Int)
+        case insufficientSentences(actual: Int, min: Int)
+        case containsPlaceholderToken
+        case possibleFabricatedStatistic
     }
     
     public struct ValidationResult {
@@ -25,13 +29,15 @@ public struct ArticleConstraintsEvaluator {
     ///   - totalWordCount: Total words in text
     public func evaluate(text: String, newWordCount: Int, totalWordCount: Int) -> ValidationResult {
         var issues: [ConstraintViolation] = []
+        let minTargetWords = 220
+        let maxTargetWords = 460
         
-        // 1. Length Constraints (Soft limits)
-        if totalWordCount < 50 {
-            issues.append(.tooShort(actual: totalWordCount, min: 50))
+        // 1. Length Constraints (targeting ~400-word articles)
+        if totalWordCount < minTargetWords {
+            issues.append(.tooShort(actual: totalWordCount, min: minTargetWords))
         }
-        if totalWordCount > 2000 {
-            issues.append(.tooLong(actual: totalWordCount, max: 2000))
+        if totalWordCount > maxTargetWords {
+            issues.append(.tooLong(actual: totalWordCount, max: maxTargetWords))
         }
         
         // 2. Density Check (Target: 1-3%)
@@ -54,6 +60,23 @@ public struct ArticleConstraintsEvaluator {
         if totalWordCount > 100 && paragraphs.count < 2 {
             issues.append(.unreadable)
         }
+        let nonEmptyParagraphs = paragraphs.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        if totalWordCount >= 220 && nonEmptyParagraphs.count < 3 {
+            issues.append(.insufficientParagraphs(actual: nonEmptyParagraphs.count, min: 3))
+        }
+
+        let sentences = sentenceCount(in: text)
+        if totalWordCount >= 220 && sentences < 8 {
+            issues.append(.insufficientSentences(actual: sentences, min: 8))
+        }
+
+        if containsPlaceholder(in: text) {
+            issues.append(.containsPlaceholderToken)
+        }
+
+        if hasUnsourcedStatisticSignal(in: text) {
+            issues.append(.possibleFabricatedStatistic)
+        }
         
         // Calculate Score
         let isValid = issues.isEmpty
@@ -62,5 +85,36 @@ public struct ArticleConstraintsEvaluator {
         let finalScore = max(0.0, baseScore - penalty)
         
         return ValidationResult(isValid: isValid, issues: issues, score: finalScore)
+    }
+
+    private func sentenceCount(in text: String) -> Int {
+        text.components(separatedBy: CharacterSet(charactersIn: ".!?"))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .count
+    }
+
+    private func containsPlaceholder(in text: String) -> Bool {
+        let placeholderPatterns = [
+            #"\b(?:scenario|placeholder|sample|template)_word_\d+\b"#,
+            #"\{\{[^}]+\}\}"#,
+            #"<[^>]+>"#,
+            #"\b(?:lorem ipsum|todo)\b"#
+        ]
+        return placeholderPatterns.contains {
+            text.range(of: $0, options: [.regularExpression, .caseInsensitive]) != nil
+        }
+    }
+
+    private func hasUnsourcedStatisticSignal(in text: String) -> Bool {
+        let hasPercent = text.range(
+            of: #"\b\d{1,3}(?:\.\d+)?\s?(?:%|percent)\b"#,
+            options: [.regularExpression, .caseInsensitive]
+        ) != nil
+        let hasAuthorityClaim = text.range(
+            of: #"\b(?:study|research|survey|report|according to)\b"#,
+            options: [.regularExpression, .caseInsensitive]
+        ) != nil
+        return hasPercent && hasAuthorityClaim
     }
 }

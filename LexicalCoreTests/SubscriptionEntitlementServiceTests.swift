@@ -201,6 +201,83 @@ final class SubscriptionEntitlementServiceTests: XCTestCase {
         XCTAssertEqual(fakeClient.syncCallCount, 1)
     }
 
+    func testPurchasePendingReturnsPendingWithoutTierMutation() async throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let userId = uniqueUserID(prefix: "entitlement.pending")
+        let profile = UserProfile(userId: userId)
+        context.insert(profile)
+        try context.save()
+        setActiveUser(userId)
+
+        let fakeClient = FakeSubscriptionStoreKitClient()
+        fakeClient.purchaseOutcome = .pending
+
+        let service = SubscriptionEntitlementService(
+            storeKitClient: fakeClient,
+            productIDs: ["com.lexical.premium.monthly"]
+        )
+
+        let result = try await service.purchase(
+            productID: "com.lexical.premium.monthly",
+            modelContainer: container
+        )
+
+        XCTAssertEqual(result, .pending)
+        XCTAssertEqual(profile.subscriptionTier, .free)
+        XCTAssertTrue(fakeClient.finishedTransactionIDs.isEmpty)
+    }
+
+    func testPurchaseUserCancelledReturnsCancelledWithoutTierMutation() async throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let userId = uniqueUserID(prefix: "entitlement.cancelled")
+        let profile = UserProfile(userId: userId)
+        context.insert(profile)
+        try context.save()
+        setActiveUser(userId)
+
+        let fakeClient = FakeSubscriptionStoreKitClient()
+        fakeClient.purchaseOutcome = .userCancelled
+
+        let service = SubscriptionEntitlementService(
+            storeKitClient: fakeClient,
+            productIDs: ["com.lexical.premium.monthly"]
+        )
+
+        let result = try await service.purchase(
+            productID: "com.lexical.premium.monthly",
+            modelContainer: container
+        )
+
+        XCTAssertEqual(result, .userCancelled)
+        XCTAssertEqual(profile.subscriptionTier, .free)
+        XCTAssertTrue(fakeClient.finishedTransactionIDs.isEmpty)
+    }
+
+    func testOfflineRefreshFallsBackToCachedPremiumEntitlement() async throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let userId = uniqueUserID(prefix: "entitlement.offline")
+        let expiresAt = Date().addingTimeInterval(24 * 60 * 60)
+        let profile = UserProfile(userId: userId)
+        profile.applySubscriptionTier(.premium, source: .localCache, expiresAt: expiresAt)
+        context.insert(profile)
+        try context.save()
+        setActiveUser(userId)
+
+        let fakeClient = FakeSubscriptionStoreKitClient()
+        let service = SubscriptionEntitlementService(
+            storeKitClient: fakeClient,
+            productIDs: []
+        )
+
+        let snapshot = await service.refreshEntitlements(modelContainer: container)
+        XCTAssertEqual(snapshot.tier, .premium)
+        XCTAssertEqual(snapshot.source, .localCache)
+        XCTAssertEqual(snapshot.entitlementExpiresAt, expiresAt)
+    }
+
     private func makeInMemoryContainer() throws -> ModelContainer {
         let schema = Schema(LexicalSchemaV6.models)
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)

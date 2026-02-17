@@ -46,12 +46,13 @@ struct SessionContent: View {
                         .foregroundStyle(Color.sonPrimary)
                     
                     Text(manager.hadDueCardsAtSessionStart ? "Session Complete!" : "No Cards Due")
-                        .font(.display(size: 32, weight: .bold))
+                        .font(.display(.largeTitle, weight: .bold))
                         .foregroundStyle(Color.adaptiveText)
+                        .accessibilityAddTraits(.isHeader)
                     
                     Text(manager.hadDueCardsAtSessionStart ? "You've reviewed all due words." : "Your due queue is empty right now. Come back later or read a new article.")
                         .font(.bodyText)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.adaptiveTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                     
@@ -71,7 +72,8 @@ struct SessionContent: View {
                         value: Double(manager.completedCount),
                         total: Double(max(manager.initialQueueCount, 1))
                     )
-                        .padding()
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
                     
                     Spacer()
                     
@@ -101,6 +103,8 @@ struct SessionContent: View {
                                         .background(Color.sonPrimary.opacity(0.12))
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                 }
+                                .accessibilityLabel("Word info")
+                                .accessibilityHint("Shows definition, synonyms, and examples.")
 
                                 Button(role: .destructive) {
                                     withAnimation(.spring()) {
@@ -116,6 +120,7 @@ struct SessionContent: View {
                                         .background(Color.red.opacity(0.12))
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                 }
+                                .accessibilityHint("Removes this word from your learning deck.")
                             }
 
                             HStack(spacing: 12) {
@@ -160,7 +165,7 @@ struct GradeButton: View {
     let title: String
     let color: Color
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)
@@ -176,6 +181,7 @@ struct GradeButton: View {
                         .stroke(color.opacity(0.3), lineWidth: 1)
                 )
         }
+        .accessibilityLabel("Grade \(title)")
     }
 }
 
@@ -197,5 +203,8 @@ struct ProgressBar: View {
             }
         }
         .frame(height: 6)
+        .accessibilityElement()
+        .accessibilityLabel("Session progress")
+        .accessibilityValue("\(Int(value)) of \(Int(total)) cards reviewed")
     }
 }

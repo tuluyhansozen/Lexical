@@ -14,7 +14,18 @@ public enum ContentSafetyService {
             "\\bsuicide\\s+bomber\\b",
             "\\bkill\\s+you\\b",
             "\\bnazi\\b",
-            "\\bselected\\s+to\\s+receive\\s+a\\s+free\\s+cruise\\b"
+            "\\bselected\\s+to\\s+receive\\s+a\\s+free\\s+cruise\\b",
+            "\\bfuck(?:ed|ing|s)?\\b",
+            "\\bshit(?:ty|ton)?\\b",
+            "\\bbitch(?:es)?\\b",
+            "\\bbastard(?:s)?\\b",
+            "\\basshole(?:s)?\\b",
+            "\\bcunt(?:s)?\\b",
+            "\\bslut(?:s)?\\b",
+            "\\bwhore(?:s)?\\b",
+            "\\brape\\b",
+            "\\bsuicide\\b",
+            "\\bterrorist(?:s)?\\b"
         ]
 
         return patterns.compactMap { pattern in

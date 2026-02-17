@@ -32,13 +32,14 @@ struct ContentView: View {
                         .foregroundStyle(Color.sonPrimary)
                     
                     Text("Ready to Review?")
-                        .font(.display(size: 32, weight: .bold))
+                        .font(.display(.largeTitle, weight: .bold))
                         .foregroundStyle(Color.adaptiveText)
+                        .accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("review.readyTitle")
                     
                     Text("Your retention engine is primed.")
                         .font(.bodyText)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.adaptiveTextSecondary)
                     
                     Button("Start Session") {
                         showSession = true
@@ -49,6 +50,7 @@ struct ContentView: View {
                     .frame(maxWidth: 200)
                     .background(Color.sonPrimary)
                     .cornerRadius(16)
+                    .accessibilityHint("Starts a review session with due words.")
                     .accessibilityIdentifier("review.startSessionButton")
                     
                     #if DEBUG

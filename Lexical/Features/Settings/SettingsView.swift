@@ -47,6 +47,8 @@ struct SettingsView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
+                    screenHeader
+
                     // Profile Section
                     profileSection
                     
@@ -105,6 +107,20 @@ struct SettingsView: View {
             modelContext.insert(newProfile)
         }
     }
+
+    private var screenHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Settings")
+                .font(.display(.largeTitle, weight: .bold))
+                .foregroundStyle(Color.adaptiveText)
+                .accessibilityAddTraits(.isHeader)
+
+            Text("Profile and learning preferences")
+                .font(.caption)
+                .foregroundStyle(Color.adaptiveTextSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
     
     // MARK: - Profile Section
     
@@ -133,6 +149,9 @@ struct SettingsView: View {
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.adaptiveText)
+                .textInputAutocapitalization(.words)
+                .accessibilityLabel("Display name")
+                .accessibilityHint("Used across profile and progress surfaces.")
             
             // Streak Badge
             HStack(spacing: 6) {
@@ -141,7 +160,7 @@ struct SettingsView: View {
                 Text("\(currentStreak) day streak")
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.adaptiveTextSecondary)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
@@ -150,8 +169,13 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .background(Color.adaptiveSurface)
+        .background(Color.adaptiveSurfaceElevated)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.adaptiveBorder, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: Color.cardShadow.opacity(0.45), radius: 5, x: 0, y: 2)
     }
     
     // MARK: - Stats Section
@@ -178,7 +202,7 @@ struct SettingsView: View {
                     Label("Daily Goal", systemImage: "target")
                     Spacer()
                     Text("\(dailyGoal) words")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.adaptiveTextSecondary)
                 }
                 
                 Slider(value: Binding(
@@ -186,6 +210,8 @@ struct SettingsView: View {
                     set: { dailyGoal = Int($0) }
                 ), in: 5...50, step: 5)
                 .tint(Color.sonPrimary)
+                .accessibilityLabel("Daily goal")
+                .accessibilityValue("\(dailyGoal) words")
             }
             
             Divider()
@@ -211,14 +237,15 @@ struct SettingsView: View {
                             .foregroundStyle(Color.adaptiveText)
                         Spacer()
                         Text("\(profile.selectedTags.count) selected")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.adaptiveTextSecondary)
                         Image(systemName: "chevron.right")
                             .foregroundStyle(.tertiary)
                     }
                 }
+                .accessibilityHint("Opens the interest selection screen.")
             } else {
                 Text("Loading profile...")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.adaptiveTextSecondary)
             }
         }
     }
@@ -239,7 +266,7 @@ struct SettingsView: View {
                     Label("Timing", systemImage: "clock.fill")
                     Spacer()
                     Text("Smart (Bandit)")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.adaptiveTextSecondary)
                 }
             }
         }
@@ -260,6 +287,7 @@ struct SettingsView: View {
                         .foregroundStyle(.tertiary)
                 }
             }
+            .accessibilityHint("Exports your current vocabulary data.")
             
             Divider()
 
@@ -288,6 +316,7 @@ struct SettingsView: View {
                 }
             }
             .disabled(isRestoringPurchases)
+            .accessibilityHint("Restores premium purchases linked to your Apple ID.")
 
             Divider()
             
@@ -299,7 +328,7 @@ struct SettingsView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Text("Local Only")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.adaptiveTextSecondary)
                 }
                 .font(.caption)
             }
@@ -326,7 +355,7 @@ struct SettingsView: View {
                 Label("Version", systemImage: "info.circle")
                 Spacer()
                 Text("1.0.0 (Beta)")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.adaptiveTextSecondary)
             }
             
             Divider()
@@ -425,22 +454,27 @@ struct StatBox: View {
     let title: String
     let value: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.metricValue)
                 .foregroundStyle(color)
             
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.adaptiveTextSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(Color.adaptiveSurface)
+        .background(Color.adaptiveSurfaceElevated)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.adaptiveBorder, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title) \(value)")
     }
 }
 
@@ -451,17 +485,21 @@ struct SettingsGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title.uppercased())
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundStyle(.secondary)
+                .font(.metricLabel)
+                .foregroundStyle(Color.adaptiveTextSecondary)
                 .padding(.leading, 4)
             
             VStack(spacing: 16) {
                 content
             }
             .padding(16)
-            .background(Color.adaptiveSurface)
+            .background(Color.adaptiveSurfaceElevated)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.adaptiveBorder, lineWidth: 1)
+            )
             .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.cardShadow.opacity(0.32), radius: 4, x: 0, y: 2)
         }
     }
 }

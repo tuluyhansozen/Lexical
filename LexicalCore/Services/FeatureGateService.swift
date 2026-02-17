@@ -30,6 +30,7 @@ public struct FeatureGateService {
     public static let freeArticleLimitPerWindow = 1
     public static let freeArticleWindowDays = 7
     public static let freeWidgetProfileLimit = 1
+    public static let freeStatsPeriods: [StatsPeriod] = [.last30]
 
     private let calendar: Calendar
 
@@ -47,6 +48,32 @@ public struct FeatureGateService {
     public func activeFSRSMode(modelContext: ModelContext) -> FSRSParameterMode {
         let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
         return fsrsParameterMode(for: profile)
+    }
+
+    @MainActor
+    public func availableStatsPeriods(modelContext: ModelContext) -> [StatsPeriod] {
+        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        return availableStatsPeriods(for: profile)
+    }
+
+    public func availableStatsPeriods(for profile: UserProfile) -> [StatsPeriod] {
+        if effectiveTier(for: profile) == .premium {
+            return StatsPeriod.allCases
+        }
+        return Self.freeStatsPeriods
+    }
+
+    @MainActor
+    public func canAccessStatsPeriod(
+        _ period: StatsPeriod,
+        modelContext: ModelContext
+    ) -> Bool {
+        let profile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        return canAccessStatsPeriod(period, for: profile)
+    }
+
+    public func canAccessStatsPeriod(_ period: StatsPeriod, for profile: UserProfile) -> Bool {
+        availableStatsPeriods(for: profile).contains(period)
     }
 
     public func fsrsParameterMode(for profile: UserProfile) -> FSRSParameterMode {

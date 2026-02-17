@@ -40,6 +40,7 @@ struct CustomTabBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tab.label)
+                .accessibilityValue(selectedTab == tab.id ? "Selected" : "Not selected")
                 .accessibilityIdentifier(tab.testID)
             }
         }

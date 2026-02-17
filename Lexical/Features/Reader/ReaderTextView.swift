@@ -20,8 +20,11 @@ struct ReaderTextView: UIViewRepresentable {
         textView.isSelectable = true
         textView.backgroundColor = .clear
         textView.font = UIFont.preferredFont(forTextStyle: .body)
+        textView.adjustsFontForContentSizeCategory = true
         textView.textContainerInset = UIEdgeInsets(top: 16, left: 20, bottom: 16, right: 20)
-        
+        textView.accessibilityLabel = "Article content"
+        textView.accessibilityHint = "Double tap a highlighted word to open word details."
+
         // Add tap gesture for word selection
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         textView.addGestureRecognizer(tapGesture)
@@ -43,14 +46,15 @@ struct ReaderTextView: UIViewRepresentable {
     
     private func createAttributedText() -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: text)
-        
+
         // Base attributes
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 8
+        let baseFont = UIFont.preferredFont(forTextStyle: .body)
+        paragraphStyle.lineSpacing = max(6, round(baseFont.pointSize * 0.28))
         paragraphStyle.paragraphSpacing = 16
-        
+
         let baseAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.preferredFont(forTextStyle: .body),
+            .font: baseFont,
             .foregroundColor: UIColor.label,
             .paragraphStyle: paragraphStyle
         ]
@@ -80,9 +84,9 @@ struct ReaderTextView: UIViewRepresentable {
     private func colorForState(_ state: VocabularyState) -> UIColor {
         switch state {
         case .new:
-            return UIColor(red: 0.89, green: 0.95, blue: 0.99, alpha: 1.0) // #E3F2FD
+            return UIColor(red: 0.91, green: 0.95, blue: 1.0, alpha: 1.0)
         case .learning:
-            return UIColor(red: 1.0, green: 0.98, blue: 0.77, alpha: 1.0) // #FFF9C4
+            return UIColor(red: 1.0, green: 0.95, blue: 0.82, alpha: 1.0)
         case .known:
             return .clear
         case .unknown:
@@ -127,6 +131,9 @@ struct ReaderTextView: UIViewRepresentable {
             }
             
             let range = startIndex..<endIndex
+            guard tokenHighlights.contains(where: { $0.range.overlaps(range) }) else {
+                return
+            }
             
             // Extract sentence context
             let sentence = extractSentence(containing: range)

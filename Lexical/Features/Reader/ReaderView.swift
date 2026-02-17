@@ -7,16 +7,17 @@ struct ReaderView: View {
     let title: String
     let content: String
     let focusLemmas: [String]
-    
+
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var tokenHighlights: [TokenHighlight] = []
     @State private var lemmaStates: [String: VocabularyState] = [:]
     @State private var isLoading = true
     @State private var selectedWord: SelectedWord?
     @State private var infoData: WordDetailData?
-    
+
     private let tokenizationActor = TokenizationActor()
     private let lexemePromotionService = LexemePromotionService()
 
@@ -46,39 +47,47 @@ struct ReaderView: View {
             if isLoading {
                 ProgressView("Analyzing text...")
                     .progressViewStyle(.circular)
+                    .foregroundStyle(Color.adaptiveTextSecondary)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         // Article Header
                         Text(title)
-                            .font(.display(size: 28, weight: .bold))
+                            .font(.display(.largeTitle, weight: .bold))
                             .foregroundStyle(Color.adaptiveText)
                             .padding(.horizontal, 20)
                             .padding(.top, 16)
-                        
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("reader.title")
+
                         // Stats Bar
                         HStack(spacing: 16) {
                             StatBadge(
                                 icon: "book.fill",
                                 value: "\(countWords()) words",
-                                color: .blue
+                                color: .blue,
+                                includeBorder: differentiateWithoutColor
                             )
                             StatBadge(
                                 icon: "star.fill",
                                 value: "\(countNewWords()) new",
-                                color: .orange
+                                color: .orange,
+                                includeBorder: differentiateWithoutColor
                             )
                             StatBadge(
                                 icon: "graduationcap.fill",
                                 value: "\(countLearningWords()) learning",
-                                color: .green
+                                color: .green,
+                                includeBorder: differentiateWithoutColor
                             )
                         }
                         .padding(.horizontal, 20)
-                        
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(countWords()) words, \(countNewWords()) new words, \(countLearningWords()) learning words")
+
                         Divider()
                             .padding(.horizontal, 20)
-                        
+
                         // Text Content with Highlighting
                         ReaderTextView(
                             text: content,
@@ -87,6 +96,7 @@ struct ReaderView: View {
                             handleWordTap(word: word, sentence: sentence, range: range)
                         }
                         .frame(minHeight: 400)
+                        .accessibilityIdentifier("reader.text")
                     }
                 }
             }
@@ -99,6 +109,8 @@ struct ReaderView: View {
                 } label: {
                     Image(systemName: "textformat.size")
                 }
+                .accessibilityLabel("Reading options")
+                .accessibilityHint("Adjusts reader options.")
             }
         }
         .sheet(item: $infoData) { detail in
@@ -340,7 +352,7 @@ struct ReaderView: View {
     // MARK: - Stats
     
     private func countWords() -> Int {
-        content.split(separator: " ").count
+        content.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
     
     private func countNewWords() -> Int {
@@ -366,7 +378,8 @@ struct StatBadge: View {
     let icon: String
     let value: String
     let color: Color
-    
+    var includeBorder: Bool = false
+
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
@@ -380,6 +393,12 @@ struct StatBadge: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(color.opacity(0.1))
+        .overlay {
+            if includeBorder {
+                Capsule()
+                    .stroke(color.opacity(0.45), lineWidth: 1)
+            }
+        }
         .clipShape(Capsule())
     }
 }

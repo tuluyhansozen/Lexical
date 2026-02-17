@@ -2,7 +2,7 @@
 
 > **Generated:** 2026-01-31
 > **Last Updated:** 2026-02-16
-> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Post-Review Hardening Complete | Phase 10 Complete | UI Refinement Phase Active | Monetization Phase Active | Content Diversity Phase Active | Audit Remediation Phase Active
+> **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Phase 10 Complete | Audit Remediation Complete | Monetization Complete | UI Refinement Phase Active | Content Diversity Phase Active | Release Prep Active
 
 ---
 
@@ -377,7 +377,7 @@ Operationalize adaptive difficulty loops across articles, matrix, and notificati
 
 ## Phase 10B: UI Refinement & Experience Cohesion
 
-**Status:** 🟡 In Progress (Explore iPhone 16-3 redesign parity pass completed on 2026-02-10)
+**Status:** ✅ Complete (cross-screen polish + accessibility QA closed on 2026-02-16)
 
 ### Section 1: Objective
 Refine end-to-end interface quality and interaction ergonomics using the Liquid Glass style guide, accessibility mandates, and thumb-zone-first interaction rules across all primary screens.
@@ -394,22 +394,22 @@ Refine end-to-end interface quality and interaction ergonomics using the Liquid 
 - **Accessibility + Device QA:** Validate VoiceOver labeling, color-differentiation cues, Dynamic Type breakpoints, Reduce Motion/Transparency behavior, and small-screen layout stability.
 
 ### Section 3: Deliverables
-- [ ] `LexicalCore/DesignSystem/Colors.swift` + `LexicalCore/DesignSystem/Typography.swift` - semantic token and scalable typography alignment
-- [ ] `LexicalCore/DesignSystem/GlassEffectContainer.swift` + `LexicalCore/DesignSystem/LiquidBackground.swift` - glass consistency and accessibility fallbacks
+- [x] `LexicalCore/DesignSystem/Colors.swift` + `LexicalCore/DesignSystem/Typography.swift` - semantic token and scalable typography alignment
+- [x] `LexicalCore/DesignSystem/GlassEffectContainer.swift` + `LexicalCore/DesignSystem/LiquidBackground.swift` - glass consistency and accessibility fallbacks
 - [x] `Lexical/Features/Common/CustomTabBar.swift` + `Lexical/ContentView.swift` - Explore-focused bottom navigation parity pass (5-icon shell, selected glass ring, rounded top rail)
-- [ ] `Lexical/Features/Reader/ReaderView.swift`, `Lexical/Features/Reader/ReaderTextView.swift`, `Lexical/Features/Reader/WordCaptureSheet.swift` - reader and capture-flow refinement
-- [ ] `Lexical/Features/Review/FlashcardView.swift`, `Lexical/Features/Review/ReviewSessionView.swift`, `Lexical/Features/Review/SingleCardPromptView.swift`, `Lexical/Features/Review/WordDetailSheet.swift` - recall-loop and reveal-state UI polish
+- [x] `Lexical/Features/Reader/ReaderView.swift`, `Lexical/Features/Reader/ReaderTextView.swift`, `Lexical/Features/Reader/WordCaptureSheet.swift` - reader and capture-flow refinement
+- [x] `Lexical/Features/Review/FlashcardView.swift`, `Lexical/Features/Review/ReviewSessionView.swift`, `Lexical/Features/Review/SingleCardPromptView.swift`, `Lexical/Features/Review/WordDetailSheet.swift` - recall-loop and reveal-state UI polish
 - [x] `Lexical/Features/Explore/ExploreView.swift` - iPhone 16-3 redesign implementation (Figma node `1:2` parity pass: centered radial matrix, six satellite bubbles, root emphasis treatment, accessibility labeling/pattern cues)
 - [x] Explore word interaction update (2026-02-10): tap any matrix word to open an action sheet with `Word Info` and `Add to Deck`, reusing `WordDetailSheet` + `NotificationTriageService` for consistency with notification triage flows.
-- [ ] `Lexical/Features/Home/ArticleCardView.swift`, `Lexical/Features/Dashboard/StatsView.swift`, `Lexical/Features/Settings/SettingsView.swift` - remaining cross-screen visual consistency pass
+- [x] `Lexical/Features/Home/ArticleCardView.swift`, `Lexical/Features/Dashboard/StatsView.swift`, `Lexical/Features/Settings/SettingsView.swift` - remaining cross-screen visual consistency pass
 - [x] Explore-focused simulator verification (2026-02-10): `xcodebuild -scheme Lexical -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16e' -derivedDataPath build/derived_data build` (`BUILD SUCCEEDED`) + packaged app launch on simulator (`--lexical-debug-open-explore`) + screenshot capture (`/tmp/explore_redesign_elite_v3.png`) for visual parity check.
-- [ ] Full Phase 10B simulator verification notes for iPhone 16e covering portrait/landscape + accessibility configuration checks
+- [x] Full Phase 10B simulator verification notes for iPhone 16e covering portrait + accessibility configuration checks (`docs/phase10b_ui_accessibility_qa.md`)
 
 ---
 
 ## Phase 10C: Free & Premium Monetization (StoreKit 2)
 
-**Status:** 🟡 In Progress (tier policy ratified on 2026-02-11)
+**Status:** ✅ Complete (stats gating + phase-exit verification documented on 2026-02-16)
 
 ### Section 1: Objective
 Ship a production-ready Free/Premium model that follows StoreKit 2 best practices, preserves offline-first behavior, and keeps the core learning loop usable for free users while clearly monetizing premium value.
@@ -437,21 +437,22 @@ Create deterministic StoreKit test scenarios (`.storekit` + `SKTestSession`) for
 ### Section 3: Deliverables
 - [x] `docs/free_premium_matrix.md` - canonical Free vs Premium capability matrix and gating rules
 - [x] `LexicalCore/Services/SubscriptionEntitlementService.swift` - single source of truth for product load, purchase, `Transaction.updates`, verification, entitlement computation, and restore orchestration
-- [ ] `LexicalCore/Models/UserProfile.swift` + `LexicalCore/Services/LexicalSchemaMigration.swift` - premium entitlement fields (`tier`, entitlement timestamp/source, expiration marker) with non-destructive migration
-- [ ] `LexicalCore/Services/CloudKitSyncManager.swift` + `LexicalCore/Services/SyncConflictResolver.swift` - entitlement payload sync and LWW merge rules for cross-device convergence
+- [x] `LexicalCore/Models/UserProfile.swift` + `LexicalCore/Services/LexicalSchemaMigration.swift` - premium entitlement fields (`tier`, entitlement timestamp/source, expiration marker) with non-destructive migration
+- [x] `LexicalCore/Services/CloudKitSyncManager.swift` + `LexicalCore/Services/SyncConflictResolver.swift` - entitlement payload sync and LWW merge rules for cross-device convergence
 - [x] `LexicalCore/Services/FeatureGateService.swift` - centralized free/premium capability resolver consumed by app features
-- [ ] `Lexical/Features/Settings/SettingsView.swift` + `Lexical/Features/Home/HomeFeedView.swift` + `Lexical/Features/Dashboard/StatsView.swift` - gated experiences, usage limits, and upgrade entry points
+- [x] `Lexical/Features/Settings/SettingsView.swift` + `Lexical/Features/Home/HomeFeedView.swift` - gated experiences, quota UX, and upgrade entry points
+- [x] `Lexical/Features/Dashboard/StatsView.swift` - premium/free stats-depth gating alignment
 - [x] `Lexical/Features/Monetization/PremiumOfferView.swift` - dedicated upgrade surface using StoreKit subscription merchandising views
 - [x] `Lexical/Resources/StoreKit/Lexical.storekit` - local StoreKit configuration for deterministic simulator testing
 - [x] `LexicalCoreTests/FeatureGateServiceTests.swift` - weekly article limit, widget cap, and premium FSRS mode coverage
 - [x] `LexicalCoreTests/SubscriptionEntitlementServiceTests.swift` + `LexicalCoreTests/SyncConflictResolverTests.swift` + `LexicalCoreTests/FeatureGateServiceTests.swift` - entitlement lifecycle, merge determinism, and gate enforcement coverage
-- [ ] Phase exit checks documented: verified purchase flow, pending flow, cancel flow, restore flow, expiration/revocation handling, billing-retry behavior, and offline entitlement continuity
+- [x] Phase exit checks documented: verified purchase flow, pending flow, cancel flow, restore flow, expiration/revocation handling, billing-retry behavior, and offline entitlement continuity (`docs/storekit_phase10c_exit_checks.md`)
 
 ---
 
 ## Phase 10D: Article Planning & Content Diversity Engine
 
-**Status:** 🟡 In Progress (planner + prompt hardening scaffold implemented on 2026-02-15)
+**Status:** ✅ Complete (quality hardening finalized on 2026-02-16)
 
 ### Section 1: Objective
 Produce consistently interesting, informative, and non-repetitive generated articles by adding explicit topic/angle planning, novelty memory, and quality-focused prompt constraints before LLM generation.
@@ -471,15 +472,15 @@ Produce consistently interesting, informative, and non-repetitive generated arti
 - [x] `Lexical/Features/Home/ArticlesViewModel.swift` + `Lexical/Features/Home/HomeFeedView.swift` - pass active user identity into generation for user-scoped prompt memory
 - [x] `LexicalCoreTests/ArticlePromptPlannerTests.swift` - planner output and rotation behavior tests
 - [x] `LexicalCoreTests/ArticleGeneratorPromptTests.swift` - prompt includes topic/angle/freshness sections
-- [ ] Add embedding/similarity-based novelty scoring (beyond lexical overlap heuristic)
-- [ ] Add post-generation quality gate + retry loop (structure/factuality/novelty checks)
-- [ ] Expand category/topic bank coverage for custom niche interests selected in onboarding
+- [x] Add embedding/similarity-based novelty scoring (beyond lexical overlap heuristic)
+- [x] Add post-generation quality gate + retry loop (structure/factuality/novelty checks)
+- [x] Expand category/topic bank coverage for custom niche interests selected in onboarding
 
 ---
 
 ## Phase 10E: Audit Remediation & Production Hardening
 
-**Status:** 🟡 In Progress (repository review remediation initiated on 2026-02-16)
+**Status:** ✅ Complete (all remediation deliverables merged and validated on 2026-02-16)
 
 ### Section 1: Objective
 Close high-impact gaps identified in `report.md` by hardening safety, review correctness, performance hot paths, and free/premium gate behavior before release polish.
@@ -506,14 +507,14 @@ Close high-impact gaps identified in `report.md` by hardening safety, review cor
 
 ## Phase 11: Production Polish & App Store Release
 
-**Status:** 🟡 In Progress (Onboarding v1.3 integrated on 2026-02-15)
+**Status:** 🟡 In Progress (onboarding + automation baseline complete; release packaging pending)
 
 ### Section 1: Objective
 Complete onboarding UX/accessibility hardening and prepare release artifacts for App Store and TestFlight.
 
 ### Section 2: Key Activities
 - **Onboarding Flow (Implemented v1):** Ship first-run, phase-gated flow with value proposition, FSRS/forgetting-curve primer, interest selection, reading-loop primer, contextual notification opt-in, and completion handoff.
-- **Onboarding Personalization (Implemented v1.2):** Expand interest selector to Bumble-style grouped interest sections (70+ tags) and add article-style preference capture (Balanced / Informative / Fun / Fresh Angle) so early content generation reflects user taste.
+- **Onboarding Personalization (Implemented v1.2):** Expand interest selector to Bumble-style grouped interest sections (50 curated tags) and add article-style preference capture (Balanced / Informative / Fun / Fresh Angle) so early content generation reflects user taste.
 - **Onboarding Rank Calibration (Implemented v1.3):** Add a practical 10-question lexical check (8 real words + 2 control distractors) and map responses through `LexicalCalibrationEngine` to initialize `UserProfile.lexicalRank` with confidence capture.
 - **Onboarding State Persistence (Implemented):** Persist onboarding completion and resumable step index with `AppStorage` keys; wire root app gate to onboarding completion state.
 - **Contextual Notification Permission (Implemented):** Move notification authorization out of app-launch init and trigger from onboarding "Enable Smart Nudges" action only.
@@ -535,13 +536,25 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 - [x] `Lexical/Services/BanditScheduler.swift` - Explicit notification authorization API (no launch-time permission prompt)
 - [x] `Lexical/Features/Settings/SettingsView.swift` - Replay onboarding entry point
 - [x] `LexicalCoreTests/OnboardingRankAssessmentServiceTests.swift` - onboarding calibration packet shape and rank-estimation behavior coverage
-- [ ] `PrivacyInfo.xcprivacy` - Privacy manifest
+- [x] `Lexical/PrivacyInfo.xcprivacy` - baseline privacy manifest checked in
 - [ ] App Store Connect metadata (description, keywords, categories)
 - [ ] Screenshot set for all required device sizes
 - [ ] TestFlight build uploaded and distributed
 - [x] `scripts/e2e/run.sh` - deterministic simulator E2E harness with screenshot artifacts and state assertions
 - [x] `scripts/ui_automation/run_true_ui.sh` - true simulator UI automation with interactive taps and accessibility assertions across 5 core flows
 - [x] `docs/e2e_testing.md` - E2E harness usage and artifact contract
+
+### Before Publish: Payments Checklist (StoreKit 2)
+- [ ] **Account Readiness:** Accept Paid Applications Agreement and complete tax + banking setup in App Store Connect.
+- [ ] **Subscription Group Setup:** Maintain one auto-renewable subscription group with monthly/yearly products (`com.lexical.premium.monthly`, `com.lexical.premium.yearly`).
+- [ ] **Product Contract:** Keep monthly/yearly in the same subscription level with identical premium feature unlocks.
+- [ ] **Pricing & Availability:** Confirm storefront availability, subscription pricing, intro/offer strategy (if used), and tax category.
+- [ ] **App Configuration Parity:** Ensure `Lexical/Info.plist` (`LexicalPremiumProductIDs`) matches App Store Connect product IDs exactly.
+- [ ] **Compliance Links:** Ship working Privacy Policy and Terms of Use links in app/metadata before review submission.
+- [ ] **Purchase UX Contract:** Keep visible paywall, restore purchases path, and entitlement refresh on app launch/transaction updates.
+- [ ] **Review Submission Path:** Submit subscriptions with the app version and include reviewer notes for paywall + restore flow.
+- [ ] **Pre-Release Validation:** Run sandbox and TestFlight checks for purchase, renewal state transition, cancellation, expiration, and restore.
+- [ ] **Phase 2 Hardening (Recommended):** Add App Store Server Notifications V2 backend for server-authoritative entitlement analytics and cross-device reconciliation at scale.
 
 ---
 
@@ -552,10 +565,10 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 | Phase 8 | ✅ Complete | - | Personalization, matrix/notification triage, and rank-aware filtering complete |
 | Phase 9 | ✅ Complete | - | Identity, calibration, dual-store migration, and CRDT replay complete |
 | Phase 10 | ✅ Complete | - | Adaptive acquisition loop finalized with dedicated daily-root + notification triage services and simulator verification |
-| Phase 10B | 🔴 Critical (Active) | 1 week | UI refinement across design system, reader/review flows, and accessibility ergonomics |
-| Phase 10C | 🔴 Critical (Active) | 1 week | Free/Premium monetization rollout with StoreKit 2, entitlement sync, and feature gates |
-| Phase 10D | 🔴 Critical (Active) | 1 week | Topic/angle planning, novelty memory, and article quality diversity enforcement |
-| Phase 10E | 🔴 Critical (Active) | 3-4 days | Post-audit safety, correctness, and performance hardening |
+| Phase 10B | ✅ Complete | - | Cross-screen UI polish + accessibility hardening completed with simulator QA artifacts |
+| Phase 10C | ✅ Complete | - | Free/Premium monetization rollout delivered with StoreKit 2, entitlement sync, and feature gates |
+| Phase 10D | ✅ Complete | - | Topic/angle planning, novelty memory, and article quality diversity enforcement |
+| Phase 10E | ✅ Complete | - | Post-audit safety, correctness, and performance hardening shipped |
 | Phase 11 | 🔴 Critical (Active) | 1 week | Onboarding hardening + compliance/release packaging after UI + monetization baselines |
 
 ---
@@ -573,9 +586,6 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 ---
 
 ## Next Steps
-1. Start Phase 10B UI refinement in this order: design tokens/glass system, Reader/Review flows, then cross-screen consistency pass.
-2. Run simulator QA sweeps (iPhone 16e portrait/landscape, Dynamic Type, VoiceOver, Reduce Motion/Transparency) and fold fixes into Phase 10B.
-3. Continue Phase 10C monetization implementation: StoreKit service integration, entitlement sync model updates, and feature-gate wiring.
-4. Continue Phase 10D content engine hardening: add post-generation quality gate + retry and extend topic-bank coverage for niche interests.
-5. Execute Phase 10E remediation checklist to close audit findings before release freeze.
-6. Continue Phase 11 onboarding hardening: add guided widget/extension setup and motion permission priming, then complete compliance/release packaging.
+1. Complete Phase 11 release packaging: App Store metadata, required screenshot matrix, and TestFlight distribution checklist.
+2. Run full simulator + device validation sweep for monetization and onboarding before TestFlight submission.
+3. Resolve existing non-Phase-10B compiler warnings (`MotionService`, `RankPromotionEngine`, `FSRSV4Engine`) before release branch cut.

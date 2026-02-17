@@ -82,8 +82,44 @@ final class FeatureGateServiceTests: XCTestCase {
         XCTAssertFalse(try service.canCreateAdditionalWidgetProfile(modelContext: context))
     }
 
+    func testFreeTierStatsDepthIsLastThirtyDaysOnly() throws {
+        let container = try makeInMemoryContainer()
+        let context = ModelContext(container)
+        let userId = uniqueUserID(prefix: "gate.free.stats")
+        context.insert(UserProfile(userId: userId))
+        try context.save()
+        setActiveUser(userId)
+
+        let service = FeatureGateService()
+        let available = service.availableStatsPeriods(modelContext: context)
+
+        XCTAssertEqual(available, [.last30])
+        XCTAssertTrue(service.canAccessStatsPeriod(.last30, modelContext: context))
+        XCTAssertFalse(service.canAccessStatsPeriod(.last90, modelContext: context))
+        XCTAssertFalse(service.canAccessStatsPeriod(.year, modelContext: context))
+    }
+
+    func testPremiumTierStatsDepthIncludesNinetyDaysAndYear() throws {
+        let container = try makeInMemoryContainer()
+        let context = ModelContext(container)
+        let userId = uniqueUserID(prefix: "gate.premium.stats")
+        let profile = UserProfile(userId: userId)
+        profile.applySubscriptionTier(.premium, source: .appStore)
+        context.insert(profile)
+        try context.save()
+        setActiveUser(userId)
+
+        let service = FeatureGateService()
+        let available = service.availableStatsPeriods(modelContext: context)
+
+        XCTAssertEqual(available, StatsPeriod.allCases)
+        XCTAssertTrue(service.canAccessStatsPeriod(.last30, modelContext: context))
+        XCTAssertTrue(service.canAccessStatsPeriod(.last90, modelContext: context))
+        XCTAssertTrue(service.canAccessStatsPeriod(.year, modelContext: context))
+    }
+
     private func makeInMemoryContainer() throws -> ModelContainer {
-        let schema = Schema(LexicalSchemaV5.models)
+        let schema = Schema(LexicalSchemaV6.models)
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [configuration])
     }

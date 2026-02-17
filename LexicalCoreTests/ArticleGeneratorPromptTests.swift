@@ -13,7 +13,7 @@ final class ArticleGeneratorPromptTests: XCTestCase {
         super.tearDown()
     }
 
-    func testPromptRequestsFourToFiveMinuteArticle() async throws {
+    func testPromptRequestsThreeToFourMinuteArticle() async throws {
         let originalContainer = Persistence.sharedModelContainer
         defer { Persistence.sharedModelContainer = originalContainer }
 
@@ -32,10 +32,10 @@ final class ArticleGeneratorPromptTests: XCTestCase {
             response: """
             {
               "title": "Deep Practice",
-              "body_text": "Insight drives synthesis in reflective study routines.",
-              "used_reinforcement_words": ["insight"],
-              "used_stretch_words": ["synthesis"],
-              "target_words": ["insight", "synthesis"],
+              "body_text": "Insight and synthesis support reflective study in realistic projects. Learners test one assumption, compare trade-offs, and refine decisions. This routine keeps vocabulary meaningful while improving recall.\\n\\nA practical reading loop starts with one question and one target behavior for the week. Instead of collecting random tips, learners connect each paragraph to a concrete action they can execute today. Reflection after reading turns passive exposure into durable understanding. A clear workflow also keeps context stable when attention drops.\\n\\nWhen people summarize in their own words, they discover uncertainty early and adjust quickly. This lowers frustration because mistakes become signals rather than identity threats. The article then becomes a tool for better decisions, not a static block of information.\\n\\nA second pass through key sections helps learners notice structure: claim, evidence, counterpoint, and takeaway. Seeing this structure repeatedly strengthens transfer into writing and speaking. Vocabulary becomes usable because every term appears in context, purpose, and consequence.\\n\\nBy the end of the session, the reader can explain the central argument, challenge one weak assumption, and propose a better next step. That closes the retrieval loop and makes future review sessions faster, calmer, and more effective.\\n\\nTo sustain progress, learners finish with a one-week experiment and a short reflection log. This turns comprehension into action, surfaces weak assumptions, and creates evidence for the next review session. The same workflow-context loop supports consistent improvement over time.",
+              "used_reinforcement_words": ["insight", "workflow"],
+              "used_stretch_words": ["synthesis", "context"],
+              "target_words": ["insight", "synthesis", "workflow", "context"],
               "glossary": []
             }
             """
@@ -45,16 +45,16 @@ final class ArticleGeneratorPromptTests: XCTestCase {
 
         _ = try await generator.generateArticle(
             profile: profile,
-            targetWords: ["insight", "synthesis"],
-            reinforcementWords: ["insight"],
-            stretchWords: ["synthesis"],
+            targetWords: ["insight", "synthesis", "workflow", "context"],
+            reinforcementWords: ["insight", "workflow"],
+            stretchWords: ["synthesis", "context"],
             articleStylePreference: ArticleStylePreference.informative.rawValue
         )
 
         let capturedPrompt = await provider.lastPromptValue()
         XCTAssertNotNil(capturedPrompt)
-        XCTAssertTrue(capturedPrompt?.contains("Reading duration target: 4-5 minutes.") == true)
-        XCTAssertTrue(capturedPrompt?.contains("Length: 450-550 words.") == true)
+        XCTAssertTrue(capturedPrompt?.contains("Reading duration target: 3-4 minutes.") == true)
+        XCTAssertTrue(capturedPrompt?.contains("Length: 360-440 words.") == true)
         XCTAssertTrue(capturedPrompt?.contains("Topic and angle brief:") == true)
         XCTAssertTrue(capturedPrompt?.contains("Freshness constraints:") == true)
         XCTAssertTrue(capturedPrompt?.contains("Style preference: Informative.") == true)

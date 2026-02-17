@@ -28,6 +28,7 @@ struct SingleCardPromptView: View {
                     Text(completionText)
                         .font(.headline)
                         .foregroundStyle(Color.adaptiveText)
+                        .accessibilityAddTraits(.isHeader)
                     Button("Done") {
                         dismiss()
                     }
@@ -46,7 +47,8 @@ struct SingleCardPromptView: View {
                     HStack {
                         Text("Prompt Card")
                             .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.adaptiveTextSecondary)
+                            .accessibilityAddTraits(.isHeader)
                             .accessibilityIdentifier("prompt.title")
                         Spacer()
                     }
@@ -79,6 +81,8 @@ struct SingleCardPromptView: View {
                                         .background(Color.sonPrimary.opacity(0.12))
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                 }
+                                .accessibilityLabel("Word info")
+                                .accessibilityHint("Shows full details for this word.")
 
                                 Button(role: .destructive) {
                                     removeFromDeck(card)
@@ -91,6 +95,7 @@ struct SingleCardPromptView: View {
                                         .background(Color.red.opacity(0.12))
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                 }
+                                .accessibilityHint("Removes this word from your learning deck.")
                             }
 
                             HStack(spacing: 12) {
@@ -104,9 +109,9 @@ struct SingleCardPromptView: View {
                         .padding(.bottom, 28)
                     } else {
                         Text("Tap card to reveal")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.bottom, 28)
+                        .font(.caption)
+                        .foregroundStyle(Color.adaptiveTextSecondary)
+                        .padding(.bottom, 28)
                     }
                 }
             } else {

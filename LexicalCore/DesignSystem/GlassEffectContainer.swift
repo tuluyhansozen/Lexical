@@ -16,6 +16,9 @@ public enum GlassMaterial: Sendable {
 /// The `spacing` parameter defines the morphing threshold (surface tension)
 /// for child elements within the container — per the Liquid Glass design system.
 public struct GlassEffectContainer<Content: View>: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
     private let material: GlassMaterial
     private let spacing: CGFloat
     private let content: Content
@@ -32,9 +35,20 @@ public struct GlassEffectContainer<Content: View>: View {
 
     public var body: some View {
         ZStack {
-            GlassEffectView(material: material)
+            if reduceTransparency {
+                Color.adaptiveSurface
+                    .opacity(colorScheme == .dark ? 0.96 : 0.90)
+            } else {
+                GlassEffectView(material: material)
+                Color.white.opacity(specularOpacity)
+            }
             content
         }
+    }
+
+    private var specularOpacity: Double {
+        let clampedSpacing = max(0, min(spacing, 40))
+        return 0.02 + Double(clampedSpacing / 40) * 0.07
     }
 }
 

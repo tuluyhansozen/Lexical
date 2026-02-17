@@ -263,7 +263,7 @@ struct WordDetailSheet: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color(hex: "F5F5F7")
+            Color.adaptiveBackground
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -276,10 +276,11 @@ struct WordDetailSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Word Info")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.metricLabel)
                             .tracking(0.6)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.bottom, 2)
+                            .accessibilityAddTraits(.isHeader)
 
                         wordHeaderCard
                         definitionCard
@@ -308,15 +309,15 @@ struct WordDetailSheet: View {
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(data.lemma.capitalized)
-                        .font(.system(size: 35, weight: .bold))
-                        .foregroundStyle(Color(hex: "131615"))
+                        .font(.display(.largeTitle, weight: .bold))
+                        .foregroundStyle(Color.adaptiveText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
 
                     Text((data.partOfSpeech?.isEmpty == false ? data.partOfSpeech! : "noun"))
                         .font(.system(size: 10, weight: .medium))
                         .italic()
-                        .foregroundStyle(Color(hex: "4E7366"))
+                        .foregroundStyle(Color.sonPrimary)
                         .offset(y: -2)
                 }
 
@@ -334,6 +335,7 @@ struct WordDetailSheet: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Play pronunciation")
+                .accessibilityHint("Speaks the word aloud.")
             }
             .padding(.horizontal, 21)
             .padding(.top, 10)
@@ -347,8 +349,8 @@ struct WordDetailSheet: View {
             sectionHeading("Definition")
 
             Text(data.definition?.isEmpty == false ? data.definition! : "No definition available")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color(hex: "131615"))
+                .font(.body)
+                .foregroundStyle(Color.adaptiveText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 21)
@@ -368,15 +370,15 @@ struct WordDetailSheet: View {
 
             if visibleSentences.isEmpty {
                 Text("No sentence examples available")
-                    .font(.system(size: 12, weight: .light))
-                    .foregroundStyle(Color(hex: "131615"))
+                    .font(.body)
+                    .foregroundStyle(Color.adaptiveText)
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(visibleSentences.enumerated()), id: \.offset) { index, sentence in
                         Text("\(index + 1). ")
-                            .font(.system(size: 12, weight: .light))
+                            .font(.body)
                             .italic()
-                            .foregroundStyle(Color(hex: "131615"))
+                            .foregroundStyle(Color.adaptiveText)
                         + Text(highlightedSentence(sentence))
                     }
                 }
@@ -393,8 +395,8 @@ struct WordDetailSheet: View {
             sectionHeading("Synonyms")
 
             Text(data.synonyms.joined(separator: ", "))
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(Color(hex: "131615"))
+                .font(.body)
+                .foregroundStyle(Color.adaptiveText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 21)
@@ -415,35 +417,37 @@ struct WordDetailSheet: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
-                .background(Color(hex: "021105").opacity(0.72))
+                .background(Color.sonPrimary)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Add to deck")
+            .accessibilityHint("Adds this word to your learning queue.")
             .padding(.horizontal, 24)
             .padding(.vertical, 11)
         }
-        .background(Color(hex: "F5F5F7"))
+        .background(Color.adaptiveBackground)
     }
 
     private func sectionHeading(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 12, weight: .bold))
+            .font(.metricLabel)
             .tracking(0.6)
-            .foregroundStyle(Color(hex: "6A7C76"))
+            .foregroundStyle(Color.sonPrimary.opacity(0.88))
             .opacity(0.9)
     }
 
     private func highlightedSentence(_ sentence: String) -> AttributedString {
         var value = AttributedString(sentence)
-        value.foregroundColor = Color(hex: "131615")
-        value.font = .system(size: 12, weight: .light)
+        value.foregroundColor = Color.adaptiveText
+        value.font = .body
 
         let target = data.lemma.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !target.isEmpty else { return value }
 
         if let range = value.range(of: target, options: .caseInsensitive) {
-            value[range].foregroundColor = Color(hex: "4E7366")
-            value[range].font = .system(size: 12, weight: .semibold)
+            value[range].foregroundColor = Color.sonPrimary
+            value[range].font = .body.bold()
         }
 
         return value
@@ -454,12 +458,12 @@ private struct WordInfoCardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.6))
+            .background(Color.adaptiveSurfaceElevated.opacity(0.9))
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                    .stroke(Color.adaptiveBorder, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .shadow(color: Color.black.opacity(0.12), radius: 2.5, x: 0, y: 1)
+            .shadow(color: Color.cardShadow, radius: 2.5, x: 0, y: 1)
     }
 }

@@ -29,7 +29,7 @@ struct FlashcardView: View {
                             Text(definition)
                                 .font(.subheadline)
                                 .italic()
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.adaptiveTextSecondary)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -46,7 +46,7 @@ struct FlashcardView: View {
                 title: "Complete the Sentence",
                 content: {
                     Text(generateCloze(sentence: item.contextSentence, target: item.originalWord))
-                        .font(.display(size: 24, weight: .medium))
+                        .font(.display(.title2, weight: .medium))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(Color.adaptiveText)
                 }
@@ -60,10 +60,13 @@ struct FlashcardView: View {
         .frame(height: 400)
         .padding(24)
         .onTapGesture {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
-                isFlipped.toggle()
-                if isFlipped { onFlip() }
-            }
+            flipCard()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Double tap to flip the card.")
+        .accessibilityAction(named: Text("Flip card")) {
+            flipCard()
         }
     }
     
@@ -83,6 +86,13 @@ struct FlashcardView: View {
         )
         return LocalizedStringKey(modified)
     }
+
+    private func flipCard() {
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+            isFlipped.toggle()
+            if isFlipped { onFlip() }
+        }
+    }
 }
 
 /// Reusable Card Face Container
@@ -99,11 +109,12 @@ struct CardFace<Content: View>: View {
         GlassEffectContainer(material: .ultraThin) {
             VStack(spacing: 20) {
                 Text(title.uppercased())
-                    .font(.caption2)
+                    .font(.metricLabel)
                     .fontWeight(.bold)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.adaptiveTextSecondary)
                     .padding(.top, 20)
-                
+                    .accessibilityAddTraits(.isHeader)
+
                 Spacer()
                 
                 content
@@ -113,14 +124,10 @@ struct CardFace<Content: View>: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 32))
-        .shadow(color: Color.black.opacity(0.1), radius: 20, x: 0, y: 10)
+        .shadow(color: Color.cardShadow, radius: 20, x: 0, y: 10)
         .overlay(
             RoundedRectangle(cornerRadius: 32)
-                .stroke(LinearGradient(
-                    colors: [.white.opacity(0.5), .white.opacity(0.1)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ), lineWidth: 1)
+                .stroke(Color.adaptiveBorder, lineWidth: 1)
         )
     }
 }

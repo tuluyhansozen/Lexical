@@ -22,7 +22,7 @@ public final class MockLLMProvider: ArticleLLMProvider {
         let body = Self.buildLongFormBody(
             topic: topic,
             focusWords: focusWords,
-            targetWordCount: 500
+            targetWordCount: 400
         )
         let title = "Deep Dive: \(topic)"
         let payload: [String: Any] = [
@@ -112,61 +112,74 @@ public final class MockLLMProvider: ArticleLLMProvider {
         let usableFocusWords = focusWords
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { $0.range(of: "^[a-z][a-z-]*$", options: .regularExpression) != nil }
-        let focusDrills = usableFocusWords.prefix(8).map { lemma in
-            "Notice how \(lemma) is used in a concrete sentence so the meaning stays attached to context rather than memorized in isolation."
+        let focusDrills = usableFocusWords.prefix(6).map { lemma in
+            "Notice how \(lemma) appears in a practical sentence so meaning stays attached to context."
         }.joined(separator: " ")
         let focusSentence = usableFocusWords.isEmpty
             ? "As you read, track how ideas connect across examples and summaries."
             : "Key learning words in this article are \(usableFocusWords.joined(separator: ", ")). \(focusDrills)"
 
         let intro = """
-        The most effective way to improve fluency in \(topic) is to combine deep reading with deliberate retrieval. Instead of rushing through short fragments, spend time with one coherent argument from start to finish. A long-form article gives your brain enough context to connect cause and effect, compare viewpoints, and notice subtle transitions in tone. \(focusSentence) By the end of this piece, you should be able to explain the main idea in your own words and reuse the new vocabulary in a fresh example.
+        Improving fluency in \(topic) works best when reading and retrieval reinforce each other. Instead of jumping across disconnected snippets, stay with one coherent argument and test your understanding as you go. \(focusSentence) By the end of this article, you should be able to explain the main claim, name one trade-off, and reuse the new vocabulary in your own sentence.
         """
 
         let reusableParagraphs = [
             """
-            A useful reading routine starts before the first paragraph. Set a clear question for the session, such as what problem the author is trying to solve, what trade-offs are discussed, and which actions are realistic for a learner to apply immediately. This small pre-reading step changes attention quality. You stop scanning for random facts and start following structure. When your attention follows structure, memory improves because every sentence has a role: introducing a claim, supporting it with evidence, or clarifying a limitation.
+            A practical reading routine starts with one question. Ask what problem is being solved and which assumptions matter most. This sharpens attention, because each paragraph is judged for relevance instead of treated as random information. Relevance-first reading improves retention and reduces cognitive noise.
             """,
             """
-            In practical terms, comprehension improves when examples are specific and emotionally neutral. If every paragraph contains dramatic language, the text feels exciting but difficult to retain. Strong educational writing balances narrative energy with stable explanations. A clear sequence works best: define a concept, provide one concrete example, then contrast it with a near miss. That contrast teaches boundaries. Learners who understand boundaries are less likely to misuse vocabulary, because they know when a term fits and when another choice is more precise.
+            Comprehension improves when examples are concrete and comparisons are explicit. A reliable pattern is simple: define a concept, show one realistic example, then compare it with a near miss. This reveals boundaries, and boundaries are what make vocabulary usable in speech and writing.
             """,
             """
-            Another high-leverage habit is paragraph summarization. After each section, pause for ten seconds and produce one sentence from memory. Do not look back while summarizing. This tiny retrieval attempt surfaces uncertainty quickly. If the summary is vague, you revisit only the unclear lines instead of rereading the whole page. Over multiple sessions, this approach reduces passive repetition and increases active reconstruction. Active reconstruction is slower in the moment, but it builds durable understanding that transfers into conversation and writing.
+            Retrieval is the multiplier. After each section, pause and summarize in one sentence without looking back. If the summary is vague, revisit only the unclear lines. This keeps sessions efficient and turns passive exposure into active reconstruction, which is slower now but more durable later.
             """,
             """
-            Vocabulary growth is strongest when words appear in meaningful clusters rather than isolated lists. In a focused article, related terms recur under slightly different conditions: explanation, comparison, and application. That repetition with variation helps your mind build flexible representations. A term first seen in a descriptive sentence later appears in a problem-solving sentence, then in a reflective sentence. The form stays familiar while the function shifts. This is exactly the kind of signal retrieval systems can schedule effectively over the next days.
+            Vocabulary grows faster when words reappear across functions: description, comparison, and decision-making. Repetition with variation builds flexibility. A word should not only be recognized; it should be used to explain a choice, challenge an idea, or propose a better next step.
             """,
             """
-            For intermediate learners, reading speed should not be maximized at the expense of reasoning depth. A better metric is decision quality after reading. Can you identify the strongest argument? Can you name one assumption the author depends on? Can you propose one alternative interpretation? These questions force the text to become actionable. Actionable comprehension supports long-term retention because your brain stores not only words, but also decision patterns. Decision patterns are easier to recall later than disconnected definitions.
+            For intermediate learners, speed should not replace reasoning depth. A better metric is decision quality after reading: can you identify the strongest argument, one hidden assumption, and one alternative interpretation? Actionable understanding is easier to retain than isolated facts.
             """,
             """
-            Interest alignment also matters. When a topic matches your curiosity, attention sustains itself with less friction. However, interest alone is not enough. The article still needs coherent progression and clear linguistic scaffolding. Good scaffolding includes explicit transitions, constrained sentence length, and concrete nouns that anchor abstract ideas. With those supports, readers can spend cognitive energy on meaning instead of decoding. The result is a more stable memory trace and higher confidence when re-encountering the same vocabulary in new materials.
-            """,
-            """
-            A strong post-reading step is short production. Write three sentences: one summary, one disagreement, and one transfer statement about how you would apply the idea this week. This pattern creates three memory pathways for the same content. The summary pathway captures structure, the disagreement pathway captures nuance, and the transfer pathway captures utility. If one pathway weakens, another can still trigger recall. This redundancy is especially useful when study sessions are brief and spread across busy days.
-            """,
-            """
-            Finally, treat uncertainty as useful data. When a sentence feels difficult, mark it and continue instead of stopping for every unknown detail. After finishing the section, return to marked lines with a narrower question. This keeps momentum while preserving precision. Over time, your tolerance for ambiguity increases, which is a core skill for real-world reading. Fluency is not perfect certainty at every line; it is the ability to maintain direction, resolve ambiguity efficiently, and keep building understanding across longer texts.
+            Finish with short production: one summary sentence, one critique sentence, and one transfer sentence about how you would apply the idea this week. This closes the loop from input to expression and makes later review sessions faster and more stable.
             """
         ]
 
         var paragraphs: [String] = [intro]
         var nextIndex = 0
-        while wordCount(in: paragraphs.joined(separator: " ")) < max(420, targetWordCount - 70) {
+        while wordCount(in: paragraphs.joined(separator: " ")) < max(260, targetWordCount - 110) {
             paragraphs.append(reusableParagraphs[nextIndex % reusableParagraphs.count])
             nextIndex += 1
         }
 
         let closing = """
-        In summary, long-form reading works because it blends context, repetition, and retrieval into a single experience. Stay with one article long enough to see how ideas evolve, then convert what you read into a brief output. That final output closes the learning loop: you moved from input to understanding to expression. If you repeat this cycle consistently, vocabulary becomes usable knowledge, not just recognition. The compounding effect is subtle day to day, but unmistakable across a month of focused sessions.
+        In short, reading improves when structure, retrieval, and application stay connected. Keep articles cohesive, reflect after each section, and end with a concrete weekly action. Repeating this cycle turns vocabulary into usable fluency.
         """
         paragraphs.append(closing)
-
-        return paragraphs.joined(separator: "\n\n")
+        let draft = paragraphs.joined(separator: "\n\n")
+        return trimToWordLimit(
+            draft,
+            maxWords: max(320, targetWordCount + 30)
+        )
     }
 
     private static func wordCount(in text: String) -> Int {
         text.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
+    }
+
+    private static func trimToWordLimit(_ text: String, maxWords: Int) -> String {
+        let tokens = text.split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+        guard tokens.count > maxWords else {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let clipped = tokens.prefix(maxWords).joined(separator: " ")
+        if let punctuationIndex = clipped.lastIndex(where: { ".!?".contains($0) }) {
+            let sentenceAligned = String(clipped[...punctuationIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !sentenceAligned.isEmpty {
+                return sentenceAligned
+            }
+        }
+        return clipped.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -252,14 +265,17 @@ public enum ArticleLLMProviderFactory {
 }
 
 public actor ArticleGenerator {
-    private static let targetReadMinutesRange = 4...5
-    private static let targetWordRange = 450...550
+    private static let targetReadMinutesRange = 3...4
+    private static let targetWordRange = 360...440
+    private static let maxQualityAttempts = 3
+    fileprivate static let maxAllowedNoveltySimilarity = 0.84
 
     private let store: ArticleStore
     private let evaluator: ArticleConstraintsEvaluator
     private let llmProvider: ArticleLLMProvider
     private let promptBuilder: AdaptivePromptBuilder
     private let promptPlanner: ArticlePromptPlanner
+    private let noveltyScorer: ArticleNoveltyScorer
     private let discoveredLexemeIngestionService: DiscoveredLexemeIngestionService
 
     public init(
@@ -268,6 +284,7 @@ public actor ArticleGenerator {
         llmProvider: ArticleLLMProvider = MockLLMProvider(),
         promptBuilder: AdaptivePromptBuilder = .init(),
         promptPlanner: ArticlePromptPlanner = .init(),
+        noveltyScorer: ArticleNoveltyScorer = .init(),
         discoveredLexemeIngestionService: DiscoveredLexemeIngestionService = .init()
     ) {
         self.store = store
@@ -275,6 +292,7 @@ public actor ArticleGenerator {
         self.llmProvider = llmProvider
         self.promptBuilder = promptBuilder
         self.promptPlanner = promptPlanner
+        self.noveltyScorer = noveltyScorer
         self.discoveredLexemeIngestionService = discoveredLexemeIngestionService
     }
 
@@ -297,48 +315,97 @@ public actor ArticleGenerator {
             targetWords: targetWords,
             userId: userId
         )
-        let constructedPrompt = constructPrompt(
-            plan: plan,
-            targets: targetWords,
-            reinforcementWords: reinforcementWords,
-            stretchWords: stretchWords,
-            adaptiveContext: adaptiveContext,
-            articleStylePreference: articleStylePreference
-        )
-        let rawResponse = try await llmProvider.generateContent(prompt: constructedPrompt.body)
-        let parsed = parseResponse(rawResponse)
-        let title = parsed.title
-        let content = parsed.bodyText
+        var retryHints: [String] = []
+        var bestAttempt: QualityGateAttempt?
 
-        let wordCount = content.split(separator: " ").count
-        let responseTargets = parsed.declaredFocusWords.isEmpty ? targetWords : parsed.declaredFocusWords
-        let containedTargets = responseTargets.filter { content.localizedCaseInsensitiveContains($0) }
-        let validation = evaluator.evaluate(
-            text: content,
-            newWordCount: containedTargets.count,
-            totalWordCount: wordCount
-        )
+        for attemptNumber in 1...Self.maxQualityAttempts {
+            let constructedPrompt = constructPrompt(
+                plan: plan,
+                targets: targetWords,
+                reinforcementWords: reinforcementWords,
+                stretchWords: stretchWords,
+                adaptiveContext: adaptiveContext,
+                articleStylePreference: articleStylePreference,
+                qualityRetryHints: retryHints
+            )
+            let rawResponse = try await llmProvider.generateContent(prompt: constructedPrompt.body)
+            let parsed = parseResponse(rawResponse)
+            let title = parsed.title
+            let content = enforceWordLimit(parsed.bodyText, maxWords: Self.targetWordRange.upperBound)
 
-        if !validation.isValid {
-            print("Article generated with issues: \(validation.issues)")
+            let wordCount = self.wordCount(in: content)
+            let responseTargets = parsed.declaredFocusWords.isEmpty ? targetWords : parsed.declaredFocusWords
+            let containedTargets = responseTargets.filter { content.localizedCaseInsensitiveContains($0) }
+            let validation = evaluator.evaluate(
+                text: content,
+                newWordCount: containedTargets.count,
+                totalWordCount: wordCount
+            )
+            let noveltySimilarity = noveltySimilarityScore(
+                title: title,
+                content: content,
+                recentArticles: recentArticles
+            )
+            let qualityIssues = qualityIssueMessages(
+                validationIssues: validation.issues,
+                noveltySimilarity: noveltySimilarity
+            )
+            let attempt = QualityGateAttempt(
+                parsed: parsed,
+                containedTargets: containedTargets,
+                validation: validation,
+                noveltySimilarity: noveltySimilarity,
+                centerRank: constructedPrompt.centerRank,
+                qualityIssues: qualityIssues
+            )
+            bestAttempt = bestAttempt.map { pickPreferredAttempt(current: $0, candidate: attempt) } ?? attempt
+
+            if qualityIssues.isEmpty {
+                let article = GeneratedArticle(
+                    title: title,
+                    content: content,
+                    targetWords: containedTargets,
+                    category: plan.category,
+                    difficultyScore: validation.score,
+                    targetRank: constructedPrompt.centerRank
+                )
+                try await store.save(article)
+                promptPlanner.recordUsage(plan: plan, userId: userId)
+                try await ingestDiscoveredLexemes(
+                    parsed.discoveredLexemes,
+                    sourceArticleId: article.id.uuidString
+                )
+                return article
+            }
+
+            if attemptNumber < Self.maxQualityAttempts {
+                retryHints = retryDirectives(
+                    from: validation.issues,
+                    noveltySimilarity: noveltySimilarity
+                )
+            }
         }
 
-        let article = GeneratedArticle(
-            title: title,
-            content: content,
-            targetWords: containedTargets,
-            category: plan.category,
-            difficultyScore: validation.score,
-            targetRank: constructedPrompt.centerRank
-        )
+        if let bestAttempt, bestAttempt.hasOnlyNonBlockingIssues {
+            let fallbackArticle = GeneratedArticle(
+                title: bestAttempt.parsed.title,
+                content: bestAttempt.parsed.bodyText,
+                targetWords: bestAttempt.containedTargets,
+                category: plan.category,
+                difficultyScore: max(0.0, bestAttempt.validation.score - 0.1),
+                targetRank: bestAttempt.centerRank
+            )
+            try await store.save(fallbackArticle)
+            promptPlanner.recordUsage(plan: plan, userId: userId)
+            try await ingestDiscoveredLexemes(
+                bestAttempt.parsed.discoveredLexemes,
+                sourceArticleId: fallbackArticle.id.uuidString
+            )
+            return fallbackArticle
+        }
 
-        try await store.save(article)
-        promptPlanner.recordUsage(plan: plan, userId: userId)
-        try await ingestDiscoveredLexemes(
-            parsed.discoveredLexemes,
-            sourceArticleId: article.id.uuidString
-        )
-        return article
+        let issues = bestAttempt?.qualityIssues.joined(separator: " | ") ?? "Unknown quality gate failure"
+        throw ArticleGenerationError.qualityGateFailed(issues: issues)
     }
 
     private func constructPrompt(
@@ -347,14 +414,16 @@ public actor ArticleGenerator {
         reinforcementWords: [String],
         stretchWords: [String],
         adaptiveContext: AdaptivePromptContext?,
-        articleStylePreference: String?
+        articleStylePreference: String?,
+        qualityRetryHints: [String]
     ) -> ConstructedPrompt {
         let templatePrompt = templatePrompt(
             plan: plan,
             targets: targets,
             reinforcementWords: reinforcementWords,
             stretchWords: stretchWords,
-            articleStylePreference: articleStylePreference
+            articleStylePreference: articleStylePreference,
+            qualityRetryHints: qualityRetryHints
         )
 
         guard let adaptiveContext else {
@@ -382,7 +451,8 @@ public actor ArticleGenerator {
         targets: [String],
         reinforcementWords: [String],
         stretchWords: [String],
-        articleStylePreference: String?
+        articleStylePreference: String?,
+        qualityRetryHints: [String]
     ) -> String {
         let reinforcementText = reinforcementWords.isEmpty ? "none" : reinforcementWords.joined(separator: ", ")
         let stretchText = stretchWords.isEmpty ? "none" : stretchWords.joined(separator: ", ")
@@ -424,6 +494,7 @@ public actor ArticleGenerator {
         - Do not output placeholder tokens (e.g., scenario_word_###).
         """
         let styleGuidance = styleGuidanceLine(for: articleStylePreference)
+        let retryGuidance = retryGuidanceBlock(from: qualityRetryHints)
 
         if let url = Bundle.main.url(forResource: "ArticleTemplateBank", withExtension: "json"),
            let data = try? Data(contentsOf: url),
@@ -455,6 +526,7 @@ public actor ArticleGenerator {
                     \(lengthGuidance)
                     \(qualityGuidance)
                     \(styleGuidance)
+                    \(retryGuidance)
 
                     Glossary rules:
                     - Include all required target lemmas.
@@ -476,6 +548,7 @@ public actor ArticleGenerator {
         \(lengthGuidance)
         \(qualityGuidance)
         \(styleGuidance)
+        \(retryGuidance)
         - Tone: Engaging, educational, and concrete.
         - Output strict JSON with keys:
           "title", "body_text", "used_reinforcement_words", "used_stretch_words", "target_words", "glossary".
@@ -490,6 +563,127 @@ public actor ArticleGenerator {
             return "- Style preference: Balanced. Use a clear, practical, and engaging tone."
         }
         return "- Style preference: \(preference.title). \(preference.promptDirective)"
+    }
+
+    private func retryGuidanceBlock(from hints: [String]) -> String {
+        guard !hints.isEmpty else { return "" }
+        let body = hints
+            .map { "- \($0)" }
+            .joined(separator: "\n")
+        return """
+        Retry corrections (must follow all):
+        \(body)
+        - Rewrite from scratch with a fresh structure and examples.
+        """
+    }
+
+    private func noveltySimilarityScore(
+        title: String,
+        content: String,
+        recentArticles: [GeneratedArticle]
+    ) -> Double {
+        let candidate = "\(title)\n\(content.prefix(320))"
+        let corpus = recentArticles.prefix(12).map { "\($0.title)\n\($0.content.prefix(320))" }
+        return noveltyScorer.blendedSimilarity(of: candidate, against: corpus)
+    }
+
+    private func qualityIssueMessages(
+        validationIssues: [ArticleConstraintsEvaluator.ConstraintViolation],
+        noveltySimilarity: Double
+    ) -> [String] {
+        var issues: [String] = validationIssues.map(description(for:))
+        if noveltySimilarity >= Self.maxAllowedNoveltySimilarity {
+            issues.append(
+                String(
+                    format: "Novelty too low (similarity %.2f >= %.2f)",
+                    noveltySimilarity,
+                    Self.maxAllowedNoveltySimilarity
+                )
+            )
+        }
+        return issues
+    }
+
+    private func retryDirectives(
+        from violations: [ArticleConstraintsEvaluator.ConstraintViolation],
+        noveltySimilarity: Double
+    ) -> [String] {
+        var directives: [String] = []
+        for violation in violations {
+            switch violation {
+            case let .tooShort(_, min):
+                directives.append(
+                    "Increase article length above \(min) words and keep it within \(Self.targetWordRange.lowerBound)-\(Self.targetWordRange.upperBound) words."
+                )
+            case let .tooLong(_, max):
+                directives.append(
+                    "Shorten article length below \(max) words and keep it within \(Self.targetWordRange.lowerBound)-\(Self.targetWordRange.upperBound) words."
+                )
+            case .vocabularyDensityTooHigh:
+                directives.append("Reduce target-word density by using fewer forced repetitions.")
+            case .vocabularyDensityTooLow:
+                directives.append("Use required target words naturally in meaningful context at least several times.")
+            case .unreadable:
+                directives.append("Use clear paragraph breaks and readable sentence lengths.")
+            case let .insufficientParagraphs(actual, min):
+                directives.append("Use at least \(min) paragraphs (current: \(actual)).")
+            case let .insufficientSentences(actual, min):
+                directives.append("Use at least \(min) complete sentences (current: \(actual)).")
+            case .containsPlaceholderToken:
+                directives.append("Remove placeholder tokens and keep only natural language.")
+            case .possibleFabricatedStatistic:
+                directives.append("Avoid unsourced statistics or named-study claims.")
+            }
+        }
+        if noveltySimilarity >= Self.maxAllowedNoveltySimilarity {
+            directives.append("Pick a fresher angle and different examples than recent articles.")
+        }
+        if directives.isEmpty {
+            directives.append("Regenerate with stronger structure and concrete examples.")
+        }
+        return Array(Set(directives)).sorted()
+    }
+
+    private func description(for violation: ArticleConstraintsEvaluator.ConstraintViolation) -> String {
+        switch violation {
+        case let .tooShort(actual, min):
+            return "Too short (\(actual) < \(min) words)"
+        case let .tooLong(actual, max):
+            return "Too long (\(actual) > \(max) words)"
+        case let .vocabularyDensityTooHigh(actual, limit):
+            return String(format: "Vocabulary density too high (%.3f > %.3f)", actual, limit)
+        case let .vocabularyDensityTooLow(actual, limit):
+            return String(format: "Vocabulary density too low (%.3f < %.3f)", actual, limit)
+        case .unreadable:
+            return "Unreadable structure"
+        case let .insufficientParagraphs(actual, min):
+            return "Insufficient paragraphs (\(actual) < \(min))"
+        case let .insufficientSentences(actual, min):
+            return "Insufficient sentences (\(actual) < \(min))"
+        case .containsPlaceholderToken:
+            return "Contains placeholder token"
+        case .possibleFabricatedStatistic:
+            return "Possible unsourced statistic claim"
+        }
+    }
+
+    private func pickPreferredAttempt(
+        current: QualityGateAttempt,
+        candidate: QualityGateAttempt
+    ) -> QualityGateAttempt {
+        if candidate.qualityIssues.count < current.qualityIssues.count {
+            return candidate
+        }
+        if candidate.qualityIssues.count > current.qualityIssues.count {
+            return current
+        }
+        if candidate.validation.score > current.validation.score {
+            return candidate
+        }
+        if candidate.noveltySimilarity < current.noveltySimilarity {
+            return candidate
+        }
+        return current
     }
 
     private func parseResponse(_ response: String) -> ParsedArticleResponse {
@@ -663,6 +857,66 @@ public actor ArticleGenerator {
         return trimmed
     }
 
+    private func enforceWordLimit(_ text: String, maxWords: Int) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard wordCount(in: trimmed) > maxWords else {
+            return trimmed
+        }
+
+        let paragraphs = trimmed
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !paragraphs.isEmpty else {
+            return trimToWordLimit(trimmed, limit: maxWords)
+        }
+
+        var kept: [String] = []
+        var totalWords = 0
+
+        for paragraph in paragraphs {
+            let paragraphWordCount = wordCount(in: paragraph)
+            if kept.isEmpty, paragraphWordCount >= maxWords {
+                return trimToWordLimit(paragraph, limit: maxWords)
+            }
+
+            if totalWords + paragraphWordCount > maxWords {
+                let remaining = maxWords - totalWords
+                if remaining >= 24 {
+                    kept.append(trimToWordLimit(paragraph, limit: remaining))
+                }
+                break
+            }
+
+            kept.append(paragraph)
+            totalWords += paragraphWordCount
+        }
+
+        let candidate = kept.joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return candidate.isEmpty ? trimToWordLimit(trimmed, limit: maxWords) : candidate
+    }
+
+    private func trimToWordLimit(_ text: String, limit: Int) -> String {
+        let words = text.split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+        guard words.count > limit else {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let clipped = words.prefix(limit).joined(separator: " ")
+        if let punctuationIndex = clipped.lastIndex(where: { ".!?".contains($0) }) {
+            let sentenceAligned = String(clipped[...punctuationIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if self.wordCount(in: sentenceAligned) >= max(18, limit - 40) {
+                return sentenceAligned
+            }
+        }
+        return clipped.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func wordCount(in text: String) -> Int {
+        text.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
+    }
+
     private func ingestDiscoveredLexemes(
         _ candidates: [DiscoveredLexemeCandidate],
         sourceArticleId: String
@@ -708,5 +962,38 @@ private struct ParsedArticleResponse {
         self.bodyText = bodyText
         self.discoveredLexemes = discoveredLexemes
         self.declaredFocusWords = declaredFocusWords
+    }
+}
+
+private struct QualityGateAttempt {
+    let parsed: ParsedArticleResponse
+    let containedTargets: [String]
+    let validation: ArticleConstraintsEvaluator.ValidationResult
+    let noveltySimilarity: Double
+    let centerRank: Int?
+    let qualityIssues: [String]
+
+    var hasOnlyNonBlockingIssues: Bool {
+        let blockingViolationExists = validation.issues.contains { issue in
+            switch issue {
+            case .vocabularyDensityTooLow, .vocabularyDensityTooHigh:
+                return false
+            default:
+                return true
+            }
+        }
+        let noveltyBlocking = noveltySimilarity >= ArticleGenerator.maxAllowedNoveltySimilarity
+        return !blockingViolationExists && !noveltyBlocking
+    }
+}
+
+public enum ArticleGenerationError: Error, LocalizedError {
+    case qualityGateFailed(issues: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case let .qualityGateFailed(issues):
+            return "Article generation failed quality checks: \(issues)"
+        }
     }
 }

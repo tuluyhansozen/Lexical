@@ -19,7 +19,7 @@ struct HomeFeedView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7").ignoresSafeArea()
+            Color.adaptiveBackground.ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
@@ -37,10 +37,11 @@ struct HomeFeedView: View {
 
                     if let articleQuotaLabel {
                         Text(articleQuotaLabel)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundStyle(Color(hex: "4A5565"))
+                            .font(.caption)
+                            .foregroundStyle(Color.adaptiveTextSecondary)
                             .multilineTextAlignment(.leading)
                             .padding(.top, 2)
+                            .accessibilityLabel(articleQuotaLabel)
                             .accessibilityIdentifier("reading.quotaLabel")
                     }
 
@@ -107,13 +108,14 @@ struct HomeFeedView: View {
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Reading")
-                .font(.system(size: 25, weight: .bold))
-                .foregroundStyle(Color(hex: "0A0A0A"))
+                .font(.display(.largeTitle, weight: .bold))
+                .foregroundStyle(Color.adaptiveText)
+                .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("reading.headerTitle")
 
             Text("Daily curated articles for you")
-                .font(.system(size: 12, weight: .light))
-                .foregroundStyle(Color.black.opacity(0.8))
+                .font(.caption)
+                .foregroundStyle(Color.adaptiveTextSecondary)
         }
         .padding(.top, 4)
         .padding(.bottom, 8)
@@ -133,16 +135,18 @@ struct HomeFeedView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 13, weight: .semibold))
                     Text(viewModel.articles.isEmpty ? "Generate First Article" : "Generate New Article")
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.headline)
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
-                .background(Color(hex: "181818"))
+                .background(Color.sonPrimary)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
             .padding(.top, 2)
+            .accessibilityLabel(viewModel.articles.isEmpty ? "Generate first article" : "Generate new article")
+            .accessibilityHint("Creates a new reading article based on your current plan.")
             .accessibilityIdentifier("reading.generateButton")
         } else {
             Button {
@@ -152,28 +156,30 @@ struct HomeFeedView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 16, weight: .semibold))
                     Text("Upgrade for more articles")
-                        .font(.system(size: 12, weight: .regular))
+                        .font(.subheadline)
                 }
-                .foregroundStyle(Color(hex: "06071A"))
+                .foregroundStyle(Color.adaptiveText)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)
                 .background(
                     LinearGradient(
-                        colors: [Color(hex: "F4F4F4"), Color(hex: "FEFEFE")],
+                        colors: [Color.adaptiveSurfaceElevated, Color.adaptiveSurface],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.white.opacity(0.95), lineWidth: 1.2)
+                        .stroke(Color.adaptiveBorder, lineWidth: 1.2)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .shadow(color: Color.black.opacity(0.14), radius: 3, x: 0, y: 2)
+                .shadow(color: Color.cardShadow, radius: 3, x: 0, y: 2)
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 10)
             .padding(.top, 2)
+            .accessibilityLabel("Upgrade for more articles")
+            .accessibilityHint("Opens premium plans with unlimited generation.")
             .accessibilityIdentifier("reading.upgradeButton")
         }
     }
@@ -183,12 +189,12 @@ struct HomeFeedView: View {
             ProgressView()
                 .tint(.white)
             Text("Generating article...")
-                .font(.system(size: 14, weight: .regular))
+                .font(.headline)
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)
-        .background(Color(hex: "181818"))
+        .background(Color.sonPrimary)
         .clipShape(Capsule())
         .padding(.top, 2)
         .accessibilityIdentifier("reading.generatingButton")
@@ -197,20 +203,21 @@ struct HomeFeedView: View {
     private var emptyStateCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("PSYCHOLOGY")
-                .font(.system(size: 10, weight: .regular))
+                .font(.caption2)
                 .tracking(0.62)
-                .foregroundStyle(Color(hex: "4A5565"))
+                .foregroundStyle(Color.adaptiveTextSecondary)
                 .padding(.top, 16)
 
             Text("Your feed is ready")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Color(hex: "0A0A0A"))
+                .font(.cardTitle)
+                .foregroundStyle(Color.adaptiveText)
                 .padding(.top, 10)
+                .accessibilityAddTraits(.isHeader)
 
             Text("Generate your first personalized article to start your daily reading loop.")
-                .font(.system(size: 14, weight: .regular))
+                .font(.body)
                 .lineSpacing(6)
-                .foregroundStyle(Color(hex: "364153"))
+                .foregroundStyle(Color.adaptiveTextSecondary)
                 .padding(.top, 14)
                 .lineLimit(4)
 
@@ -222,18 +229,24 @@ struct HomeFeedView: View {
                 }
             } label: {
                 Text("Generate First Article \u{2192}")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color(hex: "021105").opacity(0.71))
+                    .font(.headline)
+                    .foregroundStyle(Color.sonPrimary)
             }
             .buttonStyle(.plain)
             .padding(.bottom, 25)
+            .accessibilityLabel("Generate first article")
+            .accessibilityHint("Creates your first reading article.")
             .accessibilityIdentifier("reading.generateFirstButton")
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, minHeight: 253, alignment: .topLeading)
-        .background(Color.white)
+        .background(Color.adaptiveSurfaceElevated)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.adaptiveBorder, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.22), radius: 4, x: 0, y: 4)
+        .shadow(color: Color.cardShadow, radius: 4, x: 0, y: 4)
     }
 
     @MainActor

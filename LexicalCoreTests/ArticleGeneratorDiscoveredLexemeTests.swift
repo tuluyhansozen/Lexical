@@ -32,7 +32,7 @@ final class ArticleGeneratorDiscoveredLexemeTests: XCTestCase {
             response: """
             {
               "title": "Sound in Cities",
-              "body_text": "The spectacle of urban sound can be intense. In retrospect, design choices shape noise and comfort.",
+              "body_text": "Urban sound design is not only about reducing noise; it is about shaping attention and comfort in real places where people work, learn, and recover. A city can feel calm or chaotic depending on how transit lines, building materials, and public spaces interact. In this context, a single spectacle can attract attention quickly, but sustained clarity depends on repeated small design choices that guide behavior over time.\\n\\nWhen planners evaluate a district in retrospect, they often discover that short-term convenience created long-term friction for pedestrians and residents. Better outcomes appear when teams compare trade-offs openly, test ideas at small scale, and refine layout decisions before full rollout. This process makes communication clearer, improves collaboration across stakeholders, and helps communities adapt without losing usability.",
               "used_reinforcement_words": ["spectacle"],
               "used_stretch_words": ["retrospect"],
               "glossary": [

@@ -89,13 +89,16 @@ public struct ArticlePromptMemoryStore {
 
 public struct ArticlePromptPlanner {
     private let memoryStore: ArticlePromptMemoryStore
+    private let noveltyScorer: ArticleNoveltyScorer
     private let nowProvider: () -> Date
 
     public init(
         memoryStore: ArticlePromptMemoryStore = .init(),
+        noveltyScorer: ArticleNoveltyScorer = .init(),
         nowProvider: @escaping () -> Date = Date.init
     ) {
         self.memoryStore = memoryStore
+        self.noveltyScorer = noveltyScorer
         self.nowProvider = nowProvider
     }
 
@@ -111,7 +114,7 @@ public struct ArticlePromptPlanner {
             recentArticles: recentArticles,
             memoryEntries: memoryEntries
         )
-        let topics = topicCandidates(for: category)
+        let topics = topicCandidates(for: category, profile: profile)
         let topic = selectTopic(
             category: category,
             candidates: topics,
@@ -204,10 +207,11 @@ public struct ArticlePromptPlanner {
         var best: (topic: String, score: Double)?
         for topic in candidates {
             let normalizedTopic = topic.lowercased()
-            let feedNoveltyPenalty = maxSimilarity(of: normalizedTopic, against: recentTextCorpus) * 1.20
+            let semanticPenalty = noveltyScorer.semanticSimilarity(of: topic, against: recentTextCorpus) * 1.15
+            let lexicalPenalty = noveltyScorer.lexicalSimilarity(of: topic, against: recentTextCorpus) * 0.35
             let topicRepeatPenalty = recentTopics.contains(where: { $0.caseInsensitiveCompare(topic) == .orderedSame }) ? 0.85 : 0
             let targetFitBonus = targetSet.isEmpty ? 0 : targetFitBonus(topic: normalizedTopic, targetWords: targetSet)
-            let score = 1.0 + targetFitBonus - feedNoveltyPenalty - topicRepeatPenalty
+            let score = 1.0 + targetFitBonus - semanticPenalty - lexicalPenalty - topicRepeatPenalty
 
             if best == nil || score > best!.score || (score == best!.score && topic < best!.topic) {
                 best = (topic, score)
@@ -246,25 +250,6 @@ public struct ArticlePromptPlanner {
         return min(0.30, Double(shared) * 0.12)
     }
 
-    private func maxSimilarity(of text: String, against corpus: [String]) -> Double {
-        let sourceTokens = Set(tokenize(text))
-        guard !sourceTokens.isEmpty else { return 0 }
-
-        var best = 0.0
-        for item in corpus {
-            let targetTokens = Set(tokenize(item))
-            guard !targetTokens.isEmpty else { continue }
-            let intersection = sourceTokens.intersection(targetTokens).count
-            let union = sourceTokens.union(targetTokens).count
-            guard union > 0 else { continue }
-            let score = Double(intersection) / Double(union)
-            if score > best {
-                best = score
-            }
-        }
-        return best
-    }
-
     private func tokenize(_ raw: String) -> [String] {
         raw.lowercased()
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
@@ -288,12 +273,63 @@ public struct ArticlePromptPlanner {
         }
     }
 
-    private func topicCandidates(for category: String) -> [String] {
+    private func topicCandidates(for category: String, profile: InterestProfile) -> [String] {
         let normalized = normalizedCategory(category)
-        if let configured = Self.topicBank[normalized], !configured.isEmpty {
-            return configured
+        var candidates: [String] = []
+
+        if let configured = Self.topicBank[normalized] {
+            candidates.append(contentsOf: configured)
+        }
+        candidates.append(contentsOf: nicheTopicCandidates(for: normalized, profile: profile))
+
+        let deduped = dedupPreservingOrder(candidates)
+        if !deduped.isEmpty {
+            return deduped
         }
         return defaultTopics(for: normalized)
+    }
+
+    private func nicheTopicCandidates(for category: String, profile: InterestProfile) -> [String] {
+        let normalizedCategoryValue = normalizedCategory(category)
+        let selectedTags = profile.selectedTags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        let matchingTags = selectedTags.filter {
+            normalizedCategory($0) == normalizedCategoryValue ||
+            normalizedCategory($0).caseInsensitiveCompare(category) == .orderedSame
+        }
+
+        var topics: [String] = []
+        for tag in matchingTags {
+            let key = tag.lowercased()
+            if let mapped = Self.nicheTopicBank[key], !mapped.isEmpty {
+                topics.append(contentsOf: mapped)
+            } else {
+                topics.append(contentsOf: synthesizedNicheTopics(for: tag))
+            }
+        }
+
+        // If selected tags did not match (e.g., fallback category), still try direct category mapping.
+        if topics.isEmpty {
+            let categoryKey = category.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if let mapped = Self.nicheTopicBank[categoryKey], !mapped.isEmpty {
+                topics.append(contentsOf: mapped)
+            }
+        }
+
+        return topics
+    }
+
+    private func synthesizedNicheTopics(for interest: String) -> [String] {
+        let normalized = interest.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalized.isEmpty else { return [] }
+        return [
+            "\(normalized) trends that will matter over the next year",
+            "common misconceptions in \(normalized) and practical corrections",
+            "a weekly practice framework for getting better at \(normalized)",
+            "trade-offs learners miss when exploring \(normalized)"
+        ]
     }
 
     private func defaultTopics(for category: String) -> [String] {
@@ -327,8 +363,8 @@ public struct ArticlePromptPlanner {
             "productivity": "Productivity",
             "education": "Productivity",
             "language learning": "Productivity",
-            "personal growth": "Productivity",
-            "remote work": "Productivity",
+            "cooking": "Productivity",
+            "baking": "Productivity",
             "business": "Business",
             "startups": "Business",
             "marketing": "Business",
@@ -336,23 +372,33 @@ public struct ArticlePromptPlanner {
             "negotiation": "Business",
             "culture": "Culture",
             "art": "Culture",
+            "philosophy": "Culture",
             "cinema": "Culture",
             "music": "Culture",
-            "design": "Culture",
-            "architecture": "Culture",
-            "literature": "Culture",
-            "fashion": "Culture",
-            "theater": "Culture",
+            "gaming": "Culture",
             "podcasts": "Culture",
             "tv series": "Culture",
+            "theater": "Culture",
+            "design": "Culture",
+            "architecture": "Culture",
+            "illustration": "Culture",
+            "crafts": "Culture",
+            "literature": "Culture",
+            "fashion": "Culture",
             "history": "History",
             "politics": "History",
             "law": "History",
             "global affairs": "History",
             "current events": "History",
+            "social impact": "History",
+            "volunteering": "History",
+            "lgbtq+": "History",
             "nature": "Nature",
             "climate": "Nature",
             "geography": "Nature",
+            "aviation": "Nature",
+            "cars": "Nature",
+            "motorcycles": "Nature",
             "wildlife": "Nature",
             "botany": "Nature",
             "marine life": "Nature",
@@ -361,7 +407,6 @@ public struct ArticlePromptPlanner {
             "backpacking": "Nature",
             "health": "Health",
             "health care": "Health",
-            "medicine": "Health",
             "fitness": "Health",
             "nutrition": "Health",
             "sports": "Health",
@@ -373,11 +418,11 @@ public struct ArticlePromptPlanner {
             "psychology": "Psychology",
             "mental health": "Psychology",
             "finance": "Finance",
-            "economics": "Finance",
             "investing": "Finance",
-            "personal finance": "Finance",
             "crypto": "Finance",
-            "real estate": "Finance"
+            "real estate": "Finance",
+            "ufo": "Science",
+            "mythology": "History"
         ]
         return aliases[lower] ?? trimmed.capitalized
     }
@@ -549,6 +594,304 @@ public struct ArticlePromptPlanner {
             "resource limits and sustainable decisions",
             "signal detection in climate data narratives",
             "why local interventions scale poorly"
+        ]
+    ]
+
+    private static let nicheTopicBank: [String: [String]] = [
+        "programming": [
+            "debugging strategies that reduce repeated mistakes",
+            "how to reason about code quality before refactoring",
+            "trade-offs between rapid prototyping and maintainability"
+        ],
+        "data science": [
+            "avoiding data leakage in practical model evaluation",
+            "how framing a metric changes product decisions",
+            "interpreting uncertainty without overconfidence"
+        ],
+        "artificial intelligence": [
+            "where AI assistants fail in real workflows",
+            "evaluation loops for reliable AI-assisted writing",
+            "practical boundaries for human-in-the-loop automation"
+        ],
+        "cybersecurity": [
+            "habit-based threat models for everyday users",
+            "how social engineering bypasses technical controls",
+            "incident postmortems that improve team behavior"
+        ],
+        "startups": [
+            "finding product-market fit without vanity metrics",
+            "when startup speed creates hidden quality debt",
+            "founder decision patterns under uncertainty"
+        ],
+        "marketing": [
+            "how message clarity beats channel volume",
+            "diagnosing why campaigns convert but retention drops",
+            "positioning trade-offs for crowded categories"
+        ],
+        "leadership": [
+            "decision hygiene for managers under pressure",
+            "how leaders create accountability without micromanagement",
+            "communication rituals that reduce execution drift"
+        ],
+        "negotiation": [
+            "anchoring effects and practical counter-techniques",
+            "building win-win terms under asymmetric information",
+            "common negotiation mistakes in everyday work"
+        ],
+        "investing": [
+            "how narrative risk distorts investment choices",
+            "portfolio decisions under regime uncertainty",
+            "behavioral patterns behind panic selling"
+        ],
+        "crypto": [
+            "separating protocol utility from speculation cycles",
+            "risk controls for volatile digital asset exposure",
+            "how custody and security choices shape outcomes"
+        ],
+        "real estate": [
+            "cash-flow realism vs optimistic property projections",
+            "location risk and long-horizon real estate decisions",
+            "how financing structure changes total return"
+        ],
+        "philosophy": [
+            "using first principles to improve daily decisions",
+            "ethical trade-offs in modern technology design",
+            "how philosophical framing shapes practical judgment"
+        ],
+        "literature": [
+            "why narrative voice changes reader interpretation",
+            "theme tracking techniques for deeper comprehension",
+            "how literary structure improves long-form recall"
+        ],
+        "cinema": [
+            "visual storytelling patterns that shape memory",
+            "how editing pace changes perceived meaning",
+            "genre expectations and audience interpretation"
+        ],
+        "music": [
+            "how repetition and variation drive musical memory",
+            "attention management during deep listening sessions",
+            "interpreting production choices in modern tracks"
+        ],
+        "gaming": [
+            "skill acquisition loops in competitive games",
+            "how game feedback systems shape motivation",
+            "design trade-offs between challenge and accessibility"
+        ],
+        "podcasts": [
+            "active listening techniques for long-form audio",
+            "how host format choices affect comprehension",
+            "turning podcast insights into actionable notes"
+        ],
+        "tv series": [
+            "episodic storytelling and long-arc retention",
+            "how pacing shifts viewer interpretation",
+            "theme continuity across multi-season narratives"
+        ],
+        "theater": [
+            "how stage constraints sharpen storytelling decisions",
+            "performance cues that guide audience attention",
+            "adapting script interpretation across productions"
+        ],
+        "mental health": [
+            "micro-habits that stabilize mood during heavy weeks",
+            "cognitive reframing techniques that reduce rumination",
+            "sustainable boundaries for digital mental load"
+        ],
+        "fitness": [
+            "consistency systems that survive low-motivation days",
+            "recovery trade-offs in high-frequency training plans",
+            "how to measure progress beyond short-term intensity"
+        ],
+        "nutrition": [
+            "decision frameworks for practical meal planning",
+            "habit design for stable energy across workdays",
+            "how food environments shape long-term behavior"
+        ],
+        "education": [
+            "how retrieval-first study beats passive rereading",
+            "feedback loop design for faster skill growth",
+            "instructional trade-offs between depth and pace"
+        ],
+        "language learning": [
+            "building fluency through retrieval and context reuse",
+            "how to convert reading input into active output",
+            "mistakes that slow intermediate language progress"
+        ],
+        "running": [
+            "balancing volume and intensity for durable progress",
+            "common pacing errors and practical corrections",
+            "how training logs improve race-day decisions"
+        ],
+        "cycling": [
+            "endurance progression without overtraining",
+            "gear, cadence, and efficiency trade-offs",
+            "planning recovery blocks for long-term cycling gains"
+        ],
+        "climbing": [
+            "technique-first practice for climbing efficiency",
+            "fear management in lead climbing decisions",
+            "how route analysis improves attempt quality"
+        ],
+        "swimming": [
+            "stroke efficiency habits for steady improvement",
+            "interval design for mixed-skill swimmers",
+            "breathing patterns and sustainable pace control"
+        ],
+        "yoga": [
+            "mobility progress through consistent short sessions",
+            "breath-led focus strategies for stressful weeks",
+            "balancing flexibility goals with joint safety"
+        ],
+        "climate": [
+            "how climate narratives affect public decisions",
+            "adaptation vs mitigation trade-offs in policy choices",
+            "interpreting uncertainty in climate communication"
+        ],
+        "geography": [
+            "how geography shapes economic opportunity",
+            "mapping literacy for better global understanding",
+            "spatial reasoning habits for everyday decisions"
+        ],
+        "space": [
+            "practical engineering constraints in modern space missions",
+            "commercial space strategy beyond launch headlines",
+            "how exploration goals shape technology priorities"
+        ],
+        "wildlife": [
+            "habitat fragmentation and long-term species resilience",
+            "field observation biases in wildlife reporting",
+            "conservation trade-offs between policy options"
+        ],
+        "botany": [
+            "plant adaptation strategies in changing environments",
+            "how urban botany improves local ecosystems",
+            "field methods for observing plant health signals"
+        ],
+        "travel": [
+            "high-value travel planning under time constraints",
+            "cultural learning frameworks for meaningful trips",
+            "avoiding decision fatigue during multi-stop travel"
+        ],
+        "backpacking": [
+            "pack-weight trade-offs for multi-day routes",
+            "risk planning habits for remote backpacking trips",
+            "navigation decisions when conditions change quickly"
+        ],
+        "camping": [
+            "camp setup systems that reduce stress in bad weather",
+            "safety-first routines for beginner campers",
+            "gear selection trade-offs for short vs long trips"
+        ],
+        "aviation": [
+            "crew resource management lessons for everyday teamwork",
+            "how checklist discipline reduces high-stakes errors",
+            "trade-offs between efficiency and safety margins in flight operations"
+        ],
+        "cars": [
+            "maintenance habits that prevent expensive car failures",
+            "how vehicle design trade-offs affect daily usability",
+            "interpreting safety and efficiency claims in car marketing"
+        ],
+        "motorcycles": [
+            "risk management routines for everyday riding",
+            "how rider training changes hazard perception",
+            "gear and visibility decisions that improve safety outcomes"
+        ],
+        "architecture": [
+            "how spatial design influences behavior and focus",
+            "trade-offs between aesthetics and long-term usability",
+            "decision frameworks for human-centered architecture"
+        ],
+        "photography": [
+            "compositional choices that improve storytelling",
+            "practical lighting decisions in mixed environments",
+            "editing discipline without losing authenticity"
+        ],
+        "fashion": [
+            "style systems that reduce daily decision fatigue",
+            "how materials and fit shape long-term quality",
+            "trend adoption trade-offs for personal identity"
+        ],
+        "illustration": [
+            "building visual consistency across illustration projects",
+            "how constraints improve creative output quality",
+            "feedback loops for faster artistic iteration"
+        ],
+        "crafts": [
+            "deliberate practice routines for handmade skills",
+            "material selection trade-offs in craft projects",
+            "how repetition builds precision and creative range"
+        ],
+        "lgbtq+": [
+            "how inclusive language evolves in public discourse",
+            "community storytelling and identity formation",
+            "media framing choices and social understanding"
+        ],
+        "law": [
+            "how legal reasoning handles competing principles",
+            "practical frameworks for reading policy changes",
+            "why legal language precision changes outcomes"
+        ],
+        "social impact": [
+            "measuring social impact beyond vanity metrics",
+            "how grassroots initiatives scale without mission drift",
+            "trade-offs between short-term aid and long-term resilience"
+        ],
+        "global affairs": [
+            "how supply chains reshape geopolitical strategy",
+            "decision-making under uncertainty in foreign policy",
+            "reading global news without narrative bias traps"
+        ],
+        "volunteering": [
+            "how volunteer programs sustain motivation over time",
+            "matching local needs with practical contribution models",
+            "operational habits that improve volunteer outcomes"
+        ],
+        "current events": [
+            "fact-checking routines for fast-moving news cycles",
+            "how framing effects distort public interpretation",
+            "building balanced viewpoints from conflicting reports"
+        ],
+        "ufo": [
+            "how to evaluate extraordinary claims with evidence discipline",
+            "signal vs noise in unexplained aerial event reporting",
+            "cognitive biases that shape interpretation of anomalous data"
+        ],
+        "mythology": [
+            "myth structures that still shape modern storytelling",
+            "symbolic archetypes and their practical cultural impact",
+            "cross-cultural mythology patterns and interpretation"
+        ],
+        "biotech": [
+            "biotech innovation cycles and regulatory trade-offs",
+            "how lab-to-market timelines shape product strategy",
+            "risk communication in emerging biotech narratives"
+        ],
+        "mathematics": [
+            "how mathematical modeling improves everyday decisions",
+            "intuition traps in probability and statistics",
+            "building proof-style thinking for clear reasoning"
+        ],
+        "dogs": [
+            "behavior training habits that improve dog-owner communication",
+            "daily routines for healthy canine energy management",
+            "how environment design affects dog behavior outcomes"
+        ],
+        "cats": [
+            "environmental enrichment strategies for indoor cats",
+            "understanding feline behavior signals in daily care",
+            "habit routines that reduce stress for cats and owners"
+        ],
+        "birds": [
+            "bird behavior cues and practical observation techniques",
+            "urban habitats and how birds adapt to noise",
+            "field-note habits for improving bird identification"
+        ],
+        "marine life": [
+            "ocean ecosystem feedback loops and resilience",
+            "human activity impacts on marine biodiversity",
+            "conservation strategies that balance ecology and livelihoods"
         ]
     ]
 }

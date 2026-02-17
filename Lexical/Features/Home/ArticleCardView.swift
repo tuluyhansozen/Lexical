@@ -12,9 +12,9 @@ struct ArticleCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 8) {
                 Text(article.category.uppercased())
-                    .font(.system(size: 10, weight: .regular))
+                    .font(.caption2)
                     .tracking(0.62)
-                    .foregroundStyle(Color(hex: "4A5565"))
+                    .foregroundStyle(Color.adaptiveTextSecondary)
 
                 Spacer()
 
@@ -22,23 +22,25 @@ struct ArticleCardView: View {
                     Image(systemName: "clock")
                         .font(.system(size: 9, weight: .regular))
                     Text(estimatedReadTimeLabel)
-                        .font(.system(size: 10, weight: .regular))
+                        .font(.caption2)
                 }
-                .foregroundStyle(Color(hex: "4A5565"))
+                .foregroundStyle(Color.adaptiveTextSecondary)
+                .accessibilityLabel("Estimated reading time \(estimatedReadTimeLabel)")
             }
             .padding(.top, 14)
 
             Text(article.title)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Color(hex: "0A0A0A"))
+                .font(.cardTitle)
+                .foregroundStyle(Color.adaptiveText)
                 .lineLimit(2)
-                .minimumScaleFactor(0.9)
+                .minimumScaleFactor(0.8)
                 .padding(.top, 8)
+                .accessibilityAddTraits(.isHeader)
 
             Text(highlightedExcerpt)
-                .font(.system(size: 14, weight: .regular))
+                .font(.body)
                 .lineSpacing(6)
-                .foregroundStyle(Color(hex: "364153"))
+                .foregroundStyle(Color.adaptiveTextSecondary)
                 .padding(.top, 12)
                 .lineLimit(4)
 
@@ -49,17 +51,24 @@ struct ArticleCardView: View {
                 showReader = true
             } label: {
                 Text("Continue Reading \u{2192}")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color(hex: "021105").opacity(0.71))
+                    .font(.headline)
+                    .foregroundStyle(Color.sonPrimary)
             }
             .buttonStyle(.plain)
             .padding(.bottom, 25)
+            .accessibilityLabel("Continue reading \(article.title)")
+            .accessibilityHint("Opens the full article reader.")
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, minHeight: 253, alignment: .topLeading)
-        .background(Color.white)
+        .background(Color.adaptiveSurfaceElevated)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.adaptiveBorder, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.22), radius: 4, x: 0, y: 4)
+        .shadow(color: Color.cardShadow, radius: 4, x: 0, y: 4)
+        .accessibilityElement(children: .contain)
         .fullScreenCover(isPresented: $showReader) {
             NavigationStack {
                 ReaderView(
@@ -73,6 +82,7 @@ struct ArticleCardView: View {
                             Button("Close") {
                                 showReader = false
                             }
+                            .accessibilityLabel("Close reader")
                         }
                     }
             }

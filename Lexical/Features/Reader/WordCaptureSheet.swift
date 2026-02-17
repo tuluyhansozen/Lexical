@@ -3,25 +3,25 @@ import SwiftUI
 struct WordCaptureSheet: View {
     let word: String
     let definition: String
-    
+
     // Mock data for "ios 26" demo feel
     let transcription = "/ˌsɛrənˈdɪpɪti/"
     let partOfSpeech = "noun"
     let contextSentence = "\"The discovery of penicillin was a stroke of serendipity.\""
-    
+
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color("SheetBackground") // We need to define this or use semantic
+            Color.adaptiveBackground
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 // Drag Handle
                 Capsule()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.adaptiveBorder)
                     .frame(width: 36, height: 5)
                     .padding(.top, 12)
                     .padding(.bottom, 24)
-                
+
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         // Header
@@ -35,14 +35,14 @@ struct WordCaptureSheet: View {
                                 .background(Color.sonPrimary)
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
-                            
+
                             HStack {
                                 Text(word.capitalized)
-                                    .font(.display(size: 34, weight: .bold))
+                                    .font(.display(.largeTitle, weight: .bold))
                                     .foregroundStyle(Color.adaptiveText)
-                                
+
                                 Spacer()
-                                
+
                                 Button {
                                     // Play Sound
                                 } label: {
@@ -53,15 +53,16 @@ struct WordCaptureSheet: View {
                                         .background(Color.sonPrimary.opacity(0.1))
                                         .clipShape(Circle())
                                 }
+                                .accessibilityLabel("Play pronunciation")
                             }
-                            
+
                             Text(transcription)
                                 .font(.monospaced(.body)())
                                 .foregroundStyle(.secondary)
                         }
-                        
+
                         Divider()
-                        
+
                         // Definition
                         VStack(alignment: .leading, spacing: 8) {
                             Text(partOfSpeech)
@@ -69,12 +70,12 @@ struct WordCaptureSheet: View {
                                 .fontWeight(.medium)
                                 .italic()
                                 .foregroundStyle(Color.sonPrimary)
-                            
+
                             Text(definition)
                                 .font(.bodyText)
                                 .foregroundStyle(Color.adaptiveText)
                         }
-                        
+
                         // Context Box
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
@@ -91,13 +92,13 @@ struct WordCaptureSheet: View {
                                 .foregroundStyle(Color.adaptiveText.opacity(0.9))
                         }
                         .padding(20)
-                        .background(Color.adaptiveBackground)
+                        .background(Color.adaptiveSurfaceElevated)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                                .stroke(Color.adaptiveBorder, lineWidth: 1)
                         )
-                        
+
                         // Synonyms/Antonyms
                         HStack(spacing: 12) {
                             VStack(alignment: .leading) {
@@ -112,9 +113,9 @@ struct WordCaptureSheet: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
-                            .background(Color.adaptiveBackground.opacity(0.5))
+                            .background(Color.adaptiveSurface.opacity(0.65))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
-                            
+
                             VStack(alignment: .leading) {
                                 Text("ANTONYMS")
                                     .font(.caption2)
@@ -127,7 +128,7 @@ struct WordCaptureSheet: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
-                            .background(Color.adaptiveBackground.opacity(0.5))
+                            .background(Color.adaptiveSurface.opacity(0.65))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                     }
@@ -154,6 +155,8 @@ struct WordCaptureSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: Color.sonPrimary.opacity(0.3), radius: 10, x: 0, y: 4)
                 }
+                .accessibilityLabel("Add to deck")
+                .accessibilityHint("Adds this word to your learning queue.")
             }
             .padding(24)
             .background(

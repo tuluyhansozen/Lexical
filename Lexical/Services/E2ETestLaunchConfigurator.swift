@@ -368,13 +368,13 @@ enum E2ETestLaunchConfigurator {
 
         var paragraphs: [String] = [intro]
         var idx = 0
-        while estimatedWordCount(in: paragraphs.joined(separator: " ")) < 460 {
+        while estimatedWordCount(in: paragraphs.joined(separator: " ")) < 330 {
             paragraphs.append(reusableParagraphs[idx % reusableParagraphs.count])
             idx += 1
         }
 
         let closing = """
-        In short, long-form reading creates space for attention, retrieval, and transfer to work together. This is why the article is intentionally detailed: deeper context supports stronger recall and more confident use of new language in real situations.
+        In short, cohesive reading creates space for attention, retrieval, and transfer to work together. This is why the article stays concise but complete: enough context for recall, without unnecessary length.
         """
         paragraphs.append(closing)
 

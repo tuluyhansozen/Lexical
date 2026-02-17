@@ -76,4 +76,46 @@ final class ArticlePromptPlannerTests: XCTestCase {
 
         XCTAssertTrue(first.topic != second.topic || first.angleName != second.angleName)
     }
+
+    func testPlannerProvidesNicheTopicsForCustomInterestTags() {
+        let planner = ArticlePromptPlanner(
+            memoryStore: ArticlePromptMemoryStore(defaults: defaults)
+        )
+        let profile = InterestProfile(selectedTags: ["Aviation"])
+
+        let plan = planner.buildPlan(
+            profile: profile,
+            recentArticles: [],
+            targetWords: ["checklist", "safety", "workflow"],
+            userId: "planner.niche.user"
+        )
+
+        XCTAssertEqual(plan.category, "Nature")
+        XCTAssertTrue(
+            plan.topic.localizedCaseInsensitiveContains("flight") ||
+            plan.topic.localizedCaseInsensitiveContains("aviation") ||
+            plan.topic.localizedCaseInsensitiveContains("checklist") ||
+            plan.topic.localizedCaseInsensitiveContains("crew")
+        )
+    }
+
+    func testNoveltyScorerPrefersSemanticallyRelatedCorpus() {
+        let scorer = ArticleNoveltyScorer()
+        let candidate = "retrieval-first habit loops for language practice"
+        let nearCorpus = [
+            "habit loops and retrieval practice for language learners",
+            "how to structure daily recall routines"
+        ]
+        let farCorpus = [
+            "marine biodiversity under climate stress",
+            "architectural lighting strategies for galleries"
+        ]
+
+        let near = scorer.blendedSimilarity(of: candidate, against: nearCorpus)
+        let far = scorer.blendedSimilarity(of: candidate, against: farCorpus)
+
+        XCTAssertGreaterThan(near, far)
+        XCTAssertGreaterThan(near, 0.35)
+        XCTAssertLessThan(far, 0.30)
+    }
 }
