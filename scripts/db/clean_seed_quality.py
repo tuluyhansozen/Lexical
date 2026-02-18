@@ -21,6 +21,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from import_extra_words import generate_sentence_pack
+
 
 UNSAFE_LEMMA_SET = {
     "rape",
@@ -142,42 +144,26 @@ def find_cloze_index(tokens: list[str], lemma: str) -> int | None:
     return None
 
 
-def fallback_sentences(lemma: str, pos: str) -> list[dict[str, Any]]:
-    lemma_text = lemma.replace("_", " ")
-
-    if pos == "verb":
-        candidates = [
-            f"We {lemma_text} this skill during our daily practice session.",
-            f"You can {lemma_text} the idea in a new context.",
-            f"Learners {lemma_text} better when they review consistently.",
-        ]
-    elif pos in {"adj", "adjective"}:
-        candidates = [
-            f"The final explanation felt {lemma_text} after careful revision.",
-            f"Her notes became more {lemma_text} over the week.",
-            f"A {lemma_text} example helped the group remember the concept.",
-        ]
-    elif pos in {"adv", "adverb"}:
-        candidates = [
-            f"The team worked {lemma_text} to finish the reading task.",
-            f"He replied {lemma_text} when the teacher asked for feedback.",
-            f"They discussed the topic {lemma_text} before the review started.",
-        ]
-    else:
-        candidates = [
-            f"The article introduced {lemma_text} with a practical example.",
-            f"In review, I used {lemma_text} in a clear sentence.",
-            f"Understanding {lemma_text} helps explain the main idea.",
-        ]
-
-    generated: list[dict[str, Any]] = []
-    for candidate in candidates:
-        tokens = WORD_RE.findall(candidate)
-        cloze_index = find_cloze_index(tokens, lemma)
-        if cloze_index is None:
-            continue
-        generated.append({"text": candidate, "cloze_index": cloze_index})
-    return generated
+def fallback_sentences(
+    lemma: str,
+    pos: str,
+    definition: str,
+    cefr: str,
+) -> list[dict[str, Any]]:
+    generated = generate_sentence_pack(
+        lemma=lemma,
+        pos=pos,
+        definition=definition,
+        cefr=cefr,
+    )
+    return [
+        {
+            "text": normalize_whitespace(str(entry.get("text", ""))),
+            "cloze_index": int(entry.get("cloze_index", 0)),
+        }
+        for entry in generated
+        if str(entry.get("text", "")).strip()
+    ]
 
 
 def is_valid_synonym(candidate: str, lemma: str, blocked: list[re.Pattern[str]]) -> bool:
@@ -302,7 +288,12 @@ def clean_seed_rows(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], C
                 break
 
         if len(kept_sentences) < 3:
-            for fallback in fallback_sentences(lemma, pos):
+            for fallback in fallback_sentences(
+                lemma=lemma,
+                pos=pos,
+                definition=str(row.get("definition", "")),
+                cefr=str(row.get("cefr", "")),
+            ):
                 lowered_text = fallback["text"].lower()
                 if lowered_text in seen_sentence_text:
                     continue

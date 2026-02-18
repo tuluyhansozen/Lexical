@@ -12,6 +12,7 @@ Pipeline-aligned behavior:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -86,55 +87,250 @@ def build_extra_index(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
 
 def cloze_index_for(lemma: str, sentence: str) -> int:
     tokens = TOKEN_PATTERN.findall(sentence.lower())
+    lemma_tokens = TOKEN_PATTERN.findall(lemma.lower())
+    if not tokens or not lemma_tokens:
+        return 0
+
+    if len(lemma_tokens) > 1:
+        for index in range(len(tokens) - len(lemma_tokens) + 1):
+            if tokens[index : index + len(lemma_tokens)] == lemma_tokens:
+                return index
+        return 0
+
+    lemma_token = lemma_tokens[0]
     for index, token in enumerate(tokens):
-        if token == lemma:
+        if token == lemma_token:
             return index
 
     # Lightweight inflection matching for provided examples.
     for index, token in enumerate(tokens):
-        if token.startswith(lemma) or lemma.startswith(token):
+        if token.startswith(lemma_token) or lemma_token.startswith(token):
             return index
-        if lemma.endswith("e") and token.startswith(lemma[:-1]):
+        if lemma_token.endswith("e") and token.startswith(lemma_token[:-1]):
             return index
-        if token.endswith("ed") and token[:-2] == lemma:
+        if token.endswith("ed") and token[:-2] == lemma_token:
             return index
-        if token.endswith("ing") and (token[:-3] == lemma or token[:-3] == lemma[:-1]):
+        if token.endswith("ing") and (
+            token[:-3] == lemma_token or token[:-3] == lemma_token[:-1]
+        ):
             return index
-        if token.endswith("es") and (token[:-2] == lemma or token[:-2] == lemma[:-1]):
+        if token.endswith("es") and (
+            token[:-2] == lemma_token or token[:-2] == lemma_token[:-1]
+        ):
             return index
-        if token.endswith("s") and token[:-1] == lemma:
+        if token.endswith("s") and token[:-1] == lemma_token:
             return index
     return 0
 
 
-def generate_sentence_pack(lemma: str, pos: str) -> list[dict[str, Any]]:
-    if pos == "verb":
-        templates = [
-            f"Teams often {lemma} data carefully before publishing final recommendations.",
-            f"During the workshop, participants {lemma} each example step by step.",
-            f"We {lemma} the feedback to improve the next product release.",
-        ]
-    elif pos == "adjective":
-        templates = [
-            f"The proposal seemed {lemma}, so everyone asked for stronger evidence.",
-            f"Her {lemma} explanation made the policy easier for newcomers to understand.",
-            f"A {lemma} approach helped the group avoid repeated mistakes.",
-        ]
-    elif pos == "adverb":
-        templates = [
-            f"The analyst reviewed the numbers {lemma} before sending the report.",
-            f"They communicated {lemma}, which reduced confusion across departments.",
-            f"We tested the feature {lemma} to catch hidden issues early.",
-        ]
+def stable_index(seed: str, size: int) -> int:
+    if size <= 0:
+        return 0
+    digest = hashlib.sha1(seed.encode("utf-8")).digest()
+    value = int.from_bytes(digest[:4], byteorder="big", signed=False)
+    return value % size
+
+
+def is_probably_concrete_noun(definition: str) -> bool:
+    text = definition.lower().strip()
+    abstract_starts = (
+        "quality",
+        "state",
+        "condition",
+        "concept",
+        "idea",
+        "process",
+        "act",
+        "action",
+        "feeling",
+        "emotion",
+        "ability",
+        "practice",
+        "behavior",
+        "method",
+        "system",
+        "relationship",
+        "attachment",
+        "commitment",
+    )
+    abstract_pattern = re.compile(
+        r"^(?:a|an|the)?\s*(?:"
+        + "|".join(re.escape(token) for token in abstract_starts)
+        + r")\b"
+    )
+    if abstract_pattern.search(text):
+        return False
+
+    concrete_heads = (
+        "person",
+        "people",
+        "animal",
+        "plant",
+        "object",
+        "item",
+        "tool",
+        "device",
+        "machine",
+        "material",
+        "substance",
+        "gas",
+        "liquid",
+        "vehicle",
+        "building",
+        "place",
+        "organ",
+        "body part",
+        "chemical element",
+        "element",
+    )
+    concrete_pattern = re.compile(
+        r"^(?:a|an|the)?\s*(?:"
+        + "|".join(re.escape(token) for token in concrete_heads)
+        + r")\b"
+    )
+    return concrete_pattern.search(text) is not None
+
+
+def generate_sentence_pack(
+    lemma: str,
+    pos: str,
+    definition: str | None = None,
+    cefr: str | None = None,
+) -> list[dict[str, Any]]:
+    del cefr  # Reserved for future level-aware variation.
+    lemma_text = lemma.replace("_", " ").strip()
+    normalized_pos = normalize_pos(pos)
+    definition_text = clean_definition(definition or "")
+
+    noun_complex_abstract = [
+        "Because shift notes were incomplete, recurring mistakes exposed weak {lemma} across teams.",
+        "After the compliance audit, leadership treated {lemma} as essential rather than optional.",
+        "Although the team had funding, poor {lemma} delayed the launch by two months.",
+        "When customer complaints doubled, the manager rebuilt the service {lemma} from scratch.",
+    ]
+    noun_question_abstract = [
+        "During a group project, what {lemma} keeps everyone from duplicating the same task?",
+        "If two job offers look similar, which {lemma} helps you decide with confidence?",
+        "When a plan starts failing, which signs of weak {lemma} appear first?",
+        "In a stressful meeting, what kind of {lemma} makes people trust your judgment?",
+    ]
+    noun_dialogue_abstract = [
+        "\"Without {lemma},\" the coach warned, \"talent collapses the moment pressure rises.\"",
+        "\"That single {lemma} changed everything,\" she said after the negotiation finally closed.",
+        "\"We had skills but no {lemma},\" he admitted, staring at the failed prototype.",
+        "\"Once we built {lemma},\" the founder said, \"customers stopped leaving after one month.\"",
+    ]
+
+    noun_complex_concrete = [
+        "Because the storm cut power overnight, extra {lemma} became essential in every apartment.",
+        "When the shipment finally arrived, each classroom received {lemma} for new experiments.",
+        "Although the workshop was full, missing {lemma} stopped the repair immediately.",
+        "After the safety inspection, they replaced damaged {lemma} before reopening the site.",
+    ]
+    noun_question_concrete = [
+        "If you were packing for a long trip, which {lemma} would you refuse to leave behind?",
+        "When a neighbor asks to borrow {lemma}, what makes you say yes?",
+        "At checkout, how can you tell whether {lemma} is worth the higher price?",
+        "During an emergency, which {lemma} would you reach for first?",
+    ]
+    noun_dialogue_concrete = [
+        "\"Pass the {lemma},\" the mechanic said, \"or this bolt will not move.\"",
+        "\"Keep {lemma} by the door,\" she said, \"we may need it tonight.\"",
+        "\"That {lemma} saved us,\" he said, \"when the elevator stalled between floors.\"",
+        "\"Guard the {lemma} carefully,\" the guide said, \"there is no spare in camp.\"",
+    ]
+
+    verb_complex = [
+        "Because witness accounts conflicted, detectives had to {lemma} every detail before filing charges.",
+        "When deadlines tightened, strong teams {lemma} early instead of guessing at the end.",
+        "Although the chart looked convincing, the analyst paused to {lemma} the assumptions underneath it.",
+        "Since the contract was vague, both sides met again to {lemma} before signing.",
+    ]
+    verb_question = [
+        "If a friend shares a shocking rumor, do you {lemma} first or react immediately?",
+        "When plans collapse at the last minute, how do you {lemma} the situation and recover quickly?",
+        "During a disagreement, can you {lemma} without raising your voice?",
+        "If instructions are unclear, do you {lemma} the goal before you begin?",
+    ]
+    verb_dialogue = [
+        "\"Do not {lemma} yet,\" the editor said, \"sleep on it and read again tomorrow.\"",
+        "\"We cannot {lemma} this by guessing,\" she said, pointing at the error log.",
+        "\"Before you {lemma},\" the coach said, \"watch how the veterans handle it.\"",
+        "\"Let us {lemma} together,\" he said, \"so we do not miss the obvious.\"",
+    ]
+
+    adjective_complex = [
+        "Although his apology sounded {lemma}, nobody believed him after months of broken promises.",
+        "Because the market shifted overnight, even a {lemma} forecast failed by noon.",
+        "While the design looked {lemma}, users still struggled with basic tasks.",
+        "Since the witness was {lemma}, the judge requested independent evidence.",
+    ]
+    adjective_question = [
+        "Would you invest your savings in a plan that still feels this {lemma}?",
+        "If your teammate sounded {lemma} before launch day, would you delay the release?",
+        "During heavy turbulence, do you trust a pilot who seems this {lemma}?",
+        "When advice feels {lemma}, what evidence helps you decide whether to follow it?",
+    ]
+    adjective_dialogue = [
+        "\"The result looks {lemma},\" Maya said, \"but we still need stronger data.\"",
+        "\"The plan is too {lemma} for launch day,\" his mentor said, \"tighten it first.\"",
+        "\"This route feels {lemma},\" she whispered, checking the weather radar again.",
+        "\"His explanation sounded {lemma},\" Jordan said, \"so I asked a second expert.\"",
+    ]
+
+    adverb_complex = [
+        "Because the procedure changed twice, the crew moved {lemma} and avoided costly mistakes.",
+        "When the customer grew angry, the manager replied {lemma} and de-escalated the call.",
+        "Although the room was noisy, she listened {lemma} enough to catch one key detail.",
+        "Since the margin for error was tiny, the surgeon worked {lemma} for three hours.",
+    ]
+    adverb_question = [
+        "When your alarm fails and you are late, can you still think {lemma} enough to adapt?",
+        "If a friend is upset, do you speak {lemma} or rush into advice?",
+        "During a difficult exam, how do you breathe {lemma} and stay focused?",
+        "When plans change suddenly, can your team respond {lemma} without blaming each other?",
+    ]
+    adverb_dialogue = [
+        "\"Explain it {lemma},\" the teacher said, \"your cousin is hearing this for the first time.\"",
+        "\"Drive {lemma},\" she warned, \"the bridge is still icy after sunset.\"",
+        "\"Answer {lemma},\" the lawyer whispered, \"the judge is watching your reaction.\"",
+        "\"Move {lemma},\" the medic said, \"he is in shock and barely standing.\"",
+    ]
+
+    if normalized_pos == "verb":
+        complex_templates = verb_complex
+        question_templates = verb_question
+        dialogue_templates = verb_dialogue
+    elif normalized_pos == "adjective":
+        complex_templates = adjective_complex
+        question_templates = adjective_question
+        dialogue_templates = adjective_dialogue
+    elif normalized_pos == "adverb":
+        complex_templates = adverb_complex
+        question_templates = adverb_question
+        dialogue_templates = adverb_dialogue
     else:
-        templates = [
-            f"The report explains how {lemma} affects planning in complex organizations.",
-            f"In class, students used {lemma} to compare two related concepts clearly.",
-            f"A clear {lemma} helped the team make faster and better decisions.",
-        ]
+        concrete = is_probably_concrete_noun(definition_text)
+        if concrete:
+            complex_templates = noun_complex_concrete
+            question_templates = noun_question_concrete
+            dialogue_templates = noun_dialogue_concrete
+        else:
+            complex_templates = noun_complex_abstract
+            question_templates = noun_question_abstract
+            dialogue_templates = noun_dialogue_abstract
+
+    templates = [
+        complex_templates[stable_index(f"{lemma_text}:complex", len(complex_templates))],
+        question_templates[stable_index(f"{lemma_text}:question", len(question_templates))],
+        dialogue_templates[stable_index(f"{lemma_text}:dialogue", len(dialogue_templates))],
+    ]
 
     return [
-        {"text": text, "cloze_index": cloze_index_for(lemma, text)}
+        {
+            "text": text.format(lemma=lemma_text),
+            "cloze_index": cloze_index_for(lemma_text, text.format(lemma=lemma_text)),
+        }
         for text in templates
     ]
 
@@ -190,7 +386,7 @@ def make_seed_entry(
 ) -> dict[str, Any]:
     sentences = sentence_pack_from_examples(lemma, examples)
     if len(sentences) < 3:
-        sentences = generate_sentence_pack(lemma, pos)
+        sentences = generate_sentence_pack(lemma, pos, definition=definition, cefr=cefr)
 
     return {
         "id": seed_id,

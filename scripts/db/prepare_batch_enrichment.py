@@ -178,16 +178,37 @@ def choose_root_word_ids(
 
 
 def enrich_prompts() -> tuple[str, str]:
-    word_prompt = """You are a senior lexicographer and curriculum editor for the Lexical iOS app.
+    word_prompt = """Role:
+You are an expert Applied Linguist and Creative Writer specializing in second language acquisition for intermediate to advanced English learners.
+Your goal is to produce high-fidelity examples that support contextual incidental learning.
 
 Task:
 Enrich ONLY this batch of words. Do NOT generate roots in this step.
+Update sentence fields and related fields (`sentences[].text`, `sentences[].cloze_index`) so each lemma has three high-quality examples.
+
+Sentence quality constraints (strict):
+1. Context is king:
+   - Avoid flat Subject-Verb-Object sentences.
+   - Build mini-scenarios so learners can infer meaning from context.
+2. No repetition:
+   - The 3 sentences for each lemma must be clearly different in topic, structure, and collocation.
+3. Show, don't tell:
+   - Do not define the lemma or use phrases like "which means".
+4. Structure diversity per lemma:
+   - Sentence 1: complex sentence with a dependent clause.
+   - Sentence 2: question form.
+   - Sentence 3: dialogue snippet with quotation marks.
+5. CEFR alignment:
+   - Match sentence complexity to the lemma CEFR.
+   - Use natural, modern English.
+6. Safety and practicality:
+   - No unsafe/offensive content.
+   - Prefer high-frequency, natural collocations.
 
 App constraints:
 - Synonyms section is hidden when synonym = [].
-- Exactly 3 example sentences are needed per word.
-- Sentences must be natural, CEFR-appropriate, safe, and useful for intermediate learners.
-- cloze_index is 0-based and must point to the target lemma token in each sentence.
+- Exactly 3 example sentences are required per word.
+- cloze_index is 0-based and must point to the lemma token (or the first token for multi-word lemmas) in each sentence.
 
 Word output schema (strict):
 {
@@ -212,7 +233,7 @@ Rules:
 - Keep lemma lowercase.
 - Keep synonym unique, no lemma itself, max 8; if unreliable, use [].
 - Exactly 3 sentences per word.
-- Each sentence length: 8–20 words.
+- Each sentence length: 8-24 words.
 - Prefer modern/high-frequency senses.
 - No unsafe/offensive content.
 - Return valid JSON only.
