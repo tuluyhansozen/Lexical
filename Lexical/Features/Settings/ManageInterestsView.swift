@@ -44,7 +44,7 @@ struct ManageInterestsView: View {
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(.secondary)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
+                        ScrollView(.horizontal) {
                             HStack {
                                 ForEach(group.options) { option in
                                     if !profile.selectedTags.contains(option.title) {
@@ -63,6 +63,7 @@ struct ManageInterestsView: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .scrollIndicators(.hidden)
                     }
                 }
             }

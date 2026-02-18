@@ -1,7 +1,12 @@
 import SwiftUI
 import SwiftData
 import LexicalCore
+#if canImport(UIKit)
+import UIKit
+import UserNotifications
+#endif
 
+#if canImport(UIKit)
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
@@ -23,10 +28,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         completionHandler()
     }
 }
+#endif
 
 @main
 struct LexicalApp: App {
+    #if canImport(UIKit)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
     @StateObject private var banditScheduler = BanditScheduler.shared
     @StateObject private var motionService = MotionService()
 
@@ -46,6 +54,8 @@ struct LexicalApp: App {
 
 private struct RootView: View {
     @State private var didRunBootstrapTasks = false
+    @State private var didScheduleDeferredCloudSync = false
+    @State private var persistenceStartupIssue: Persistence.StartupIssue? = Persistence.startupIssue
     @AppStorage(OnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
 
     var body: some View {
@@ -75,11 +85,30 @@ private struct RootView: View {
                 // Use new VocabularySeeder for 5000-entry seed_data.json
                 await VocabularySeeder.shared.seed(modelContainer: Persistence.sharedModelContainer)
                 SeedLexemeIndex.prewarm()
+            }
+            .task(id: didRunBootstrapTasks) {
+                guard didRunBootstrapTasks else { return }
+                guard !E2ETestLaunchConfigurator.shouldSkipBootstrapTasks else { return }
+                guard !didScheduleDeferredCloudSync else { return }
+                didScheduleDeferredCloudSync = true
 
-                let report = await CloudKitSyncManager.shared.synchronize(
-                    modelContainer: Persistence.sharedModelContainer
+                Task.detached(priority: .utility) {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    let report = await CloudKitSyncManager.shared.synchronizeSharedContainer()
+                    print("CloudKit sync: \(report.message)")
+                }
+            }
+            .onAppear {
+                if persistenceStartupIssue == nil {
+                    persistenceStartupIssue = Persistence.startupIssue
+                }
+            }
+            .alert(item: $persistenceStartupIssue) { issue in
+                Alert(
+                    title: Text(issue.title),
+                    message: Text(issue.message),
+                    dismissButton: .default(Text("Continue"))
                 )
-                print("CloudKit sync: \(report.message)")
             }
     }
 }

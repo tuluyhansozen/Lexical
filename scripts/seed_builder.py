@@ -40,6 +40,7 @@ ROOTS_OUTPUT_FILE = OUTPUT_DIR / "roots.json"
 # Source Files
 OXFORD_5000 = WORDLIST_DIR / "oxford_5000.csv"
 GOOGLE_10K = DATA_DIR / "google_10k.txt"
+NORVIG_1W_CANDIDATES = [Path("count_1w.txt"), DATA_DIR / "count_1w.txt"]
 KAIKKI_FILE = DATA_DIR / "kaikki_english.jsonl.gz"
 TATOEBA_FILE = DATA_DIR / "sentences_detailed.tar.bz2"
 ROOTS_1 = Path("roots1.json")
@@ -120,12 +121,28 @@ def load_roots_lemmas() -> tuple[Set[str], List[dict]]:
 
 def load_frequency_ranking() -> Dict[str, int]:
     ranking = {}
+    norvig_path = next((path for path in NORVIG_1W_CANDIDATES if path.exists()), None)
+    if norvig_path is not None:
+        with open(norvig_path, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) < 2:
+                    continue
+                word = parts[0].lower()
+                if word and word not in ranking:
+                    ranking[word] = len(ranking) + 1
+        print(f"   Loaded {len(ranking)} words from Norvig 1w ({norvig_path})")
+        return ranking
+
     if GOOGLE_10K.exists():
-        with open(GOOGLE_10K, 'r') as f:
+        with open(GOOGLE_10K, "r", encoding="utf-8") as f:
             for rank, line in enumerate(f, 1):
                 word = line.strip().lower()
                 if word and word not in ranking:
                     ranking[word] = rank
+        print(f"   Loaded {len(ranking)} words from Google 10K ({GOOGLE_10K})")
+    else:
+        print("   ⚠️ No frequency source found (Norvig/Google10K).")
     return ranking
 
 def load_oxford_cefr() -> Dict[str, str]:

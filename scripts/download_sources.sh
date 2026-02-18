@@ -10,13 +10,17 @@ echo "==========================================="
 echo "📂 Lexical Seed Data: Source Manager"
 echo "==========================================="
 
-# 1. COCA / Frequency Data
-# We are currently using google_10k.txt as a fallback since COCA is restricted.
-if [ -f "$DATA_DIR/google_10k.txt" ]; then
-    echo "✅ [Found] Google 10K Frequency List"
+# 1. Frequency Data (Norvig preferred, Google 10K fallback)
+if [ -f "count_1w.txt" ]; then
+    echo "✅ [Found] Norvig 1w Frequency List (repo root count_1w.txt)"
+elif [ -f "$DATA_DIR/count_1w.txt" ]; then
+    echo "✅ [Found] Norvig 1w Frequency List ($DATA_DIR/count_1w.txt)"
+elif [ -f "$DATA_DIR/google_10k.txt" ]; then
+    echo "✅ [Found] Google 10K Frequency List (fallback)"
 else
-    echo "⚠️ [Missing] Google 10K Frequency List ($DATA_DIR/google_10k.txt)"
-    echo "   Action: Please provide a frequency list or COCA sample."
+    echo "⚠️ [Missing] Frequency List"
+    echo "   Preferred: count_1w.txt from https://norvig.com/ngrams/count_1w.txt"
+    echo "   Fallback:  $DATA_DIR/google_10k.txt"
 fi
 
 # 2. Oxford Lists (CEFR)

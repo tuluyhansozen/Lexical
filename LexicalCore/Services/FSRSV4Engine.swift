@@ -60,7 +60,6 @@ public actor FSRSV4Engine {
             // Success (Grade 3 or 4)
             // S' = S * (1 + exp(w8) * (11-D) * S^-w9 * (exp(w10 * (1-R)) - 1))
             // Simplified reference impl:
-            let hardPenalty = (grade == 2) ? w[15] : 1.0 // Only if grade 2 considered "success" in some variants, but usually Grade 2 is fail/hard.
             // Standard FSRS 4.5:
             // If grade >= 3
             

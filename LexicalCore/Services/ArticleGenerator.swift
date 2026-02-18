@@ -303,11 +303,9 @@ public actor ArticleGenerator {
         reinforcementWords: [String] = [],
         stretchWords: [String] = [],
         adaptiveContext: AdaptivePromptContext? = nil,
-        knownWords: [String] = [],
         userId: String? = nil,
         articleStylePreference: String? = nil
     ) async throws -> GeneratedArticle {
-        _ = knownWords
         let recentArticles = await store.loadAll()
         let plan = promptPlanner.buildPlan(
             profile: profile,
@@ -335,7 +333,10 @@ public actor ArticleGenerator {
 
             let wordCount = self.wordCount(in: content)
             let responseTargets = parsed.declaredFocusWords.isEmpty ? targetWords : parsed.declaredFocusWords
-            let containedTargets = responseTargets.filter { content.localizedCaseInsensitiveContains($0) }
+            let containedTargets = matchedFocusWords(
+                candidates: responseTargets,
+                in: content
+            )
             let validation = evaluator.evaluate(
                 text: content,
                 newWordCount: containedTargets.count,
@@ -352,6 +353,7 @@ public actor ArticleGenerator {
             )
             let attempt = QualityGateAttempt(
                 parsed: parsed,
+                evaluatedBodyText: content,
                 containedTargets: containedTargets,
                 validation: validation,
                 noveltySimilarity: noveltySimilarity,
@@ -389,7 +391,7 @@ public actor ArticleGenerator {
         if let bestAttempt, bestAttempt.hasOnlyNonBlockingIssues {
             let fallbackArticle = GeneratedArticle(
                 title: bestAttempt.parsed.title,
-                content: bestAttempt.parsed.bodyText,
+                content: bestAttempt.evaluatedBodyText,
                 targetWords: bestAttempt.containedTargets,
                 category: plan.category,
                 difficultyScore: max(0.0, bestAttempt.validation.score - 0.1),
@@ -738,6 +740,48 @@ public actor ArticleGenerator {
         )
     }
 
+    private func matchedFocusWords(
+        candidates: [String],
+        in content: String
+    ) -> [String] {
+        let tokens = lexicalTokenSet(in: content)
+        guard !tokens.isEmpty else { return [] }
+
+        var seen = Set<String>()
+        var matches: [String] = []
+
+        for candidate in candidates {
+            guard let normalized = normalizedFocusLemma(candidate) else { continue }
+            guard tokens.contains(normalized), seen.insert(normalized).inserted else { continue }
+            matches.append(normalized)
+        }
+
+        return matches
+    }
+
+    private func lexicalTokenSet(in text: String) -> Set<String> {
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        guard let regex = try? NSRegularExpression(pattern: #"[A-Za-z]+(?:[-'][A-Za-z]+)*"#) else {
+            return []
+        }
+
+        var tokens = Set<String>()
+        for match in regex.matches(in: text, options: [], range: range) {
+            guard let tokenRange = Range(match.range, in: text) else { continue }
+            tokens.insert(text[tokenRange].lowercased())
+        }
+        return tokens
+    }
+
+    private func normalizedFocusLemma(_ lemma: String) -> String? {
+        let normalized = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalized.isEmpty else { return nil }
+        guard normalized.range(of: #"^[a-z]+(?:[-'][a-z]+)*$"#, options: .regularExpression) != nil else {
+            return nil
+        }
+        return normalized
+    }
+
     private func extractDeclaredFocusWords(from json: [String: Any]) -> [String] {
         let buckets = [
             json["used_reinforcement_words"],
@@ -967,6 +1011,7 @@ private struct ParsedArticleResponse {
 
 private struct QualityGateAttempt {
     let parsed: ParsedArticleResponse
+    let evaluatedBodyText: String
     let containedTargets: [String]
     let validation: ArticleConstraintsEvaluator.ValidationResult
     let noveltySimilarity: Double

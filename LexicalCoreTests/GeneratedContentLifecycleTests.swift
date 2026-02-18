@@ -25,7 +25,7 @@ final class GeneratedContentLifecycleTests: XCTestCase {
         context.insert(record)
         try context.save()
 
-        var fetched = try fetchAllV4Records(in: context)
+        let fetched = try fetchAllV4Records(in: context)
         XCTAssertEqual(fetched.count, 1)
         XCTAssertEqual(fetched.first?.articleId, articleID)
         XCTAssertEqual(fetched.first?.targetRank, 3_200)

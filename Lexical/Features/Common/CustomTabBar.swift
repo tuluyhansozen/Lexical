@@ -65,7 +65,7 @@ struct CustomTabBar: View {
                     Circle()
                         .stroke(Color(hex: "0A0A0A").opacity(0.85), lineWidth: 1)
                 )
-        } else if #available(iOS 26.0, *) {
+        } else if #available(iOS 26.0, macOS 26.0, *) {
             Circle()
                 .fill(.clear)
                 .glassEffect(.regular.tint(Color.white.opacity(0.06)).interactive(), in: Circle())

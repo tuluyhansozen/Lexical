@@ -87,12 +87,22 @@ public actor CloudKitSyncManager {
         self.resolver = resolver
     }
 
-    @MainActor
     @discardableResult
     public func synchronize(modelContainer: ModelContainer) async -> CloudKitSyncReport {
-        let context = modelContainer.mainContext
-        let activeProfile = UserProfile.resolveActiveProfile(modelContext: context)
-        let userId = activeProfile.userId
+        let context = ModelContext(modelContainer)
+        let userId: String
+        do {
+            userId = try resolveActiveUserID(modelContext: context)
+        } catch {
+            return CloudKitSyncReport(
+                success: false,
+                userId: UserProfile.fallbackLocalUserID,
+                pulledEvents: 0,
+                mergedStates: 0,
+                mergedProfiles: 0,
+                message: "Sync skipped: failed to resolve active user (\(error.localizedDescription))"
+            )
+        }
 
         let environment = await validateRuntimeEnvironment()
         guard environment.canSync, database != nil else {
@@ -159,6 +169,11 @@ public actor CloudKitSyncManager {
         }
     }
 
+    @discardableResult
+    public func synchronizeSharedContainer() async -> CloudKitSyncReport {
+        await synchronize(modelContainer: Persistence.sharedModelContainer)
+    }
+
     public func validateRuntimeEnvironment() async -> CloudKitEnvironmentReport {
         #if targetEnvironment(simulator)
         return CloudKitEnvironmentReport(
@@ -211,7 +226,6 @@ public actor CloudKitSyncManager {
 
     // MARK: - Local Snapshot
 
-    @MainActor
     private func localSnapshot(modelContext: ModelContext, userId: String) throws -> SyncSnapshot {
         let eventsDescriptor = FetchDescriptor<ReviewEvent>(
             predicate: #Predicate { event in
@@ -238,6 +252,38 @@ public actor CloudKitSyncManager {
             userProfiles: profiles,
             generatedAt: Date()
         )
+    }
+
+    private func resolveActiveUserID(modelContext: ModelContext) throws -> String {
+        let defaults = UserDefaults(suiteName: Persistence.appGroupIdentifier) ?? .standard
+
+        if let storedUserID = defaults.string(forKey: UserProfile.activeUserDefaultsKey),
+           let profile = try fetchProfile(userId: storedUserID, modelContext: modelContext) {
+            return profile.userId
+        }
+
+        let descriptor = FetchDescriptor<UserProfile>(
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+        if let firstProfile = try modelContext.fetch(descriptor).first {
+            defaults.set(firstProfile.userId, forKey: UserProfile.activeUserDefaultsKey)
+            return firstProfile.userId
+        }
+
+        let fallbackProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
+        modelContext.insert(fallbackProfile)
+        try modelContext.save()
+        defaults.set(fallbackProfile.userId, forKey: UserProfile.activeUserDefaultsKey)
+        return fallbackProfile.userId
+    }
+
+    private func fetchProfile(userId: String, modelContext: ModelContext) throws -> UserProfile? {
+        let descriptor = FetchDescriptor<UserProfile>(
+            predicate: #Predicate { profile in
+                profile.userId == userId
+            }
+        )
+        return try modelContext.fetch(descriptor).first
     }
 
     // MARK: - CloudKit Transport
@@ -394,19 +440,25 @@ public actor CloudKitSyncManager {
 
     // MARK: - Apply Merged Snapshot
 
-    @MainActor
     private func applyMergedSnapshot(
         _ snapshot: SyncSnapshot,
         to modelContext: ModelContext,
         userId: String
     ) throws {
         try upsertProfiles(snapshot.userProfiles.filter { $0.userId == userId }, modelContext: modelContext)
-        try upsertReviewEvents(snapshot.reviewEvents.filter { $0.userId == userId }, modelContext: modelContext)
-        try upsertStates(snapshot.userWordStates.filter { $0.userId == userId }, modelContext: modelContext)
+        try upsertReviewEvents(
+            snapshot.reviewEvents.filter { $0.userId == userId },
+            userId: userId,
+            modelContext: modelContext
+        )
+        try upsertStates(
+            snapshot.userWordStates.filter { $0.userId == userId },
+            userId: userId,
+            modelContext: modelContext
+        )
         try modelContext.save()
     }
 
-    @MainActor
     private func upsertProfiles(_ profiles: [SyncUserProfile], modelContext: ModelContext) throws {
         for payload in profiles {
             let descriptor = FetchDescriptor<UserProfile>(
@@ -435,9 +487,19 @@ public actor CloudKitSyncManager {
         }
     }
 
-    @MainActor
-    private func upsertReviewEvents(_ events: [SyncReviewEvent], modelContext: ModelContext) throws {
-        let existing = try modelContext.fetch(FetchDescriptor<ReviewEvent>())
+    private func upsertReviewEvents(
+        _ events: [SyncReviewEvent],
+        userId: String,
+        modelContext: ModelContext
+    ) throws {
+        guard !events.isEmpty else { return }
+
+        let descriptor = FetchDescriptor<ReviewEvent>(
+            predicate: #Predicate { event in
+                event.userId == userId
+            }
+        )
+        let existing = try modelContext.fetch(descriptor)
         var existingIDs = Set(existing.map(\.eventId))
 
         for payload in events {
@@ -459,9 +521,19 @@ public actor CloudKitSyncManager {
         }
     }
 
-    @MainActor
-    private func upsertStates(_ states: [SyncUserWordState], modelContext: ModelContext) throws {
-        let existing = try modelContext.fetch(FetchDescriptor<UserWordState>())
+    private func upsertStates(
+        _ states: [SyncUserWordState],
+        userId: String,
+        modelContext: ModelContext
+    ) throws {
+        guard !states.isEmpty else { return }
+
+        let descriptor = FetchDescriptor<UserWordState>(
+            predicate: #Predicate { state in
+                state.userId == userId
+            }
+        )
+        let existing = try modelContext.fetch(descriptor)
         var byKey: [String: UserWordState] = [:]
         byKey.reserveCapacity(existing.count)
         for state in existing {

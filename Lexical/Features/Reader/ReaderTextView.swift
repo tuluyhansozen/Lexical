@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 import LexicalCore
 
 /// Represents a highlight to apply at a specific text range
@@ -8,6 +10,7 @@ struct TokenHighlight: Sendable {
     let state: VocabularyState
 }
 
+#if canImport(UIKit)
 /// TextKit 2 based reader view with vocabulary highlighting
 struct ReaderTextView: UIViewRepresentable {
     let text: String
@@ -170,3 +173,24 @@ struct ReaderTextView: UIViewRepresentable {
         }
     }
 }
+#else
+struct ReaderTextView: View {
+    let text: String
+    let tokenHighlights: [TokenHighlight]
+    let onWordTap: (String, String, Range<String.Index>) -> Void
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+        }
+        .onAppear {
+            _ = tokenHighlights
+            _ = onWordTap
+        }
+    }
+}
+#endif

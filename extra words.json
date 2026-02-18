@@ -1,0 +1,2772 @@
+[
+    {
+        "word": "hierarchy",
+        "type": "noun",
+        "definition": "a system or organization in which people or groups are ranked one above the other according to status or authority",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "bureaucracy",
+        "type": "noun",
+        "definition": "excessively complicated administrative procedure, seen as characteristic of a bureaucracy",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "infrastructure",
+        "type": "noun",
+        "definition": "the basic physical and organizational structures and facilities needed for the operation of a society or enterprise",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "framework",
+        "type": "noun",
+        "definition": "a basic structure underlying a system, concept, or text",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "architecture",
+        "type": "noun",
+        "definition": "the complex or carefully designed structure of something",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "configuration",
+        "type": "noun",
+        "definition": "an arrangement of elements in a particular form, figure, or combination",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "composition",
+        "type": "noun",
+        "definition": "the nature of something's ingredients or constituents; the way in which a whole or mixture is made up",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "constitution",
+        "type": "noun",
+        "definition": "the composition of something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "component",
+        "type": "noun",
+        "definition": "a part or element of a larger whole",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "element",
+        "type": "noun",
+        "definition": "a part or aspect of something abstract, especially one that is essential or characteristic",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "constituent",
+        "type": "noun",
+        "definition": "a component part of something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "ingredient",
+        "type": "noun",
+        "definition": "a component part or element of something",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "segment",
+        "type": "noun",
+        "definition": "each of the parts into which something is or may be divided",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "portion",
+        "type": "noun",
+        "definition": "a part of a whole; an amount, section, or piece of something",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "fraction",
+        "type": "noun",
+        "definition": "a small or tiny part, amount, or proportion of something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "fragment",
+        "type": "noun",
+        "definition": "a small part broken or separated off something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "particle",
+        "type": "noun",
+        "definition": "a minute portion of matter",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "entity",
+        "type": "noun",
+        "definition": "a thing with distinct and independent existence",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "unit",
+        "type": "noun",
+        "definition": "an individual thing or person regarded as single and complete but which can also form an individual component of a larger or more complex whole",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "module",
+        "type": "noun",
+        "definition": "each of a set of standardized parts or independent units that can be used to construct a more complex structure",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "sector",
+        "type": "noun",
+        "definition": "an area or portion that is distinct from others",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "section",
+        "type": "noun",
+        "definition": "any of the more or less distinct parts into which something is or may be divided or from which it is made up",
+        "cefr_level": "A2"
+    },
+    {
+        "word": "division",
+        "type": "noun",
+        "definition": "the action of separating something into parts or the process of being separated",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "department",
+        "type": "noun",
+        "definition": "a division of a large organization such as a government, university, business, or shop",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "branch",
+        "type": "noun",
+        "definition": "a division or subdivision of a larger organization",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "wing",
+        "type": "noun",
+        "definition": "a part of a large building, especially one that projects from the main part",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "category",
+        "type": "noun",
+        "definition": "a class or division of people or things regarded as having particular shared characteristics",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "class",
+        "type": "noun",
+        "definition": "a set or category of things having some property or attribute in common and differentiated from others by kind, type, or quality",
+        "cefr_level": "A2"
+    },
+    {
+        "word": "classification",
+        "type": "noun",
+        "definition": "the action or process of classifying something according to shared qualities or characteristics",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "grouping",
+        "type": "noun",
+        "definition": "a set of associated persons or things",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "cluster",
+        "type": "noun",
+        "definition": "a group of similar things or people positioned or occurring closely together",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "batch",
+        "type": "noun",
+        "definition": "a quantity or consignment of goods produced at one time",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "bunch",
+        "type": "noun",
+        "definition": "a number of things, typically of the same kind, growing or fastened together",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "assortment",
+        "type": "noun",
+        "definition": "a miscellaneous collection of things or people",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "collection",
+        "type": "noun",
+        "definition": "a group of things or people",
+        "cefr_level": "A2"
+    },
+    {
+        "word": "assembly",
+        "type": "noun",
+        "definition": "a group of people gathered together in one place for a common purpose",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "accumulation",
+        "type": "noun",
+        "definition": "the acquisition or gradual gathering of something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "aggregation",
+        "type": "noun",
+        "definition": "the formation of a number of things into a cluster",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "conglomeration",
+        "type": "noun",
+        "definition": "a number of different things, parts or items that are grouped together; collection",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "array",
+        "type": "noun",
+        "definition": "an impressive display or range of a particular type of thing",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "network",
+        "type": "noun",
+        "definition": "a group or system of interconnected people or things",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "matrix",
+        "type": "noun",
+        "definition": "an organizational structure in which two or more lines of command, responsibility, or communication may run through the same individual",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "lattice",
+        "type": "noun",
+        "definition": "an interlaced structure or pattern",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "grid",
+        "type": "noun",
+        "definition": "a network of lines that cross each other to form a series of squares or rectangles",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "circuit",
+        "type": "noun",
+        "definition": "a roughly circular line, route, or movement that starts and finishes at the same place",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "conduit",
+        "type": "noun",
+        "definition": "a channel for conveying water or other fluid",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "trajectory",
+        "type": "noun",
+        "definition": "the path followed by a projectile flying or an object moving under the action of given forces",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "itinerary",
+        "type": "noun",
+        "definition": "a planned route or journey",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "spectrum",
+        "type": "noun",
+        "definition": "used to classify something, or suggest that it can be classified, in terms of its position on a scale between two extreme or opposite points",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "continuum",
+        "type": "noun",
+        "definition": "a continuous sequence in which adjacent elements are not perceptibly different from each other, although the extremes are quite distinct",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "gamut",
+        "type": "noun",
+        "definition": "the complete range or scope of something",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "scope",
+        "type": "noun",
+        "definition": "the extent of the area or subject matter that something deals with or to which it is relevant",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "domain",
+        "type": "noun",
+        "definition": "an area of territory owned or controlled by a ruler or government",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "realm",
+        "type": "noun",
+        "definition": "a field or domain of activity or interest",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "sphere",
+        "type": "noun",
+        "definition": "an area of activity, interest, or expertise",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "jurisdiction",
+        "type": "noun",
+        "definition": "the official power to make legal decisions and judgments",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "territory",
+        "type": "noun",
+        "definition": "an area of knowledge, activity, or experience",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "province",
+        "type": "noun",
+        "definition": "an area of special knowledge, interest, or responsibility",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "logistics",
+        "type": "noun",
+        "definition": "the detailed coordination of a complex operation involving many people, facilities, or supplies",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "protocol",
+        "type": "noun",
+        "definition": "the official procedure or system of rules governing affairs of state or diplomatic occasions",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "procedure",
+        "type": "noun",
+        "definition": "an established or official way of doing something",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "regime",
+        "type": "noun",
+        "definition": "a system or planned way of doing things, especially one imposed from above",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "administration",
+        "type": "noun",
+        "definition": "the process or activity of running a business, organization, etc.",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "syndicate",
+        "type": "noun",
+        "definition": "a group of individuals or organizations combined to promote some common interest",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "consortium",
+        "type": "noun",
+        "definition": "an association, typically of several business companies",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "cartel",
+        "type": "noun",
+        "definition": "an association of manufacturers or suppliers with the purpose of maintaining prices at a high level and restricting competition",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "apparatus",
+        "type": "noun",
+        "definition": "a complex structure within an organization or system",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "mechanism",
+        "type": "noun",
+        "definition": "a system of parts working together in a machine; a piece of machinery",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "concatenation",
+        "type": "noun",
+        "definition": "a series of interconnected things or events",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "stratification",
+        "type": "noun",
+        "definition": "the arrangement or classification of something into different groups",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "empathy",
+        "type": "noun",
+        "definition": "the ability to understand and share the feelings of another",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "sympathy",
+        "type": "noun",
+        "definition": "feelings of pity and sorrow for someone else's misfortune",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "apathy",
+        "type": "noun",
+        "definition": "lack of interest, enthusiasm, or concern",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "antipathy",
+        "type": "noun",
+        "definition": "a deep-seated feeling of dislike; aversion",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "indifference",
+        "type": "noun",
+        "definition": "lack of interest, concern, or sympathy",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "compassion",
+        "type": "noun",
+        "definition": "sympathetic pity and concern for the sufferings or misfortunes of others",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "benevolence",
+        "type": "noun",
+        "definition": "the quality of being well meaning; kindness",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "malice",
+        "type": "noun",
+        "definition": "the intention or desire to do evil; ill will",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "hostility",
+        "type": "noun",
+        "definition": "hostile behavior; unfriendliness or opposition",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "animosity",
+        "type": "noun",
+        "definition": "strong hostility",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "resentment",
+        "type": "noun",
+        "definition": "bitter indignation at having been treated unfairly",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "bitterness",
+        "type": "noun",
+        "definition": "anger and disappointment at being treated unfairly; resentment",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "grudge",
+        "type": "noun",
+        "definition": "a persistent feeling of ill will or resentment resulting from a past insult or injury",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "grievance",
+        "type": "noun",
+        "definition": "a real or imagined wrong or other cause for complaint or protest",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "vengeance",
+        "type": "noun",
+        "definition": "punishment inflicted or retribution exacted for an injury or wrong",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "retaliation",
+        "type": "noun",
+        "definition": "the action of returning a military attack; counterattack",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "retribution",
+        "type": "noun",
+        "definition": "punishment inflicted on someone as vengeance for a wrong or criminal act",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "altruism",
+        "type": "noun",
+        "definition": "the belief in or practice of disinterested and selfless concern for the well-being of others",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "philanthropy",
+        "type": "noun",
+        "definition": "the desire to promote the welfare of others, expressed especially by the generous donation of money to good causes",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "generosity",
+        "type": "noun",
+        "definition": "the quality of being kind and generous",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "magnanimity",
+        "type": "noun",
+        "definition": "the condition of being magnanimous; generosity",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "integrity",
+        "type": "noun",
+        "definition": "the quality of being honest and having strong moral principles; moral uprightness",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "honesty",
+        "type": "noun",
+        "definition": "the quality of being honest",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "sincerity",
+        "type": "noun",
+        "definition": "the quality of being free from pretense, deceit, or hypocrisy",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "candor",
+        "type": "noun",
+        "definition": "the quality of being open and honest in expression; frankness",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "deception",
+        "type": "noun",
+        "definition": "the action of deceiving someone",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "deceit",
+        "type": "noun",
+        "definition": "the action or practice of deceiving someone by concealing or misrepresenting the truth",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "fraud",
+        "type": "noun",
+        "definition": "wrongful or criminal deception intended to result in financial or personal gain",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "hypocrisy",
+        "type": "noun",
+        "definition": "the practice of claiming to have moral standards or beliefs to which one's own behavior does not conform",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "pretense",
+        "type": "noun",
+        "definition": "an attempt to make something that is not the case appear true",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "vanity",
+        "type": "noun",
+        "definition": "excessive pride in or admiration of one's own appearance or achievements",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "arrogance",
+        "type": "noun",
+        "definition": "the quality of being arrogant",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "conceit",
+        "type": "noun",
+        "definition": "excessive pride in oneself",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "hubris",
+        "type": "noun",
+        "definition": "excessive pride or self-confidence",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "modesty",
+        "type": "noun",
+        "definition": "the quality or state of being unassuming or moderate in the estimation of one's abilities",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "humility",
+        "type": "noun",
+        "definition": "a modest or low view of one's own importance; humbleness",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "diffidence",
+        "type": "noun",
+        "definition": "modesty or shyness resulting from a lack of self-confidence",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "timidity",
+        "type": "noun",
+        "definition": "lack of courage or confidence",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "shyness",
+        "type": "noun",
+        "definition": "the quality or state of being shy",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "apprehension",
+        "type": "noun",
+        "definition": "anxiety or fear that something bad or unpleasant will happen",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "trepidation",
+        "type": "noun",
+        "definition": "a feeling of fear or agitation about something that may happen",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "dread",
+        "type": "noun",
+        "definition": "anticipate with great apprehension or fear",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "angst",
+        "type": "noun",
+        "definition": "a feeling of deep anxiety or dread, typically an unfocused one about the human condition or the state of the world",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "euphoria",
+        "type": "noun",
+        "definition": "a feeling or state of intense excitement and happiness",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "exuberance",
+        "type": "noun",
+        "definition": "the quality of being full of energy, excitement, and cheerfulness; ebullience",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "elation",
+        "type": "noun",
+        "definition": "great happiness and exhilaration",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "despondency",
+        "type": "noun",
+        "definition": "a state of low spirits caused by loss of hope or courage",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "melancholy",
+        "type": "noun",
+        "definition": "a feeling of pensive sadness, typically with no obvious cause",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "nostalgia",
+        "type": "noun",
+        "definition": "a sentimental longing or wistful affection for the past",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "remorse",
+        "type": "noun",
+        "definition": "deep regret or guilt for a wrong committed",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "repentance",
+        "type": "noun",
+        "definition": "the action of repenting; sincere regret or remorse",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "penance",
+        "type": "noun",
+        "definition": "voluntary self-punishment inflicted as an outward expression of repentance for having done wrong",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "defiance",
+        "type": "noun",
+        "definition": "open resistance; bold disobedience",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "insubordination",
+        "type": "noun",
+        "definition": "defiance of authority; refusal to obey orders",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "obedience",
+        "type": "noun",
+        "definition": "compliance with an order, request, or law or submission to another's authority",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "submissiveness",
+        "type": "noun",
+        "definition": "the quality of being submissive",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "zeal",
+        "type": "noun",
+        "definition": "great energy or enthusiasm in pursuit of a cause or an objective",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "ardor",
+        "type": "noun",
+        "definition": "enthusiasm or passion",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "fervor",
+        "type": "noun",
+        "definition": "intense and passionate feeling",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "fanaticism",
+        "type": "noun",
+        "definition": "the quality of being fanatical",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "obsession",
+        "type": "noun",
+        "definition": "the state of being obsessed with someone or something",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "infatuation",
+        "type": "noun",
+        "definition": "an intense but short-lived passion or admiration for someone or something",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "indignation",
+        "type": "noun",
+        "definition": "anger or annoyance provoked by what is perceived as unfair treatment",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "scorn",
+        "type": "noun",
+        "definition": "the feeling or belief that someone or something is worthless or despicable; contempt",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "contempt",
+        "type": "noun",
+        "definition": "the feeling that a person or a thing is beneath consideration, worthless, or deserving scorn",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "disdain",
+        "type": "noun",
+        "definition": "the feeling that someone or something is unworthy of one's consideration or respect; contempt",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "reverence",
+        "type": "noun",
+        "definition": "deep respect for someone or something",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "veneration",
+        "type": "noun",
+        "definition": "great respect; reverence",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "equanimity",
+        "type": "noun",
+        "definition": "mental calmness, composure, and evenness of temper, especially in a difficult situation",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "schadenfreude",
+        "type": "noun",
+        "definition": "pleasure derived by someone from another person's misfortune",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "implication",
+        "type": "noun",
+        "definition": "the conclusion that can be drawn from something although it is not explicitly stated",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "consequence",
+        "type": "noun",
+        "definition": "a result or effect of an action or condition",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "repercussion",
+        "type": "noun",
+        "definition": "an unintended consequence occurring some time after an event or action, especially an unwelcome one",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "outcome",
+        "type": "noun",
+        "definition": "the way a thing turns out; a consequence",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "impact",
+        "type": "noun",
+        "definition": "the action of one object coming forcibly into contact with another; a marked effect or influence",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "significance",
+        "type": "noun",
+        "definition": "the quality of being worthy of attention; importance",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "relevance",
+        "type": "noun",
+        "definition": "the quality or state of being closely connected or appropriate",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "pertinence",
+        "type": "noun",
+        "definition": "relevance to a particular matter; applicability",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "correlation",
+        "type": "noun",
+        "definition": "a mutual relationship or connection between two or more things",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "disparity",
+        "type": "noun",
+        "definition": "a great difference",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "discrepancy",
+        "type": "noun",
+        "definition": "a lack of compatibility or similarity between two or more facts",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "inconsistency",
+        "type": "noun",
+        "definition": "the fact or state of being self-contradictory",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "contradiction",
+        "type": "noun",
+        "definition": "a combination of statements, ideas, or features of a situation that are opposed to one another",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "paradigm",
+        "type": "noun",
+        "definition": "a typical example or pattern of something; a model",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "phenomenon",
+        "type": "noun",
+        "definition": "a fact or situation that is observed to exist or happen, especially one whose cause or explanation is in question",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "consensus",
+        "type": "noun",
+        "definition": "general agreement",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "unanimity",
+        "type": "noun",
+        "definition": "agreement by all people involved; consensus",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "discord",
+        "type": "noun",
+        "definition": "disagreement between people",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "dissent",
+        "type": "noun",
+        "definition": "the expression or holding of opinions at variance with those previously, commonly, or officially held",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "controversy",
+        "type": "noun",
+        "definition": "disagreement, typically when prolonged, public, and heated",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "discourse",
+        "type": "noun",
+        "definition": "written or spoken communication or debate",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "rationale",
+        "type": "noun",
+        "definition": "a set of reasons or a logical basis for a course of action or a particular belief",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "premise",
+        "type": "noun",
+        "definition": "a previous statement or proposition from which another is inferred or follows as a conclusion",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "hypothesis",
+        "type": "noun",
+        "definition": "a supposition or proposed explanation made on the basis of limited evidence as a starting point for further investigation",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "conjecture",
+        "type": "noun",
+        "definition": "an opinion or conclusion formed on the basis of incomplete information",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "speculation",
+        "type": "noun",
+        "definition": "the forming of a theory or conjecture without firm evidence",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "nuance",
+        "type": "noun",
+        "definition": "a subtle difference in or shade of meaning, expression, or sound",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "ambiguity",
+        "type": "noun",
+        "definition": "the quality of being open to more than one interpretation; inexactness",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "complexity",
+        "type": "noun",
+        "definition": "the state or quality of being intricate or complicated",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "intricacy",
+        "type": "noun",
+        "definition": "details, especially of an involved or perplexing subject",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "framework",
+        "type": "noun",
+        "definition": "a basic structure underlying a system, concept, or text",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "infrastructure",
+        "type": "noun",
+        "definition": "the basic physical and organizational structures and facilities needed for the operation of a society or enterprise",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "mechanism",
+        "type": "noun",
+        "definition": "a natural or established process by which something takes place or is brought about",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "criterion",
+        "type": "noun",
+        "definition": "a principle or standard by which something may be judged or decided",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "perspective",
+        "type": "noun",
+        "definition": "a particular attitude toward or way of regarding something; a point of view",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "dimension",
+        "type": "noun",
+        "definition": "an aspect or feature of a situation, problem, or thing",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "facet",
+        "type": "noun",
+        "definition": "one side of something many-sided, especially of a cut gem",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "aspect",
+        "type": "noun",
+        "definition": "a particular part or feature of something",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "propensity",
+        "type": "noun",
+        "definition": "an inclination or natural tendency to behave in a particular way",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "inclination",
+        "type": "noun",
+        "definition": "a person's natural tendency or urge to act or feel in a particular way",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "predisposition",
+        "type": "noun",
+        "definition": "a liability or tendency to suffer from a particular condition, hold a particular attitude, or act in a particular way",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "incentive",
+        "type": "noun",
+        "definition": "a thing that motivates or encourages one to do something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "impetus",
+        "type": "noun",
+        "definition": "the force or energy with which a body moves",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "stimulus",
+        "type": "noun",
+        "definition": "a thing or event that evokes a specific functional reaction in an organ or tissue",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "constraint",
+        "type": "noun",
+        "definition": "a limitation or restriction",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "impediment",
+        "type": "noun",
+        "definition": "a hindrance or obstruction in doing something",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "obstacle",
+        "type": "noun",
+        "definition": "a thing that blocks one's way or prevents or hinders progress",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "liability",
+        "type": "noun",
+        "definition": "the state of being responsible for something, especially by law",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "asset",
+        "type": "noun",
+        "definition": "a useful or valuable thing, person, or quality",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "efficacy",
+        "type": "noun",
+        "definition": "the ability to produce a desired or intended result",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "proficiency",
+        "type": "noun",
+        "definition": "a high degree of competence or skill; expertise",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "competence",
+        "type": "noun",
+        "definition": "the ability to do something successfully or efficiently",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "aptitude",
+        "type": "noun",
+        "definition": "a natural ability to do something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "scrutiny",
+        "type": "noun",
+        "definition": "critical observation or examination",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "oversight",
+        "type": "noun",
+        "definition": "an unintentional failure to notice or do something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "surveillance",
+        "type": "noun",
+        "definition": "close observation, especially of a suspected spy or criminal",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "compliance",
+        "type": "noun",
+        "definition": "the action or fact of complying with a wish or command",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "adherence",
+        "type": "noun",
+        "definition": "attachment or commitment to a person, cause, or belief",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "violation",
+        "type": "noun",
+        "definition": "the action of violating someone or something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "infringement",
+        "type": "noun",
+        "definition": "the action of breaking the terms of a law, agreement, etc.; violation",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "breach",
+        "type": "noun",
+        "definition": "an act of breaking or failing to observe a law, agreement, or code of conduct",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "synergy",
+        "type": "noun",
+        "definition": "the interaction or cooperation of two or more organizations, substances, or other agents to produce a combined effect greater than the sum of their separate effects",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "integration",
+        "type": "noun",
+        "definition": "the action or process of integrating",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "collaboration",
+        "type": "noun",
+        "definition": "the action of working with someone to produce or create something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "coalition",
+        "type": "noun",
+        "definition": "an alliance for combined action, especially a temporary alliance of political parties forming a government or of states",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "alliance",
+        "type": "noun",
+        "definition": "a union or association formed for mutual benefit, especially between countries or organizations",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "solidarity",
+        "type": "noun",
+        "definition": "unity or agreement of feeling or action, especially among individuals with a common interest; mutual support within a group",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "conglomeration",
+        "type": "noun",
+        "definition": "a number of different things, parts or items that are grouped together; collection",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "vicissitude",
+        "type": "noun",
+        "definition": "a change of circumstances or fortune, typically one that is unwelcome or unpleasant",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "verisimilitude",
+        "type": "noun",
+        "definition": "the appearance of being true or real",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "perceive",
+        "type": "verb",
+        "definition": "become aware or conscious of (something); come to realize or understand",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "discern",
+        "type": "verb",
+        "definition": "perceive or recognize (something) with difficulty or distinction",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "distinguish",
+        "type": "verb",
+        "definition": "recognize or treat (someone or something) as different",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "differentiate",
+        "type": "verb",
+        "definition": "recognize or ascertain what makes (someone or something) different",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "ascertain",
+        "type": "verb",
+        "definition": "find (something) out for certain; make sure of",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "determine",
+        "type": "verb",
+        "definition": "cause (something) to occur in a particular way; be the decisive factor in",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "deduce",
+        "type": "verb",
+        "definition": "arrive at (a fact or a conclusion) by reasoning; draw as a logical conclusion",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "infer",
+        "type": "verb",
+        "definition": "deduce or conclude (information) from evidence and reasoning rather than from explicit statements",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "imply",
+        "type": "verb",
+        "definition": "strongly suggest the truth or existence of (something not expressly stated)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "construe",
+        "type": "verb",
+        "definition": "interpret (a word or action) in a particular way",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "interpret",
+        "type": "verb",
+        "definition": "explain the meaning of (information, words, or actions)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "analyze",
+        "type": "verb",
+        "definition": "examine methodically and in detail the constitution or structure of",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "evaluate",
+        "type": "verb",
+        "definition": "form an idea of the amount, number, or value of; assess",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "assess",
+        "type": "verb",
+        "definition": "evaluate or estimate the nature, ability, or quality of",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "appraise",
+        "type": "verb",
+        "definition": "assess the value or quality of",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "scrutinize",
+        "type": "verb",
+        "definition": "examine or inspect closely and thoroughly",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "contemplate",
+        "type": "verb",
+        "definition": "look thoughtfully for a long time at; think profoundly and at length",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "ponder",
+        "type": "verb",
+        "definition": "think about (something) carefully, especially before making a decision or reaching a conclusion",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "deliberate",
+        "type": "verb",
+        "definition": "engage in long and careful consideration",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "reflect",
+        "type": "verb",
+        "definition": "think deeply or carefully about",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "speculate",
+        "type": "verb",
+        "definition": "form a theory or conjecture about a subject without firm evidence",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "hypothesize",
+        "type": "verb",
+        "definition": "put (something) forward as a hypothesis",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "theorize",
+        "type": "verb",
+        "definition": "form a theory or set of theories about something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "postulate",
+        "type": "verb",
+        "definition": "suggest or assume the existence, fact, or truth of (something) as a basis for reasoning",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "presume",
+        "type": "verb",
+        "definition": "suppose that something is the case on the basis of probability",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "assume",
+        "type": "verb",
+        "definition": "suppose to be the case, without proof",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "suppose",
+        "type": "verb",
+        "definition": "assume that something is the case on the basis of evidence or probability",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "surmise",
+        "type": "verb",
+        "definition": "suppose that something is true without having evidence to confirm it",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "anticipate",
+        "type": "verb",
+        "definition": "regard as probable; expect or predict",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "foresee",
+        "type": "verb",
+        "definition": "be aware of beforehand; predict",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "predict",
+        "type": "verb",
+        "definition": "say or estimate that (a specified thing) will happen in the future",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "project",
+        "type": "verb",
+        "definition": "estimate or forecast (something) on the basis of present trends",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "forecast",
+        "type": "verb",
+        "definition": "predict or estimate (a future event or trend)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "comprehend",
+        "type": "verb",
+        "definition": "grasp mentally; understand",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "grasp",
+        "type": "verb",
+        "definition": "comprehend fully",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "conceive",
+        "type": "verb",
+        "definition": "form or devise (a plan or idea) in the mind",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "envisage",
+        "type": "verb",
+        "definition": "contemplate or conceive of as a possibility or a desirable future event",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "envision",
+        "type": "verb",
+        "definition": "imagine as a future possibility; visualize",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "acknowledge",
+        "type": "verb",
+        "definition": "accept or admit the existence or truth of",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "recognize",
+        "type": "verb",
+        "definition": "identify (someone or something) from having encountered them before; know again",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "identify",
+        "type": "verb",
+        "definition": "establish or indicate who or what (someone or something) is",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "recall",
+        "type": "verb",
+        "definition": "bring (a fact, event, or situation) back into one's mind; remember",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "recollect",
+        "type": "verb",
+        "definition": "remember (something); call to mind",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "memorize",
+        "type": "verb",
+        "definition": "commit to memory; learn by heart",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "retain",
+        "type": "verb",
+        "definition": "keep (something) in one's memory",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "remind",
+        "type": "verb",
+        "definition": "cause (someone) to remember someone or something",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "clarify",
+        "type": "verb",
+        "definition": "make (a statement or situation) less confused and more clearly comprehensible",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "elucidate",
+        "type": "verb",
+        "definition": "make (something) clear; explain",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "explicate",
+        "type": "verb",
+        "definition": "analyze and develop (an idea or principle) in detail",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "illustrate",
+        "type": "verb",
+        "definition": "explain or make (something) clear by using examples, charts, pictures, etc.",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "demonstrate",
+        "type": "verb",
+        "definition": "clearly show the existence or truth of (something) by giving proof or evidence",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "rationalize",
+        "type": "verb",
+        "definition": "attempt to explain or justify (one's own or another's behavior or attitude) with logical, plausible reasons",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "justify",
+        "type": "verb",
+        "definition": "show or prove to be right or reasonable",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "verify",
+        "type": "verb",
+        "definition": "make sure or demonstrate that (something) is true, accurate, or justified",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "confirm",
+        "type": "verb",
+        "definition": "establish the truth or correctness of",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "corroborate",
+        "type": "verb",
+        "definition": "confirm or give support to (a statement, theory, or finding)",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "substantiate",
+        "type": "verb",
+        "definition": "provide evidence to support or prove the truth of",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "validate",
+        "type": "verb",
+        "definition": "check or prove the validity or accuracy of (something)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "negate",
+        "type": "verb",
+        "definition": "nullify; make ineffective; deny the existence of",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "misinterpret",
+        "type": "verb",
+        "definition": "interpret (something or someone) wrongly",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "misunderstand",
+        "type": "verb",
+        "definition": "fail to interpret or understand (something) correctly",
+        "cefr_level": "B1"
+    },
+    {
+        "word": "overestimate",
+        "type": "verb",
+        "definition": "estimate (something) to be higher than it is",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "underestimate",
+        "type": "verb",
+        "definition": "estimate (something) to be smaller or less important than it actually is",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "reconsider",
+        "type": "verb",
+        "definition": "consider (something) again, especially for a possible change of decision or opinion",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "reevaluate",
+        "type": "verb",
+        "definition": "evaluate again or differently",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "synthesize",
+        "type": "verb",
+        "definition": "combine (a number of things) into a coherent whole",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "integrate",
+        "type": "verb",
+        "definition": "combine (one thing) with another so that they become a whole",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "internalize",
+        "type": "verb",
+        "definition": "make (an attitude or behavior) part of one's nature by learning or unconscious assimilation",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "ratiocinate",
+        "type": "verb",
+        "definition": "form judgments by a process of logic; reason",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "prognosticate",
+        "type": "verb",
+        "definition": "foretell or prophesy (an event in the future)",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "facilitate",
+        "type": "verb",
+        "definition": "make (an action or process) easy or easier",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "implement",
+        "type": "verb",
+        "definition": "put (a decision, plan, agreement, etc.) into effect",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "execute",
+        "type": "verb",
+        "definition": "carry out or put into effect (a plan, order, or course of action)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "conduct",
+        "type": "verb",
+        "definition": "organize and carry out",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "administer",
+        "type": "verb",
+        "definition": "manage and be responsible for the running of (a business, organization, etc.)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "monitor",
+        "type": "verb",
+        "definition": "observe and check the progress or quality of something over a period of time",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "supervise",
+        "type": "verb",
+        "definition": "observe and direct the execution of (a task, project, or activity)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "oversee",
+        "type": "verb",
+        "definition": "supervise (a person or work), especially in an official capacity",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "coordinate",
+        "type": "verb",
+        "definition": "bring the different elements of (a complex activity or organization) into a relationship that will ensure efficiency or harmony",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "regulate",
+        "type": "verb",
+        "definition": "control or maintain the rate or speed of (a machine or process) so that it operates properly",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "standardize",
+        "type": "verb",
+        "definition": "cause (something) to conform to a standard",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "optimize",
+        "type": "verb",
+        "definition": "make the best or most effective use of (a situation, opportunity, or resource)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "maximize",
+        "type": "verb",
+        "definition": "make as large or great as possible",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "minimize",
+        "type": "verb",
+        "definition": "reduce (something, especially something unwanted or unpleasant) to the smallest possible amount",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "enhance",
+        "type": "verb",
+        "definition": "intensify, increase, or further improve the quality, value, or extent of",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "reinforce",
+        "type": "verb",
+        "definition": "strengthen or support, especially with additional personnel or material",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "bolster",
+        "type": "verb",
+        "definition": "support or strengthen; prop up",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "consolidate",
+        "type": "verb",
+        "definition": "make (something) physically stronger or more solid; combine into a single more effective whole",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "undermine",
+        "type": "verb",
+        "definition": "damage or weaken (someone or something), especially gradually or insidiously",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "diminish",
+        "type": "verb",
+        "definition": "make or become less",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "deteriorate",
+        "type": "verb",
+        "definition": "become progressively worse",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "impair",
+        "type": "verb",
+        "definition": "weaken or damage something (especially a human faculty or function)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "compromise",
+        "type": "verb",
+        "definition": "weaken or harm by accepting standards that are lower than is desirable",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "jeopardize",
+        "type": "verb",
+        "definition": "put (someone or something) into a situation in which there is a danger of loss, harm, or failure",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "constitute",
+        "type": "verb",
+        "definition": "be (a part of a whole)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "generate",
+        "type": "verb",
+        "definition": "cause (something, especially an emotion or situation) to arise",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "yield",
+        "type": "verb",
+        "definition": "produce or provide (a natural, agricultural, or industrial product)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "derive",
+        "type": "verb",
+        "definition": "obtain something from (a specified source)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "stem",
+        "type": "verb",
+        "definition": "originate in or be caused by",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "originate",
+        "type": "verb",
+        "definition": "have a specified beginning",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "emanate",
+        "type": "verb",
+        "definition": "(of something abstract but perceptible) issue or spread out from (a source)",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "attribute",
+        "type": "verb",
+        "definition": "regard something as being caused by (someone or something)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "ascribe",
+        "type": "verb",
+        "definition": "attribute something to (a cause)",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "acknowledge",
+        "type": "verb",
+        "definition": "accept or admit the existence or truth of",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "concede",
+        "type": "verb",
+        "definition": "admit that something is true or valid after first denying or resisting it",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "refute",
+        "type": "verb",
+        "definition": "prove (a statement or theory) to be wrong or false; disprove",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "rebut",
+        "type": "verb",
+        "definition": "claim or prove that (evidence or an accusation) is false",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "repudiate",
+        "type": "verb",
+        "definition": "refuse to accept or be associated with",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "contradict",
+        "type": "verb",
+        "definition": "deny the truth of (a statement) by asserting the opposite",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "articulate",
+        "type": "verb",
+        "definition": "express (an idea or feeling) fluently and coherently",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "elucidate",
+        "type": "verb",
+        "definition": "make (something) clear; explain",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "exemplify",
+        "type": "verb",
+        "definition": "be a typical example of",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "validate",
+        "type": "verb",
+        "definition": "check or prove the validity or accuracy of (something)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "substantiate",
+        "type": "verb",
+        "definition": "provide evidence to support or prove the truth of",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "rectify",
+        "type": "verb",
+        "definition": "put (something) right; correct",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "amend",
+        "type": "verb",
+        "definition": "make minor changes in (a text) in order to make it fairer, more accurate, or more up-to-date",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "revise",
+        "type": "verb",
+        "definition": "re-examine and make alterations to (written or printed matter)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "accumulate",
+        "type": "verb",
+        "definition": "gather together or acquire an increasing number or quantity of",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "acquire",
+        "type": "verb",
+        "definition": "buy or obtain (an asset or object) for oneself",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "allocate",
+        "type": "verb",
+        "definition": "distribute (resources or duties) for a particular purpose",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "appropriate",
+        "type": "verb",
+        "definition": "devote (money or assets) to a special purpose",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "utilize",
+        "type": "verb",
+        "definition": "make practical and effective use of",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "exploit",
+        "type": "verb",
+        "definition": "make full use of and derive benefit from (a resource)",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "manipulate",
+        "type": "verb",
+        "definition": "control or influence (a person or situation) cleverly, unfairly, or unscrupulously",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "negotiate",
+        "type": "verb",
+        "definition": "obtain or bring about by discussion",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "mediate",
+        "type": "verb",
+        "definition": "intervene between people in a dispute in order to bring about an agreement or reconciliation",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "intervene",
+        "type": "verb",
+        "definition": "come between so as to prevent or alter a result or course of events",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "participate",
+        "type": "verb",
+        "definition": "take part in an action or endeavour",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "collaborate",
+        "type": "verb",
+        "definition": "work jointly on an activity, especially to produce or create something",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "integrate",
+        "type": "verb",
+        "definition": "combine (one thing) with another so that they become a whole",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "incorporate",
+        "type": "verb",
+        "definition": "take in or contain (something) as part of a whole; include",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "unify",
+        "type": "verb",
+        "definition": "make or become united, uniform, or whole",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "isolate",
+        "type": "verb",
+        "definition": "cause (a person or place) to be or remain alone or apart from others",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "segregate",
+        "type": "verb",
+        "definition": "set apart from the rest or from each other; isolate or divide",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "differentiate",
+        "type": "verb",
+        "definition": "recognize or ascertain what makes (someone or something) different",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "distinguish",
+        "type": "verb",
+        "definition": "recognize or treat (someone or something) as different",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "discern",
+        "type": "verb",
+        "definition": "perceive or recognize (something)",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "formulate",
+        "type": "verb",
+        "definition": "create or devise methodically (a strategy or a proposal)",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "obfuscate",
+        "type": "verb",
+        "definition": "render obscure, unclear, or unintelligible",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "capitulate",
+        "type": "verb",
+        "definition": "cease to resist an opponent or an unwelcome demand; surrender",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "esoteric",
+        "type": "adj",
+        "definition": "intended for or likely to be understood by only a small number of people with a specialized knowledge or interest",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "plausible",
+        "type": "adj",
+        "definition": "seeming reasonable or probable",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "rudimentary",
+        "type": "adj",
+        "definition": "involving or limited to basic principles",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "obsolete",
+        "type": "adj",
+        "definition": "no longer produced or used; out of date",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "scrupulous",
+        "type": "adj",
+        "definition": "diligent, thorough, and extremely attentive to details",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "clandestine",
+        "type": "adj",
+        "definition": "kept secret or done secretively, especially because illicit",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "benevolent",
+        "type": "adj",
+        "definition": "well meaning and kindly",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "malevolent",
+        "type": "adj",
+        "definition": "having or showing a wish to do evil to others",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "candid",
+        "type": "adj",
+        "definition": "truthful and straightforward; frank",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "obscure",
+        "type": "adj",
+        "definition": "not discovered or known about; uncertain",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "cryptic",
+        "type": "adj",
+        "definition": "having a meaning that is mysterious or obscure",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "mundane",
+        "type": "adj",
+        "definition": "lacking interest or excitement; dull",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "volatile",
+        "type": "adj",
+        "definition": "liable to change rapidly and unpredictably, especially for the worse",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "stagnant",
+        "type": "adj",
+        "definition": "showing no activity; dull and sluggish",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "tedious",
+        "type": "adj",
+        "definition": "too long, slow, or dull; tiresome or monotonous",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "arduous",
+        "type": "adj",
+        "definition": "involving or requiring strenuous effort; difficult and tiring",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "strenuous",
+        "type": "adj",
+        "definition": "requiring or using great exertion",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "futile",
+        "type": "adj",
+        "definition": "incapable of producing any useful result; pointless",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "indispensable",
+        "type": "adj",
+        "definition": "absolutely necessary",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "imperative",
+        "type": "adj",
+        "definition": "of vital importance; crucial",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "inevitable",
+        "type": "adj",
+        "definition": "certain to happen; unavoidable",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "relentless",
+        "type": "adj",
+        "definition": "oppressively constant; incessant",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "incessant",
+        "type": "adj",
+        "definition": "of something regarded as unpleasant, continuing without pause or interruption",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "sporadic",
+        "type": "adj",
+        "definition": "occurring at irregular intervals or only in a few places; scattered or isolated",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "intermittent",
+        "type": "adj",
+        "definition": "occurring at irregular intervals; not continuous or steady",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "coherent",
+        "type": "adj",
+        "definition": "logical and consistent",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "articulate",
+        "type": "adj",
+        "definition": "having or showing the ability to speak fluently and coherently",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "eloquent",
+        "type": "adj",
+        "definition": "fluent or persuasive in speaking or writing",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "feasible",
+        "type": "adj",
+        "definition": "possible to do easily or conveniently",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "viable",
+        "type": "adj",
+        "definition": "capable of working successfully; feasible",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "formidable",
+        "type": "adj",
+        "definition": "inspiring fear or respect through being impressively large, powerful, intense, or capable",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "resilient",
+        "type": "adj",
+        "definition": "able to withstand or recover quickly from difficult conditions",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "robust",
+        "type": "adj",
+        "definition": "strong and healthy; vigorous",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "fragile",
+        "type": "adj",
+        "definition": "easily broken or damaged",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "vulnerable",
+        "type": "adj",
+        "definition": "susceptible to physical or emotional attack or harm",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "susceptible",
+        "type": "adj",
+        "definition": "likely or liable to be influenced or harmed by a particular thing",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "immune",
+        "type": "adj",
+        "definition": "protected or exempt, especially from an obligation or the effects of something",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "compatible",
+        "type": "adj",
+        "definition": "able to exist or occur together without conflict",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "congruent",
+        "type": "adj",
+        "definition": "in agreement or harmony",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "consistent",
+        "type": "adj",
+        "definition": "acting or done in the same way over time, especially so as to be fair or accurate",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "contradictory",
+        "type": "adj",
+        "definition": "mutually opposed or inconsistent",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "paradoxical",
+        "type": "adj",
+        "definition": "seemingly absurd or self-contradictory",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "ironic",
+        "type": "adj",
+        "definition": "happening in the opposite way to what is expected, and typically causing wry amusement because of this",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "cynical",
+        "type": "adj",
+        "definition": "believing that people are motivated by self-interest; distrustful of human sincerity or integrity",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "skeptical",
+        "type": "adj",
+        "definition": "not easily convinced; having doubts or reservations",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "optimistic",
+        "type": "adj",
+        "definition": "hopeful and confident about the future",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "pessimistic",
+        "type": "adj",
+        "definition": "tending to see the worst aspect of things or believe that the worst will happen",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "naive",
+        "type": "adj",
+        "definition": "showing a lack of experience, wisdom, or judgment",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "gullible",
+        "type": "adj",
+        "definition": "easily persuaded to believe something; credulous",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "ambiguous",
+        "type": "adj",
+        "definition": "open to more than one interpretation; having a double meaning",
+        "cefr_level": "B2"
+    },
+    {
+        "word": "arbitrary",
+        "type": "adj",
+        "definition": "based on random choice or personal whim, rather than any reason or system",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "capricious",
+        "type": "adj",
+        "definition": "given to sudden and unaccountable changes of mood or behavior",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "ostentatious",
+        "type": "adj",
+        "definition": "characterized by vulgar or pretentious display; designed to impress or attract notice",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "pervasive",
+        "type": "adj",
+        "definition": "spreading widely throughout an area or a group of people, especially of an unwelcome influence",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "pragmatic",
+        "type": "adj",
+        "definition": "dealing with things sensibly and realistically",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "dogmatic",
+        "type": "adj",
+        "definition": "inclined to lay down principles as incontrovertibly true",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "empirical",
+        "type": "adj",
+        "definition": "based on, concerned with, or verifiable by observation or experience rather than theory",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "hypothetical",
+        "type": "adj",
+        "definition": "of, based on, or serving as a hypothesis",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "inherent",
+        "type": "adj",
+        "definition": "existing in something as a permanent, essential, or characteristic attribute",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "intrinsic",
+        "type": "adj",
+        "definition": "belonging naturally; essential",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "extraneous",
+        "type": "adj",
+        "definition": "irrelevant or unrelated to the subject being dealt with",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "rigorous",
+        "type": "adj",
+        "definition": "extremely thorough, exhaustive, or accurate",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "vigilant",
+        "type": "adj",
+        "definition": "keeping careful watch for possible danger or difficulties",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "subtle",
+        "type": "adj",
+        "definition": "so delicate or precise as to be difficult to analyze or describe",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "profound",
+        "type": "adj",
+        "definition": "very great or intense; having or showing great knowledge or insight",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "eminent",
+        "type": "adj",
+        "definition": "famous and respected within a particular sphere or profession",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "imminent",
+        "type": "adj",
+        "definition": "about to happen",
+        "cefr_level": "C1"
+    },
+    {
+        "word": "transient",
+        "type": "adj",
+        "definition": "lasting only for a short time; impermanent",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "ineffable",
+        "type": "adj",
+        "definition": "too great or extreme to be expressed or described in words",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "pernicious",
+        "type": "adj",
+        "definition": "having a harmful effect, especially in a gradual or subtle way",
+        "cefr_level": "C2"
+    },
+    {
+        "word": "exacerbate",
+        "type": "verb",
+        "definition": "make (a problem, bad situation, or negative feeling) worse"
+    },
+    {
+        "word": "alleviate",
+        "type": "verb",
+        "definition": "make (suffering, deficiency, or a problem) less severe"
+    },
+    {
+        "word": "pragmatic",
+        "type": "adj",
+        "definition": "dealing with things sensibly and realistically in a way that is based on practical rather than theoretical considerations"
+    },
+    {
+        "word": "ubiquitous",
+        "type": "adj",
+        "definition": "present, appearing, or found everywhere"
+    },
+    {
+        "word": "ambivalence",
+        "type": "noun",
+        "definition": "the state of having mixed feelings or contradictory ideas about something or someone"
+    },
+    {
+        "word": "meticulous",
+        "type": "adj",
+        "definition": "showing great attention to detail; very careful and precise"
+    },
+    {
+        "word": "fluctuate",
+        "type": "verb",
+        "definition": "rise and fall irregularly in number or amount"
+    },
+    {
+        "word": "scrutinize",
+        "type": "verb",
+        "definition": "examine or inspect closely and thoroughly"
+    },
+    {
+        "word": "ephemeral",
+        "type": "adj",
+        "definition": "lasting for a very short time"
+    },
+    {
+        "word": "superfluous",
+        "type": "adj",
+        "definition": "unnecessary, especially through being more than enough"
+    },
+    {
+        "word": "corroborate",
+        "type": "verb",
+        "definition": "confirm or give support to (a statement, theory, or finding)"
+    },
+    {
+        "word": "vindicate",
+        "type": "verb",
+        "definition": "clear (someone) of blame or suspicion"
+    },
+    {
+        "word": "disseminate",
+        "type": "verb",
+        "definition": "spread (something, especially information) widely"
+    },
+    {
+        "word": "proliferate",
+        "type": "verb",
+        "definition": "increase rapidly in numbers; multiply"
+    },
+    {
+        "word": "divergent",
+        "type": "adj",
+        "definition": "tending to be different or develop in different directions"
+    },
+    {
+        "word": "paradigm",
+        "type": "noun",
+        "definition": "a typical example or pattern of something; a model"
+    },
+    {
+        "word": "propensity",
+        "type": "noun",
+        "definition": "an inclination or natural tendency to behave in a particular way"
+    },
+    {
+        "word": "insidious",
+        "type": "adj",
+        "definition": "proceeding in a gradual, subtle way, but with harmful effects"
+    },
+    {
+        "word": "precipitate",
+        "type": "verb",
+        "definition": "cause (an event or situation, typically one that is bad or undesirable) to happen suddenly, unexpectedly, or prematurely"
+    },
+    {
+        "word": "lucid",
+        "type": "adj",
+        "definition": "expressed clearly; easy to understand"
+    },
+    {
+        "word": "obscure",
+        "type": "verb",
+        "definition": "keep from being seen; conceal"
+    },
+    {
+        "word": "reiterate",
+        "type": "verb",
+        "definition": "say something again or a number of times, typically for emphasis or clarity"
+    },
+    {
+        "word": "meticulous",
+        "type": "adj",
+        "definition": "showing great attention to detail; very careful and precise"
+    },
+    {
+        "word": "mundane",
+        "type": "adj",
+        "definition": "lacking interest or excitement; dull"
+    },
+    {
+        "word": "mitigate",
+        "type": "verb",
+        "definition": "make less severe, serious, or painful"
+    },
+    {
+        "word": "anomaly",
+        "type": "noun",
+        "definition": "something that deviates from what is standard, normal, or expected"
+    },
+    {
+        "word": "equivocal",
+        "type": "adj",
+        "definition": "open to more than one interpretation; ambiguous"
+    },
+    {
+        "word": "precarious",
+        "type": "adj",
+        "definition": "not securely held or in position; dangerously likely to fall or collapse"
+    },
+    {
+        "word": "tangible",
+        "type": "adj",
+        "definition": "perceptible by touch; clear and definite"
+    },
+    {
+        "word": "obsolete",
+        "type": "adj",
+        "definition": "no longer produced or used; out of date"
+    },
+    {
+        "word": "contentious",
+        "type": "adj",
+        "definition": "causing or likely to cause an argument; controversial"
+    },
+    {
+        "word": "deviate",
+        "type": "verb",
+        "definition": "depart from an established course"
+    },
+    {
+        "word": "feasible",
+        "type": "adj",
+        "definition": "possible to do easily or conveniently"
+    },
+    {
+        "word": "intricate",
+        "type": "adj",
+        "definition": "very complicated or detailed"
+    },
+    {
+        "word": "subtle",
+        "type": "adj",
+        "definition": "so delicate or precise as to be difficult to analyze or describe"
+    },
+    {
+        "word": "viable",
+        "type": "adj",
+        "definition": "capable of working successfully; feasible"
+    },
+    {
+        "word": "adverse",
+        "type": "adj",
+        "definition": "preventing success or development; harmful; unfavorable"
+    },
+    {
+        "word": "deficit",
+        "type": "noun",
+        "definition": "the amount by which something, especially a sum of money, is too small"
+    },
+    {
+        "word": "implict",
+        "type": "adj",
+        "definition": "implied though not plainly expressed"
+    },
+    {
+        "word": "explicit",
+        "type": "adj",
+        "definition": "stated clearly and in detail, leaving no room for confusion or doubt"
+    },
+    {
+        "word": "intrinsic",
+        "type": "adj",
+        "definition": "belonging naturally; essential"
+    },
+    {
+        "word": "extrinsic",
+        "type": "adj",
+        "definition": "not part of the essential nature of someone or something; coming or operating from outside"
+    },
+    {
+        "word": "empirical",
+        "type": "adj",
+        "definition": "based on, concerned with, or verifiable by observation or experience rather than theory or pure logic"
+    },
+    {
+        "word": "hypothetical",
+        "type": "adj",
+        "definition": "of, based on, or serving as a hypothesis"
+    },
+    {
+        "word": "arbitrary",
+        "type": "adj",
+        "definition": "based on random choice or personal whim, rather than any reason or system"
+    },
+    {
+        "word": "spontaneous",
+        "type": "adj",
+        "definition": "performed or occurring as a result of a sudden inner impulse or inclination"
+    },
+    {
+        "word": "simultaneous",
+        "type": "adj",
+        "definition": "occurring, operating, or done at the same time"
+    },
+    {
+        "word": "subsequent",
+        "type": "adj",
+        "definition": "coming after something in time; following"
+    },
+    {
+        "word": "precede",
+        "type": "verb",
+        "definition": "come before (something) in time"
+    },
+    {
+        "word": "succeed",
+        "type": "verb",
+        "definition": "achieve the desired aim or result"
+    }
+]

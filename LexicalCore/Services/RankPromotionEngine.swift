@@ -168,17 +168,41 @@ public struct RankPromotionEngine {
     ) throws -> UserProfile? {
         if let providedUserId = userId?.trimmingCharacters(in: .whitespacesAndNewlines),
            !providedUserId.isEmpty {
-            let descriptor = FetchDescriptor<UserProfile>(
-                predicate: #Predicate { profile in
-                    profile.userId == providedUserId
-                }
-            )
-            return try modelContext.fetch(descriptor).first
+            return try fetchProfile(userId: providedUserId, modelContext: modelContext)
         }
 
-        return MainActor.assumeIsolated {
-            UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let activeDefaults = UserDefaults(suiteName: Persistence.appGroupIdentifier) ?? .standard
+        if let storedUserID = activeDefaults.string(forKey: UserProfile.activeUserDefaultsKey),
+           let profile = try fetchProfile(userId: storedUserID, modelContext: modelContext) {
+            return profile
         }
+
+        let descriptor = FetchDescriptor<UserProfile>(
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+        if let firstProfile = try modelContext.fetch(descriptor).first {
+            activeDefaults.set(firstProfile.userId, forKey: UserProfile.activeUserDefaultsKey)
+            return firstProfile
+        }
+
+        let fallbackProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
+        modelContext.insert(fallbackProfile)
+        do {
+            try modelContext.save()
+        } catch {
+            print("RankPromotionEngine: failed to save fallback profile: \(error)")
+        }
+        activeDefaults.set(fallbackProfile.userId, forKey: UserProfile.activeUserDefaultsKey)
+        return fallbackProfile
+    }
+
+    private func fetchProfile(userId: String, modelContext: ModelContext) throws -> UserProfile? {
+        let descriptor = FetchDescriptor<UserProfile>(
+            predicate: #Predicate { profile in
+                profile.userId == userId
+            }
+        )
+        return try modelContext.fetch(descriptor).first
     }
 
     private func fetchRecentEvents(

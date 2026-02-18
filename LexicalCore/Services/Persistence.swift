@@ -4,9 +4,44 @@ import Foundation
 // Centralized persistence configuration
 public struct Persistence {
     public static let appGroupIdentifier = "group.com.lexical.Lexical"
+
+    public struct StartupIssue: Identifiable, Sendable {
+        public let id: UUID
+        public let title: String
+        public let message: String
+
+        public init(title: String, message: String) {
+            self.id = UUID()
+            self.title = title
+            self.message = message
+        }
+    }
+
+    enum RecoveryAction: Equatable {
+        case resetAndRetry
+        case useInMemoryFallback
+        case failFast
+    }
+
+    public private(set) static var startupIssue: StartupIssue?
     
     public static var sharedModelContainer: ModelContainer = {
         let schema = Schema(LexicalSchemaV6.models)
+
+        startupIssue = nil
+
+        if isRunningTests {
+            let inMemoryConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
+            do {
+                return try ModelContainer(
+                    for: schema,
+                    migrationPlan: LexicalMigrationPlan.self,
+                    configurations: [inMemoryConfiguration]
+                )
+            } catch {
+                fatalError("Could not create in-memory test ModelContainer: \(error)")
+            }
+        }
 
         let storeURL: URL
 
@@ -29,23 +64,42 @@ public struct Persistence {
                 configurations: [modelConfiguration]
             )
         } catch {
-            guard shouldAttemptStoreReset(for: error, storeURL: storeURL) else {
-                fatalError("Could not create ModelContainer: \(error)")
-            }
+            let recovery = recoveryAction(
+                for: error,
+                storeExists: FileManager.default.fileExists(atPath: storeURL.path),
+                allowDestructiveReset: allowsDestructiveStoreReset
+            )
 
-            // Recovery path for legacy/incompatible stores that cannot be staged-migrated.
-            print("⚠️ Persistence: initial model-container load failed: \(error)")
-            print("⚠️ Persistence: attempting store reset at \(storeURL.path)")
-            backupAndRemoveStore(at: storeURL)
+            switch recovery {
+            case .resetAndRetry:
+                // Debug-only recovery path for legacy/incompatible stores.
+                print("⚠️ Persistence: initial model-container load failed: \(error)")
+                print("⚠️ Persistence: attempting store reset at \(storeURL.path)")
+                backupAndRemoveStore(at: storeURL)
 
-            do {
-                return try ModelContainer(
-                    for: schema,
-                    migrationPlan: LexicalMigrationPlan.self,
-                    configurations: [modelConfiguration]
+                do {
+                    return try ModelContainer(
+                        for: schema,
+                        migrationPlan: LexicalMigrationPlan.self,
+                        configurations: [modelConfiguration]
+                    )
+                } catch {
+                    startupIssue = StartupIssue(
+                        title: "Storage Recovery Mode",
+                        message: "Lexical could not reopen your data after a local reset attempt. Running in temporary recovery mode."
+                    )
+                    return makeInMemoryFallbackContainer(schema: schema, context: "post-reset load failure: \(error)")
+                }
+
+            case .useInMemoryFallback:
+                startupIssue = StartupIssue(
+                    title: "Storage Recovery Mode",
+                    message: "Lexical could not migrate your on-device data safely. Your original data was left untouched, and the app is running in temporary recovery mode."
                 )
-            } catch {
-                fatalError("Could not recreate ModelContainer after store reset: \(error)")
+                return makeInMemoryFallbackContainer(schema: schema, context: "migration-incompatible store: \(error)")
+
+            case .failFast:
+                fatalError("Could not create ModelContainer: \(error)")
             }
         }
     }()
@@ -79,16 +133,41 @@ public struct Persistence {
         }
     }
 
-    private static func shouldAttemptStoreReset(for error: Error, storeURL: URL) -> Bool {
-        // Never reset if no on-disk store exists yet.
-        guard FileManager.default.fileExists(atPath: storeURL.path) else { return false }
-
-        if containsIncompatibleStoreError(error) {
-            return true
+    static func recoveryAction(
+        for error: Error,
+        storeExists: Bool,
+        allowDestructiveReset: Bool
+    ) -> RecoveryAction {
+        guard storeExists else { return .failFast }
+        guard containsIncompatibleStoreError(error) || containsIncompatibleStoreSignal(error) else {
+            return .failFast
         }
+        return allowDestructiveReset ? .resetAndRetry : .useInMemoryFallback
+    }
 
-        // SwiftData may wrap CoreData errors. Fall back to string signals to avoid
-        // false negatives for known migration incompatibilities.
+    private static var allowsDestructiveStoreReset: Bool {
+        #if DEBUG
+        return !isRunningTests
+        #else
+        return false
+        #endif
+    }
+
+    private static func makeInMemoryFallbackContainer(schema: Schema, context: String) -> ModelContainer {
+        let inMemoryConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
+        do {
+            print("⚠️ Persistence: entering in-memory recovery mode (\(context))")
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: LexicalMigrationPlan.self,
+                configurations: [inMemoryConfiguration]
+            )
+        } catch {
+            fatalError("Could not create in-memory fallback ModelContainer: \(error)")
+        }
+    }
+
+    private static func containsIncompatibleStoreSignal(_ error: Error) -> Bool {
         let description = (String(describing: error) + " " + error.localizedDescription).lowercased()
         let signals = [
             "cannot use staged migration",
@@ -99,7 +178,6 @@ public struct Persistence {
             "134110",
             "134100"
         ]
-
         return signals.contains { description.contains($0) }
     }
 
@@ -125,5 +203,16 @@ public struct Persistence {
         }
 
         return visit(error as NSError)
+    }
+
+    private static var isRunningTests: Bool {
+        let environment = ProcessInfo.processInfo.environment
+        if environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil {
+            return true
+        }
+
+        return ProcessInfo.processInfo.arguments.contains { argument in
+            argument.localizedCaseInsensitiveContains("xctest")
+        }
     }
 }

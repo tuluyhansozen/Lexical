@@ -39,13 +39,23 @@ struct PremiumOfferView: View {
             }
             .background(Color(hex: "F5F5F7").ignoresSafeArea())
             .navigationTitle("Premium")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close") {
                         dismiss()
                     }
                 }
+                #else
+                ToolbarItem {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+                #endif
             }
         }
         .task {

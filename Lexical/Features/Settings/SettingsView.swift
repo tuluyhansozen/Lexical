@@ -149,7 +149,7 @@ struct SettingsView: View {
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.adaptiveText)
-                .textInputAutocapitalization(.words)
+                .lexicalWordsAutocapitalization()
                 .accessibilityLabel("Display name")
                 .accessibilityHint("Used across profile and progress surfaces.")
             
@@ -445,6 +445,17 @@ struct SettingsView: View {
                 restorePurchasesMessage = "Restore failed: \(error.localizedDescription)"
             }
         }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func lexicalWordsAutocapitalization() -> some View {
+#if os(iOS)
+        textInputAutocapitalization(.words)
+#else
+        self
+#endif
     }
 }
 

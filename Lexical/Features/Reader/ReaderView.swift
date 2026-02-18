@@ -101,8 +101,11 @@ struct ReaderView: View {
                 }
             }
         }
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     // Settings or share
@@ -112,6 +115,17 @@ struct ReaderView: View {
                 .accessibilityLabel("Reading options")
                 .accessibilityHint("Adjusts reader options.")
             }
+            #else
+            ToolbarItem {
+                Button {
+                    // Settings or share
+                } label: {
+                    Image(systemName: "textformat.size")
+                }
+                .accessibilityLabel("Reading options")
+                .accessibilityHint("Adjusts reader options.")
+            }
+            #endif
         }
         .sheet(item: $infoData) { detail in
             WordDetailSheet(

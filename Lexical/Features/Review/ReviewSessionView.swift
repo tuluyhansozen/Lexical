@@ -120,6 +120,7 @@ struct SessionContent: View {
                                         .background(Color.red.opacity(0.12))
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                 }
+                                .disabled(manager.isSubmittingGrade)
                                 .accessibilityHint("Removes this word from your learning deck.")
                             }
 
@@ -129,6 +130,7 @@ struct SessionContent: View {
                                 GradeButton(title: "Good", color: .blue) { submit(3) }
                                 GradeButton(title: "Easy", color: .green) { submit(4) }
                             }
+                            .disabled(manager.isSubmittingGrade)
                         }
                         .padding(.bottom, 30)
                         .padding(.horizontal)
@@ -150,7 +152,9 @@ struct SessionContent: View {
             WordDetailSheet(data: detail)
                 .presentationDetents([.medium, .large])
         }
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
     
     private func submit(_ grade: Int) {
@@ -171,7 +175,7 @@ struct GradeButton: View {
             Text(title)
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(color)
+                .foregroundStyle(color)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(Material.regular)

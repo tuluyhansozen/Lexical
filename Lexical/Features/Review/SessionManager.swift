@@ -11,6 +11,7 @@ class SessionManager: ObservableObject {
     @Published var isSessionComplete: Bool = false
     @Published var hadDueCardsAtSessionStart: Bool = false
     @Published var initialQueueCount: Int = 0
+    @Published private(set) var isSubmittingGrade: Bool = false
 
     private let modelContext: ModelContext
     private let fsrsEngine: FSRSV4Engine
@@ -51,6 +52,7 @@ class SessionManager: ObservableObject {
 
             self.currentIndex = 0
             self.isSessionComplete = queue.isEmpty
+            self.isSubmittingGrade = false
             print("🧠 Session started with \(queue.count) items")
         } catch {
             print("SessionManager: failed to fetch session items: \(error)")
@@ -59,6 +61,7 @@ class SessionManager: ObservableObject {
             self.isSessionComplete = true
             self.hadDueCardsAtSessionStart = false
             self.initialQueueCount = 0
+            self.isSubmittingGrade = false
         }
     }
 
@@ -109,10 +112,13 @@ class SessionManager: ObservableObject {
     }
 
     func submitGrade(_ grade: Int) {
+        guard !isSubmittingGrade else { return }
         guard let card = currentCard else { return }
+        isSubmittingGrade = true
         let cardKey = card.lemma
 
         Task { @MainActor in
+            defer { isSubmittingGrade = false }
             if grade < 3 {
                 let projectedIntervalDays = await projectedIntervalDays(for: card, grade: grade)
                 do {

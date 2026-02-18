@@ -153,6 +153,78 @@ final class ArticleGeneratorQualityGateTests: XCTestCase {
         XCTAssertEqual(requestCount, 1)
     }
 
+    func testFallbackPathUsesCappedContent() async throws {
+        let originalContainer = Persistence.sharedModelContainer
+        defer { Persistence.sharedModelContainer = originalContainer }
+
+        let container = try makeInMemoryContainer()
+        Persistence.sharedModelContainer = container
+
+        let context = ModelContext(container)
+        let userId = "quality.fallback.cap.\(UUID().uuidString)"
+        context.insert(UserProfile(userId: userId))
+        try context.save()
+        let defaults = UserDefaults(suiteName: Persistence.appGroupIdentifier) ?? .standard
+        defaults.set(userId, forKey: activeUserDefaultsKey)
+
+        let response = """
+        {
+          "title": "Fallback Candidate",
+          "body_text": "\(Self.makeVeryLongBodyWithoutTargets(topic: "workflow strategy"))",
+          "target_words": ["insight"],
+          "glossary": []
+        }
+        """
+        let provider = SequencedLLMProvider(responses: Array(repeating: response, count: 3))
+        let generator = ArticleGenerator(store: ArticleStore(), llmProvider: provider)
+
+        let article = try await generator.generateArticle(
+            profile: InterestProfile(selectedTags: ["Technology"]),
+            targetWords: ["insight"]
+        )
+
+        let count = article.content.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
+        XCTAssertLessThanOrEqual(count, 440)
+        XCTAssertFalse(article.targetWords.contains("insight"))
+        let requestCount = await provider.callCount()
+        XCTAssertEqual(requestCount, 3)
+    }
+
+    func testTargetMatchingDoesNotUseRawSubstringContainment() async throws {
+        let originalContainer = Persistence.sharedModelContainer
+        defer { Persistence.sharedModelContainer = originalContainer }
+
+        let container = try makeInMemoryContainer()
+        Persistence.sharedModelContainer = container
+
+        let context = ModelContext(container)
+        let userId = "quality.substring.match.\(UUID().uuidString)"
+        context.insert(UserProfile(userId: userId))
+        try context.save()
+        let defaults = UserDefaults(suiteName: Persistence.appGroupIdentifier) ?? .standard
+        defaults.set(userId, forKey: activeUserDefaultsKey)
+
+        let response = """
+        {
+          "title": "Substring Matching Check",
+          "body_text": "\(Self.makeValidBody(topic: "article workflow habits"))",
+          "target_words": ["art"],
+          "glossary": []
+        }
+        """
+        let provider = SequencedLLMProvider(responses: Array(repeating: response, count: 3))
+        let generator = ArticleGenerator(store: ArticleStore(), llmProvider: provider)
+
+        let article = try await generator.generateArticle(
+            profile: InterestProfile(selectedTags: ["Technology"]),
+            targetWords: ["art"]
+        )
+
+        XCTAssertFalse(article.targetWords.contains("art"))
+        let requestCount = await provider.callCount()
+        XCTAssertEqual(requestCount, 3)
+    }
+
     private func makeInMemoryContainer() throws -> ModelContainer {
         let schema = Schema(LexicalSchemaV6.models)
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -175,6 +247,13 @@ final class ArticleGeneratorQualityGateTests: XCTestCase {
         In this reading about \(topic), insight guides workflow decisions while retrieval protects context under pressure. Each section compares one trade-off and one practice so the learner can explain a choice, defend an assumption, and apply the idea in a realistic weekly routine without drifting into vague advice.
         """
         return Array(repeating: paragraph, count: 16).joined(separator: "\\n\\n")
+    }
+
+    private static func makeVeryLongBodyWithoutTargets(topic: String) -> String {
+        let paragraph = """
+        This article explores \(topic) through practical routines, constraints, and decisions that intermediate learners can apply immediately. Each section compares options, explains trade-offs, and offers one concrete weekly action so the text stays useful under real time pressure. The discussion avoids hype and keeps examples grounded in common study situations where consistency matters more than intensity.
+        """
+        return Array(repeating: paragraph, count: 14).joined(separator: "\\n\\n")
     }
 }
 

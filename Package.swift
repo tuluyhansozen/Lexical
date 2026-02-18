@@ -4,7 +4,8 @@ import PackageDescription
 let package = Package(
     name: "Lexical",
     platforms: [
-        .iOS(.v17)
+        .iOS(.v17),
+        .macOS(.v14)
     ],
     products: [
         .executable(name: "Lexical", targets: ["Lexical"])
@@ -12,7 +13,10 @@ let package = Package(
     targets: [
         .target(
             name: "LexicalCore",
-            path: "LexicalCore"
+            path: "LexicalCore",
+            resources: [
+                .process("DesignSystem/LiquidGlassShader.metal")
+            ]
         ),
         .executableTarget(
             name: "Lexical",
@@ -22,13 +26,19 @@ let package = Package(
                 "Info.plist",
                 "PrivacyInfo.xcprivacy"
             ],
+            resources: [
+                .process("Resources/ArticleTemplateBank.json"),
+                .process("Resources/Seeds/seed_data.json"),
+                .process("Resources/Seeds/roots.json"),
+                .process("Resources/StoreKit/Lexical.storekit")
+            ],
             linkerSettings: [
                 .unsafeFlags([
                     "-Xlinker", "-sectcreate",
                     "-Xlinker", "__TEXT",
                     "-Xlinker", "__info_plist",
                     "-Xlinker", "Lexical/Info.plist"
-                ])
+                ], .when(platforms: [.iOS]))
             ]
         ),
         .executableTarget(
@@ -45,13 +55,18 @@ let package = Package(
                     "-Xlinker", "__TEXT",
                     "-Xlinker", "__info_plist",
                     "-Xlinker", "LexicalWidget/Info.plist"
-                ])
+                ], .when(platforms: [.iOS]))
             ]
         ),
         .testTarget(
             name: "LexicalCoreTests",
             dependencies: ["LexicalCore"],
             path: "LexicalCoreTests"
+        ),
+        .testTarget(
+            name: "LexicalTests",
+            dependencies: ["Lexical", "LexicalCore"],
+            path: "LexicalTests"
         )
     ]
 )

@@ -81,7 +81,9 @@ public final class BanditScheduler: NSObject, ObservableObject {
     @Published private(set) var successCounts: [String: Double]
     @Published private(set) var totalCounts: [String: Int]
 
+    #if os(iOS)
     private let motionActivityManager = CMMotionActivityManager()
+    #endif
     private var foregroundObserver: NSObjectProtocol?
     private let triageService = NotificationTriageService()
 
@@ -123,19 +125,11 @@ public final class BanditScheduler: NSObject, ObservableObject {
     }
 
     private func setupNotifications() {
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+        if isRunningTests {
             return
         }
 
         let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
-            if granted {
-                print("BanditScheduler: notifications authorized.")
-            } else {
-                print("BanditScheduler: notifications denied.")
-            }
-        }
-
         let reveal = UNNotificationAction(
             identifier: Self.actionRevealIdentifier,
             title: "Reveal",
@@ -158,6 +152,38 @@ public final class BanditScheduler: NSObject, ObservableObject {
             options: []
         )
         center.setNotificationCategories([category])
+    }
+
+    private var isRunningTests: Bool {
+        let environment = ProcessInfo.processInfo.environment
+        if environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil {
+            return true
+        }
+
+        return ProcessInfo.processInfo.arguments.contains { argument in
+            argument.localizedCaseInsensitiveContains("xctest")
+        }
+    }
+
+    public func requestNotificationAuthorization() async -> Bool {
+        do {
+            let granted = try await UNUserNotificationCenter.current().requestAuthorization(
+                options: [.alert, .sound, .badge]
+            )
+            print("BanditScheduler: notification authorization granted=\(granted)")
+            return granted
+        } catch {
+            print("BanditScheduler: notification authorization request failed: \(error)")
+            return false
+        }
+    }
+
+    public func notificationAuthorizationStatus() async -> UNAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                continuation.resume(returning: settings.authorizationStatus)
+            }
+        }
     }
 
     private func setupForegroundScheduling() {
@@ -193,6 +219,7 @@ public final class BanditScheduler: NSObject, ObservableObject {
         }
     }
 
+    #if os(iOS)
     private func checkInterruptibility(completion: @escaping (Bool) -> Void) {
         guard CMMotionActivityManager.isActivityAvailable() else {
             completion(true)
@@ -212,6 +239,11 @@ public final class BanditScheduler: NSObject, ObservableObject {
             completion(!(activity.running || activity.automotive))
         }
     }
+    #else
+    private func checkInterruptibility(completion: @escaping (Bool) -> Void) {
+        completion(true)
+    }
+    #endif
 
     private func performSchedule() {
         let ignoreStreak = UserDefaults.standard.integer(forKey: ignoreStreakKey)
@@ -341,7 +373,9 @@ public final class BanditScheduler: NSObject, ObservableObject {
             trigger: trigger
         )
 
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+        if isRunningTests {
+            UserDefaults.standard.set(Date(), forKey: "bandit_last_scheduled")
+        } else {
             UNUserNotificationCenter.current().add(request) { error in
                 if let error {
                     print("BanditScheduler: failed to schedule notification: \(error)")
@@ -349,8 +383,6 @@ public final class BanditScheduler: NSObject, ObservableObject {
                     UserDefaults.standard.set(Date(), forKey: "bandit_last_scheduled")
                 }
             }
-        } else {
-            UserDefaults.standard.set(Date(), forKey: "bandit_last_scheduled")
         }
 
         let key = makeKey(slot, template)
@@ -499,6 +531,9 @@ public final class BanditScheduler: NSObject, ObservableObject {
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1.0, repeats: false)
         )
+        if isRunningTests {
+            return
+        }
         UNUserNotificationCenter.current().add(request)
     }
 

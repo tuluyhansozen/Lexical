@@ -49,7 +49,7 @@ struct ContentView: View {
                     .padding()
                     .frame(maxWidth: 200)
                     .background(Color.sonPrimary)
-                    .cornerRadius(16)
+                    .clipShape(.rect(cornerRadius: 16))
                     .accessibilityHint("Starts a review session with due words.")
                     .accessibilityIdentifier("review.startSessionButton")
                     
@@ -67,9 +67,15 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.adaptiveBackground)
                 .tag(2)
+                #if os(iOS)
                 .fullScreenCover(isPresented: $showSession) {
                     ReviewSessionView()
                 }
+                #else
+                .sheet(isPresented: $showSession) {
+                    ReviewSessionView()
+                }
+                #endif
                 
                 StatsView()
                     .tag(3)
@@ -77,13 +83,16 @@ struct ContentView: View {
                 SettingsView()
                     .tag(4)
             }
+            #if os(iOS)
             .tabViewStyle(.page(indexDisplayMode: .never)) // We build our own custom tab bar logic if needed, or use standard
+            #endif
             .ignoresSafeArea()
             
             // Custom Tab Bar Overlay (matches design: "Feed", "Search", "Practice", "Stats", "Settings")
             CustomTabBar(selectedTab: $selectedTab)
         }
         .preferredColorScheme(darkModeEnabled ? .dark : .light)
+        #if os(iOS)
         .fullScreenCover(item: $promptRoute) { route in
             NavigationStack {
                 SingleCardPromptView(
@@ -100,6 +109,24 @@ struct ContentView: View {
                 }
             }
         }
+        #else
+        .sheet(item: $promptRoute) { route in
+            NavigationStack {
+                SingleCardPromptView(
+                    lemma: route.lemma,
+                    presetDefinition: route.definition
+                )
+                .toolbar {
+                    ToolbarItem {
+                        Button("Close") {
+                            promptRoute = nil
+                        }
+                        .accessibilityIdentifier("prompt.closeButton")
+                    }
+                }
+            }
+        }
+        #endif
 #if DEBUG
         .overlay(alignment: .topTrailing) {
             if ProcessInfo.processInfo.arguments.contains("--lexical-debug-seed-overlay") {

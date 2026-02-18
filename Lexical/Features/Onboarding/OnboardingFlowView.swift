@@ -45,7 +45,7 @@ struct OnboardingFlowView: View {
                     notificationsStep.tag(OnboardingStep.notifications.rawValue)
                     completionStep.tag(OnboardingStep.completion.rawValue)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                .modifier(OnboardingPagerStyle())
                 .animation(.easeInOut(duration: 0.2), value: selectedStep)
 
                 bottomControls
@@ -54,17 +54,29 @@ struct OnboardingFlowView: View {
         .interactiveDismissDisabled(true)
         .onAppear {
             ensureInterestProfileExists()
-            selectedStep = clampedStepIndex(persistedStep)
+            selectedStep = normalizedOnboardingStep(persistedStep)
             selectedInterests = Set(interestProfiles.first?.selectedTags ?? [])
             if ArticleStylePreference(rawValue: articleStylePreferenceRaw) == nil {
                 articleStylePreferenceRaw = ArticleStylePreference.balanced.rawValue
             }
             normalizeUserName()
             prepareCalibrationQuestionsIfNeeded()
+            selectedStep = normalizedOnboardingStep(selectedStep)
             Task { await refreshNotificationStatus() }
         }
         .onChange(of: selectedStep) { _, newValue in
-            persistedStep = clampedStepIndex(newValue)
+            let normalized = normalizedOnboardingStep(newValue)
+            if normalized != newValue {
+                selectedStep = normalized
+                return
+            }
+            persistedStep = normalized
+        }
+        .onChange(of: hasCompletedCalibration) { _, _ in
+            let normalized = normalizedOnboardingStep(selectedStep)
+            if normalized != selectedStep {
+                selectedStep = normalized
+            }
         }
     }
 
@@ -77,7 +89,7 @@ struct OnboardingFlowView: View {
 
             Spacer()
 
-            if selectedStep < OnboardingStep.completion.rawValue {
+            if canShowSkip {
                 Button("Skip") {
                     selectedStep = OnboardingStep.completion.rawValue
                 }
@@ -166,7 +178,7 @@ struct OnboardingFlowView: View {
                         .foregroundStyle(Color(hex: "4A5565"))
 
                     TextField("Learner", text: $userName)
-                        .textInputAutocapitalization(.words)
+                        .lexicalWordsAutocapitalization()
                         .padding(.horizontal, 14)
                         .frame(height: 44)
                         .background(Color.white)
@@ -402,7 +414,7 @@ struct OnboardingFlowView: View {
 
                 HStack(spacing: 10) {
                     TextField("Add custom interest", text: $customInterest)
-                        .textInputAutocapitalization(.words)
+                        .lexicalWordsAutocapitalization()
                         .padding(.horizontal, 12)
                         .frame(height: 40)
                         .background(Color.white)
@@ -654,6 +666,20 @@ struct OnboardingFlowView: View {
         return "\(persistedCalibrationRank)"
     }
 
+    private var hasCompletedCalibration: Bool {
+        persistedCalibrationRank > 0 ||
+        (calibrationQuestions.count == 10 && calibrationAnswers.count == calibrationQuestions.count)
+    }
+
+    private var canShowSkip: Bool {
+        OnboardingProgressGate.canSkip(
+            selectedStep: selectedStep,
+            completionStep: OnboardingStep.completion.rawValue,
+            calibrationStep: OnboardingStep.rankCalibration.rawValue,
+            hasCompletedCalibration: hasCompletedCalibration
+        )
+    }
+
     private var selectedArticleStyle: ArticleStylePreference {
         ArticleStylePreference(rawValue: articleStylePreferenceRaw) ?? .balanced
     }
@@ -827,6 +853,16 @@ struct OnboardingFlowView: View {
         return min(max(raw, 0), maxIndex)
     }
 
+    private func normalizedOnboardingStep(_ raw: Int) -> Int {
+        let clamped = clampedStepIndex(raw)
+        return OnboardingProgressGate.normalizeSelectedStep(
+            clamped,
+            completionStep: OnboardingStep.completion.rawValue,
+            calibrationStep: OnboardingStep.rankCalibration.rawValue,
+            hasCompletedCalibration: hasCompletedCalibration
+        )
+    }
+
     private func advanceOrComplete() {
         persistCurrentStepState()
         if selectedStep >= OnboardingStep.completion.rawValue {
@@ -902,6 +938,56 @@ private enum OnboardingStep: Int, CaseIterable {
     case readingPrimer
     case notifications
     case completion
+}
+
+enum OnboardingProgressGate {
+    static func normalizeSelectedStep(
+        _ selectedStep: Int,
+        completionStep: Int,
+        calibrationStep: Int,
+        hasCompletedCalibration: Bool
+    ) -> Int {
+        let guardrailStep = min(max(0, calibrationStep), completionStep)
+        guard !hasCompletedCalibration, selectedStep > guardrailStep else { return selectedStep }
+        return guardrailStep
+    }
+
+    static func canSkip(
+        selectedStep: Int,
+        completionStep: Int,
+        calibrationStep: Int,
+        hasCompletedCalibration: Bool
+    ) -> Bool {
+        guard hasCompletedCalibration else { return false }
+        let normalizedStep = normalizeSelectedStep(
+            selectedStep,
+            completionStep: completionStep,
+            calibrationStep: calibrationStep,
+            hasCompletedCalibration: hasCompletedCalibration
+        )
+        return normalizedStep < completionStep
+    }
+}
+
+private struct OnboardingPagerStyle: ViewModifier {
+    func body(content: Content) -> some View {
+#if os(iOS)
+        content.tabViewStyle(.page(indexDisplayMode: .never))
+#else
+        content
+#endif
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func lexicalWordsAutocapitalization() -> some View {
+#if os(iOS)
+        textInputAutocapitalization(.words)
+#else
+        self
+#endif
+    }
 }
 
 private struct ForgettingCurvePreview: View {

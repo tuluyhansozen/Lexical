@@ -46,6 +46,7 @@ OUTPUT_FILE = Path("Lexical/Resources/vocab_seed.json")
 TARGET_SIZE = 8000
 KAIKKI_FILE = DATA_DIR / "kaikki_english.jsonl.gz"
 GOOGLE_10K_FILE = DATA_DIR / "google_10k.txt"
+NORVIG_1W_CANDIDATES = [Path("count_1w.txt"), DATA_DIR / "count_1w.txt"]
 OXFORD_3000_FILE = DATA_DIR / "oxford_3000.csv"
 OXFORD_5000_FILE = DATA_DIR / "oxford_5000.csv"
 TATOEBA_FILE = DATA_DIR / "sentences_detailed.tar.bz2"
@@ -446,19 +447,33 @@ def inject_context_tatoeba(entries: list[VocabularyEntry]):
 
 
 def load_frequency_ranking() -> dict[str, int]:
-    """Load word frequency ranking from Google 10K."""
-    if not GOOGLE_10K_FILE.exists():
-        print(f"   ⚠️ {GOOGLE_10K_FILE} not found!")
-        return {}
-    
+    """Load word frequency ranking, preferring Norvig 1w."""
+    norvig_path = next((path for path in NORVIG_1W_CANDIDATES if path.exists()), None)
     ranking = {}
-    with open(GOOGLE_10K_FILE, 'r') as f:
+
+    if norvig_path is not None:
+        with open(norvig_path, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) < 2:
+                    continue
+                word = parts[0].lower()
+                if len(word) > 1 and word not in ranking:
+                    ranking[word] = len(ranking) + 1
+        print(f"   Loaded {len(ranking)} words from Norvig 1w ({norvig_path})")
+        return ranking
+
+    if not GOOGLE_10K_FILE.exists():
+        print(f"   ⚠️ No frequency source found. Missing {GOOGLE_10K_FILE}")
+        return {}
+
+    with open(GOOGLE_10K_FILE, "r", encoding="utf-8") as f:
         for rank, line in enumerate(f, 1):
             word = line.strip().lower()
             if len(word) > 1 and word.isalpha() and word not in ranking:
                 ranking[word] = rank
-    
-    print(f"   Loaded {len(ranking)} words with frequency rankings")
+
+    print(f"   Loaded {len(ranking)} words from Google 10K ({GOOGLE_10K_FILE})")
     return ranking
 
 

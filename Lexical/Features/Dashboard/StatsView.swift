@@ -63,7 +63,7 @@ struct StatsView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        ScrollView(.horizontal, showsIndicators: false) {
+                        ScrollView(.horizontal) {
                             HStack(spacing: 10) {
                                 ForEach(StatsPeriod.allCases, id: \.rawValue) { period in
                                     let isUnlocked = availablePeriods.contains(period)
@@ -84,6 +84,7 @@ struct StatsView: View {
                             .padding(.horizontal, 20)
                             .padding(.vertical, 4)
                         }
+                        .scrollIndicators(.hidden)
 
                         if !isPremiumTier {
                             premiumUpsellBanner
@@ -103,7 +104,7 @@ struct StatsView: View {
                             )
                             StatCard(
                                 title: "RETENTION",
-                                value: String(format: "%.0f%%", retentionRate * 100),
+                                value: "\(Int((retentionRate * 100).rounded()))%",
                                 subtitle: selectedPeriod.shortLabel,
                                 subtitleColor: .green
                             )
@@ -401,7 +402,7 @@ struct HeatmapGrid: View {
     private let rows = Array(repeating: GridItem(.fixed(12), spacing: 4), count: 7)
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal) {
             LazyHGrid(rows: rows, spacing: 4) {
                 ForEach(points) { point in
                     RoundedRectangle(cornerRadius: 2)
@@ -416,6 +417,7 @@ struct HeatmapGrid: View {
                 }
             }
         }
+        .scrollIndicators(.hidden)
     }
 
     private func color(for count: Int) -> Color {

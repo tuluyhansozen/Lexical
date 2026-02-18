@@ -69,6 +69,7 @@ struct ArticleCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color.cardShadow, radius: 4, x: 0, y: 4)
         .accessibilityElement(children: .contain)
+        #if os(iOS)
         .fullScreenCover(isPresented: $showReader) {
             NavigationStack {
                 ReaderView(
@@ -87,6 +88,25 @@ struct ArticleCardView: View {
                     }
             }
         }
+        #else
+        .sheet(isPresented: $showReader) {
+            NavigationStack {
+                ReaderView(
+                    title: article.title,
+                    content: article.content,
+                    focusLemmas: article.targetWords
+                )
+                    .toolbar {
+                        ToolbarItem {
+                            Button("Close") {
+                                showReader = false
+                            }
+                            .accessibilityLabel("Close reader")
+                        }
+                    }
+            }
+        }
+        #endif
     }
 
     private var highlightedExcerpt: AttributedString {

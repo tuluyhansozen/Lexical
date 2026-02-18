@@ -27,19 +27,22 @@ struct ExploreView: View {
     }
 
     var body: some View {
-        ZStack {
-            Color(hex: "F5F5F7").ignoresSafeArea()
+        GeometryReader { geometry in
+            let layoutWidth = geometry.size.width
+            ZStack {
+                Color(hex: "F5F5F7").ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                headerView
-                matrixView
+                VStack(spacing: 0) {
+                    headerView(layoutWidth: layoutWidth)
+                    matrixView
+                }
             }
         }
         .safeAreaPadding(.bottom, 92)
         .onAppear(perform: buildMatrix)
         .onChange(of: roots.count) { buildMatrix() }
         .onChange(of: lexemes.count) { buildMatrix() }
-        .onChange(of: userStates.count) { buildMatrix() }
+        .onChange(of: userStatesRevisionKey) { buildMatrix() }
         .sheet(item: $infoData) { detail in
             WordDetailSheet(
                 data: detail,
@@ -54,20 +57,21 @@ struct ExploreView: View {
         }
     }
 
-    private var headerView: some View {
-        HStack(spacing: 0) {
+    private func headerView(layoutWidth: CGFloat) -> some View {
+        let scale = headerScale(for: layoutWidth)
+        return HStack(spacing: 0) {
             Text("Word Matrix")
-                .font(.system(size: titleFontSize, weight: .bold))
-                .kerning(0.3955 * headerScale)
+                .font(.system(size: titleFontSize(for: layoutWidth), weight: .bold))
+                .kerning(0.3955 * scale)
                 .foregroundStyle(Color(hex: "0A0A0A"))
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
-                .frame(width: 236 * headerScale, alignment: .leading)
+                .frame(width: 236 * scale, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 0)
         }
-        .frame(height: 67 * headerScale)
-        .padding(.horizontal, 18 * headerScale)
+        .frame(height: 67 * scale)
+        .padding(.horizontal, 18 * scale)
     }
 
     private var matrixView: some View {
@@ -170,27 +174,31 @@ struct ExploreView: View {
         )
     }
 
-    private var titleFontSize: CGFloat {
-#if canImport(UIKit)
-        let scale = UIScreen.main.bounds.width / 272.0
+    private func titleFontSize(for layoutWidth: CGFloat) -> CGFloat {
+        let scale = layoutWidth / 272.0
         return (25 * scale).clamped(to: 30...39)
-#else
-        return 25
-#endif
     }
 
-    private var headerScale: CGFloat {
-#if canImport(UIKit)
-        let scale = UIScreen.main.bounds.width / 272.0
+    private func headerScale(for layoutWidth: CGFloat) -> CGFloat {
+        let scale = layoutWidth / 272.0
         return scale.clamped(to: 1.05...1.55)
-#else
-        return 1
-#endif
     }
 
     private func matrixScale(for size: CGSize) -> CGFloat {
         let scale = size.width / 272.0
         return scale.clamped(to: 1.0...1.55)
+    }
+
+    private var userStatesRevisionKey: Int {
+        var hasher = Hasher()
+        for state in userStates {
+            hasher.combine(state.userLemmaKey)
+            hasher.combine(state.statusRawValue)
+            hasher.combine(state.reviewCount)
+            hasher.combine(state.stateUpdatedAt.timeIntervalSinceReferenceDate)
+            hasher.combine(state.nextReviewDate?.timeIntervalSinceReferenceDate ?? -1)
+        }
+        return hasher.finalize()
     }
 
     private func buildMatrix() {
