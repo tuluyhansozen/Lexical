@@ -32,6 +32,7 @@ struct SessionContent: View {
     @Environment(\.dismiss) var dismiss
     @State private var isFlipped = false
     @State private var infoData: WordDetailData?
+    @State private var showingPremiumOffer = false
     
     var body: some View {
         ZStack {
@@ -41,29 +42,71 @@ struct SessionContent: View {
             
             if manager.isSessionComplete {
                 VStack(spacing: 24) {
-                    Image(systemName: manager.hadDueCardsAtSessionStart ? "checkmark.seal.fill" : "clock.badge.exclamationmark")
+                    Image(systemName: completionIconName)
                         .font(.system(size: 80))
                         .foregroundStyle(Color.sonPrimary)
                     
-                    Text(manager.hadDueCardsAtSessionStart ? "Session Complete!" : "No Cards Due")
+                    Text(completionTitle)
                         .font(.display(.largeTitle, weight: .bold))
                         .foregroundStyle(Color.adaptiveText)
                         .accessibilityAddTraits(.isHeader)
                     
-                    Text(manager.hadDueCardsAtSessionStart ? "You've reviewed all due words." : "Your due queue is empty right now. Come back later or read a new article.")
+                    Text(completionMessage)
                         .font(.bodyText)
                         .foregroundStyle(Color.adaptiveTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
-                    
-                    Button(manager.hadDueCardsAtSessionStart ? "Home" : "Go to Reading") {
-                        dismiss()
+
+                    if isNoDueState {
+                        VStack(spacing: 12) {
+                            if manager.isPremiumUser {
+                                Button("Practice Now") {
+                                    withAnimation(.spring()) {
+                                        manager.startFallbackPracticeSession()
+                                    }
+                                }
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.sonPrimary)
+                                .clipShape(Capsule())
+                                .disabled(!manager.canStartFallbackPractice)
+                                .opacity(manager.canStartFallbackPractice ? 1.0 : 0.5)
+                            } else {
+                                Button("Upgrade to Premium") {
+                                    showingPremiumOffer = true
+                                }
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.sonPrimary)
+                                .clipShape(Capsule())
+                                .accessibilityHint("Unlocks fallback practice when no cards are due.")
+                            }
+
+                            Button("Go to Reading") {
+                                dismiss()
+                            }
+                            .font(.headline)
+                            .foregroundStyle(Color.sonPrimary)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.sonPrimary.opacity(0.12))
+                            .clipShape(Capsule())
+                        }
+                        .padding(.horizontal, 24)
+                    } else {
+                        Button(completionPrimaryActionTitle) {
+                            dismiss()
+                        }
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .background(Color.sonPrimary)
+                        .clipShape(Capsule())
                     }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding()
-                    .background(Color.sonPrimary)
-                    .clipShape(Capsule())
                 }
             } else if let card = manager.currentCard {
                 VStack {
@@ -152,6 +195,16 @@ struct SessionContent: View {
             WordDetailSheet(data: detail)
                 .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showingPremiumOffer, onDismiss: {
+            manager.startSession(mode: .dueOnly)
+        }) {
+            PremiumOfferView(
+                productIDs: SubscriptionEntitlementService.configuredProductIDs(),
+                onEntitlementChanged: {
+                    manager.startSession(mode: .dueOnly)
+                }
+            )
+        }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -162,6 +215,53 @@ struct SessionContent: View {
             manager.submitGrade(grade)
             isFlipped = false // Reset for next card
         }
+    }
+
+    private var isNoDueState: Bool {
+        manager.sessionMode == .dueOnly && !manager.hadDueCardsAtSessionStart
+    }
+
+    private var isFallbackMode: Bool {
+        manager.sessionMode == .fallbackPractice
+    }
+
+    private var fallbackHasCompletedCards: Bool {
+        isFallbackMode && manager.initialQueueCount > 0
+    }
+
+    private var completionIconName: String {
+        if fallbackHasCompletedCards || manager.hadDueCardsAtSessionStart {
+            return "checkmark.seal.fill"
+        }
+        if isFallbackMode {
+            return "sparkles"
+        }
+        return "clock.badge.exclamationmark"
+    }
+
+    private var completionTitle: String {
+        if isFallbackMode {
+            return fallbackHasCompletedCards ? "Practice Complete!" : "No Practice Cards"
+        }
+        return manager.hadDueCardsAtSessionStart ? "Session Complete!" : "No Cards Due"
+    }
+
+    private var completionMessage: String {
+        if isFallbackMode {
+            return fallbackHasCompletedCards
+                ? "You've finished your extra practice set."
+                : "No practice cards are available right now. Capture more words from Reading."
+        }
+        return manager.hadDueCardsAtSessionStart
+            ? "You've reviewed all due words."
+            : "Your due queue is empty right now. Come back later or read a new article."
+    }
+
+    private var completionPrimaryActionTitle: String {
+        if isFallbackMode {
+            return "Go to Reading"
+        }
+        return "Home"
     }
 }
 

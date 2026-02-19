@@ -3,14 +3,24 @@ import SwiftData
 import SwiftUI
 import LexicalCore
 
+enum ReviewSessionMode: Equatable {
+    case dueOnly
+    case fallbackPractice
+}
+
 /// Manages the active review session queue and Brain Boost logic.
 @MainActor
 class SessionManager: ObservableObject {
+    private static let fallbackPracticeLimit = 10
+
     @Published var queue: [ReviewCard] = []
     @Published var currentIndex: Int = 0
     @Published var isSessionComplete: Bool = false
     @Published var hadDueCardsAtSessionStart: Bool = false
     @Published var initialQueueCount: Int = 0
+    @Published var sessionMode: ReviewSessionMode = .dueOnly
+    @Published var canStartFallbackPractice: Bool = false
+    @Published var isPremiumUser: Bool = false
     @Published private(set) var isSubmittingGrade: Bool = false
 
     private let modelContext: ModelContext
@@ -36,24 +46,54 @@ class SessionManager: ObservableObject {
         self.reviewCoordinator = ReviewWriteCoordinator()
     }
 
-    /// Start a new session with due cards.
-    func startSession() {
+    /// Start a new session in due-only or fallback-practice mode.
+    func startSession(mode: ReviewSessionMode = .dueOnly) {
         do {
             let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+            let activeTier = featureGateService.activeTier(modelContext: modelContext)
+            let isPremiumTier = activeTier == .premium
+            isPremiumUser = isPremiumTier
             requestRetentionTarget = featureGateService.fsrsRequestRetention(for: activeProfile)
             sessionFSRSWeights = try? fsrsPersonalizationService.personalizedWeights(
                 for: activeProfile,
                 modelContext: modelContext
             )
-            let dueCards = try dueCardsFromUserState(userId: activeProfile.userId)
-            self.queue = dueCards
-            self.hadDueCardsAtSessionStart = !dueCards.isEmpty
-            self.initialQueueCount = dueCards.count
+            let selectedCards: [ReviewCard]
+            switch mode {
+            case .dueOnly:
+                let dueCards = try dueCardsFromUserState(userId: activeProfile.userId)
+                selectedCards = dueCards
+                hadDueCardsAtSessionStart = !dueCards.isEmpty
+                if dueCards.isEmpty, isPremiumTier {
+                    canStartFallbackPractice = !(try fallbackPracticeCardsFromUserState(
+                        userId: activeProfile.userId,
+                        limit: 1
+                    )).isEmpty
+                } else {
+                    canStartFallbackPractice = false
+                }
+            case .fallbackPractice:
+                if isPremiumTier {
+                    selectedCards = try fallbackPracticeCardsFromUserState(
+                        userId: activeProfile.userId,
+                        limit: Self.fallbackPracticeLimit
+                    )
+                } else {
+                    selectedCards = []
+                }
+                hadDueCardsAtSessionStart = false
+                canStartFallbackPractice = false
+            }
+
+            sessionMode = mode
+            queue = selectedCards
+            initialQueueCount = selectedCards.count
+            sessionStreaks = [:]
 
             self.currentIndex = 0
             self.isSessionComplete = queue.isEmpty
             self.isSubmittingGrade = false
-            print("🧠 Session started with \(queue.count) items")
+            print("🧠 Session started (\(mode)) with \(queue.count) items")
         } catch {
             print("SessionManager: failed to fetch session items: \(error)")
             self.queue = []
@@ -61,8 +101,19 @@ class SessionManager: ObservableObject {
             self.isSessionComplete = true
             self.hadDueCardsAtSessionStart = false
             self.initialQueueCount = 0
+            self.sessionMode = mode
+            self.canStartFallbackPractice = false
+            self.isPremiumUser = false
+            self.sessionStreaks = [:]
             self.isSubmittingGrade = false
         }
+    }
+
+    func startFallbackPracticeSession() {
+        guard featureGateService.activeTier(modelContext: modelContext) == .premium else {
+            return
+        }
+        startSession(mode: .fallbackPractice)
     }
 
     /// Current active card.
@@ -119,6 +170,15 @@ class SessionManager: ObservableObject {
 
         Task { @MainActor in
             defer { isSubmittingGrade = false }
+            if sessionMode == .fallbackPractice {
+                await submitFallbackPracticeGrade(
+                    grade,
+                    card: card,
+                    cardKey: cardKey
+                )
+                return
+            }
+
             if grade < 3 {
                 let projectedIntervalDays = await projectedIntervalDays(for: card, grade: grade)
                 do {
@@ -190,6 +250,104 @@ class SessionManager: ObservableObject {
                 }
             }
         }
+    }
+
+    private func sortedFallbackStates(
+        _ states: [UserWordState]
+    ) -> [UserWordState] {
+        states.sorted { lhs, rhs in
+            let lhsDate = lhs.nextReviewDate ?? Date.distantFuture
+            let rhsDate = rhs.nextReviewDate ?? Date.distantFuture
+            if lhsDate != rhsDate { return lhsDate < rhsDate }
+            if lhs.stability != rhs.stability { return lhs.stability < rhs.stability }
+            return lhs.lemma < rhs.lemma
+        }
+    }
+
+    private func fallbackPracticeCardsFromUserState(
+        userId: String,
+        limit: Int = 10
+    ) throws -> [ReviewCard] {
+        guard limit > 0 else { return [] }
+        let now = Date()
+        let allStates = try modelContext.fetch(FetchDescriptor<UserWordState>())
+        let primaryStates = allStates.filter { state in
+            state.userId == userId &&
+            state.status != .ignored &&
+            (state.status == .learning || state.status == .new) &&
+            (state.nextReviewDate ?? Date.distantFuture) > now
+        }
+
+        let chosenStates: [UserWordState]
+        if primaryStates.isEmpty {
+            chosenStates = knownBackupCardsFromUserState(
+                allStates: allStates,
+                userId: userId
+            )
+        } else {
+            chosenStates = sortedFallbackStates(primaryStates)
+        }
+
+        guard !chosenStates.isEmpty else { return [] }
+
+        let lexemeByLemma = try fetchLexemeMap()
+        return chosenStates.prefix(limit).map { state in
+            makeCard(from: state, lexemeByLemma: lexemeByLemma)
+        }
+    }
+
+    private func knownBackupCardsFromUserState(
+        allStates: [UserWordState],
+        userId: String
+    ) -> [UserWordState] {
+        let now = Date()
+        let knownStates = allStates.filter { state in
+            state.userId == userId &&
+            state.status == .known &&
+            (state.nextReviewDate ?? Date.distantFuture) > now
+        }
+        return sortedFallbackStates(knownStates)
+    }
+
+    private func submitFallbackPracticeGrade(
+        _ grade: Int,
+        card: ReviewCard,
+        cardKey: String
+    ) async {
+        if grade < 3 {
+            let projectedIntervalDays = await projectedIntervalDays(for: card, grade: grade)
+            do {
+                try reviewCoordinator.recordSessionAttempt(
+                    grade: grade,
+                    lemma: card.lemma,
+                    durationMs: 0,
+                    scheduledDays: projectedIntervalDays,
+                    modelContext: modelContext
+                )
+                print("📝 Logged fallback practice review for '\(card.lemma)': Grade \(grade)")
+            } catch {
+                print("SessionManager: failed to log fallback practice attempt: \(error)")
+            }
+
+            sessionStreaks[cardKey] = 0
+            reinsertCurrentCard(offset: 3)
+            return
+        }
+
+        if grade == 3 {
+            let currentStreak = (sessionStreaks[cardKey] ?? 0) + 1
+            sessionStreaks[cardKey] = currentStreak
+
+            if currentStreak < 2 {
+                reinsertCurrentCard(offset: 5)
+                return
+            }
+
+            advanceQueue()
+            return
+        }
+
+        advanceQueue()
     }
 
     /// Move the current card to a later position in the session (Brain Boost).
