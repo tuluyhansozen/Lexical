@@ -1,7 +1,7 @@
 # Lexical App: Project Implementation Plan
 
 > **Generated:** 2026-01-31
-> **Last Updated:** 2026-02-16
+> **Last Updated:** 2026-02-19
 > **Status:** Core Features Complete | Strategic Requirements Merged | Phase 8 Complete | Phase 9 Complete | Phase 10 Complete | Audit Remediation Complete | Monetization Complete | UI Refinement Phase Active | Content Diversity Phase Active | Release Prep Active
 
 ---
@@ -558,6 +558,31 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 
 ---
 
+## Phase 12: Sentence Dataset Quality Refactor (Technical Debt)
+
+**Status:** 🟡 Planned (deferred technical debt; current dataset run accepted for delivery speed)
+
+### Section 1: Objective
+Refactor sentence generation/evaluation quality so contextual examples are natural, sense-faithful, and pedagogically strong while preserving deterministic validation and resume-safe processing.
+
+### Section 2: Key Activities
+- **12.1 Quality Rubric Upgrade:** Replace simplistic heuristic acceptance with stronger semantic checks (definition alignment, fixed-expression mismatch detection, collocation plausibility, register/naturalness).
+- **12.2 POS/Sense Conditioning:** Add tighter POS/sense conditioning so generated sentences avoid malformed lemma usage (especially adjective/noun ambiguity and verb-form errors).
+- **12.3 Generation Strategy Split:** Keep turbo deterministic for throughput, but add a higher-quality generation path for low-confidence lemmas with bounded review budget.
+- **12.4 QA Sampling Hardening:** Move from single-pass random checks to stratified QA samples by POS, CEFR, and definition ambiguity; add targeted re-rewrite loops.
+- **12.5 Prompt/Template Refresh:** Replace repetitive business-centric templates with broader scenario banks (daily life, abstract reasoning, interpersonal, institutional) and stronger syntax variety controls.
+- **12.6 Scoring Telemetry:** Persist per-item quality signals (rewrite reason categories, QA failures, post-fix outcomes) for phase-level regression tracking.
+- **12.7 Acceptance Gate:** Define release gate using sampled human review + automated metrics (naturalness, sense precision, diversity compliance) before canonical dataset promotion.
+
+### Section 3: Deliverables
+- [ ] `improve_sentences_inplace.py` quality engine v2 (sense-aware evaluator + confidence routing)
+- [ ] Expanded deterministic template bank with POS-safe variants and diversified topic domains
+- [ ] Stratified QA module + report artifact (`docs/word_db_quality_report.md` extension)
+- [ ] Regression tests for known weak lemmas and malformed generated patterns
+- [ ] Phase exit audit: quality benchmark report and failure taxonomy summary
+
+---
+
 ## Implementation Priority
 
 | Phase | Priority | Estimated Effort | Key Focus |
@@ -570,6 +595,7 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 | Phase 10D | ✅ Complete | - | Topic/angle planning, novelty memory, and article quality diversity enforcement |
 | Phase 10E | ✅ Complete | - | Post-audit safety, correctness, and performance hardening shipped |
 | Phase 11 | 🔴 Critical (Active) | 1 week | Onboarding hardening + compliance/release packaging after UI + monetization baselines |
+| Phase 12 | 🟡 High (Technical Debt) | 1-2 weeks | Sentence dataset quality refactor (naturalness, sense alignment, QA rigor) |
 
 ---
 
@@ -588,4 +614,5 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 ## Next Steps
 1. Complete Phase 11 release packaging: App Store metadata, required screenshot matrix, and TestFlight distribution checklist.
 2. Run full simulator + device validation sweep for monetization and onboarding before TestFlight submission.
-3. Resolve existing non-Phase-10B compiler warnings (`MotionService`, `RankPromotionEngine`, `FSRSV4Engine`) before release branch cut.
+3. Execute Phase 12 technical-debt refactor for sentence quality before the next seed refresh cycle.
+4. Resolve existing non-Phase-10B compiler warnings (`MotionService`, `RankPromotionEngine`, `FSRSV4Engine`) before release branch cut.
