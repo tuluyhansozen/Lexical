@@ -68,14 +68,14 @@ struct ExploreView: View {
 
         return VStack(alignment: .leading, spacing: 6 * scale) {
             Text(figmaSpec.titleText)
-                .font(.system(size: 32 * scale, weight: .semibold))
-                .kerning(0.3955 * scale)
+                .font(.system(size: figmaSpec.titleFontSize * scale, weight: .semibold))
+                .kerning(figmaSpec.titleKerning * scale)
                 .foregroundStyle(titleColor)
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
             Text(figmaSpec.subtitleText)
-                .font(.system(size: 16 * scale, weight: .light))
+                .font(.system(size: figmaSpec.subtitleFontSize * scale, weight: .light))
                 .foregroundStyle(subtitleColor)
                 .minimumScaleFactor(0.85)
                 .lineLimit(1)
@@ -117,12 +117,11 @@ struct ExploreView: View {
             if node.role == .root {
                 VStack(spacing: 2 * figmaScale) {
                     Text(node.label.lowercased())
-                        .font(.system(size: 31 * figmaScale, weight: .bold))
-                        .tracking(0.2 * figmaScale)
+                        .font(.system(size: figmaSpec.rootPrimaryFontSize * figmaScale, weight: .bold))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.35)
+                        .minimumScaleFactor(0.72)
                     Text("root")
-                        .font(.system(size: 18 * figmaScale, weight: .regular))
+                        .font(.system(size: figmaSpec.rootSecondaryFontSize * figmaScale, weight: .regular))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
@@ -131,11 +130,11 @@ struct ExploreView: View {
             } else {
                 VStack(spacing: 2) {
                     Text(node.label)
-                        .font(.system(size: 10 * figmaScale, weight: .regular))
+                        .font(.system(size: figmaSpec.leafFontSize * figmaScale, weight: .regular))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.56)
+                        .minimumScaleFactor(0.7)
                         .padding(.horizontal, 4)
                 }
                 .overlay(
@@ -384,6 +383,12 @@ struct ExploreFigmaSpec {
 
     let titleText = "Explore"
     let subtitleText = "Daily word families for you"
+    let titleFontSize: CGFloat = 32
+    let subtitleFontSize: CGFloat = 16
+    let titleKerning: CGFloat = 0.3955
+    let rootPrimaryFontSize: CGFloat = 16
+    let rootSecondaryFontSize: CGFloat = 10
+    let leafFontSize: CGFloat = 9
     let lightBackgroundHex = "F5F5F7"
     let darkBackgroundHex = "121417"
     let titleLightHex = "0A0A0A"

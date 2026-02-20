@@ -2,6 +2,16 @@ import XCTest
 @testable import Lexical
 
 final class ExploreFigmaSpecTests: XCTestCase {
+    func testTypographyMatchesFigmaValues() {
+        let spec = ExploreFigmaSpec()
+
+        XCTAssertEqual(spec.titleFontSize, 32, accuracy: 0.001)
+        XCTAssertEqual(spec.subtitleFontSize, 16, accuracy: 0.001)
+        XCTAssertEqual(spec.rootPrimaryFontSize, 16, accuracy: 0.001)
+        XCTAssertEqual(spec.rootSecondaryFontSize, 10, accuracy: 0.001)
+        XCTAssertEqual(spec.leafFontSize, 9, accuracy: 0.001)
+    }
+
     func testHeaderAndStyleConstantsMatchFigmaIntent() {
         let spec = ExploreFigmaSpec()
 
