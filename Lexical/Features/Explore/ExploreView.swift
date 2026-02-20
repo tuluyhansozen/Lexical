@@ -126,7 +126,6 @@ struct ExploreView: View {
                         .minimumScaleFactor(0.7)
                 }
                 .foregroundStyle(.white)
-                .shadow(color: .white.opacity(0.20), radius: 8, x: 0, y: 0)
             } else {
                 VStack(spacing: 2) {
                     Text(node.label)

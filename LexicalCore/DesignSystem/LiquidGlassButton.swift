@@ -1,5 +1,22 @@
 import SwiftUI
 
+struct LiquidGlassFigmaTokens {
+    static let rootBackdropBlur: CGFloat = 12
+    static let rootBaseHex = "7B0002"
+    static let rootBurnOpacity: Double = 0.57
+    static let rootGradientStartLocation: CGFloat = 0.5
+    static let rootGradientEndOpacity: Double = 0.4
+
+    static let leafColorBurnRed: Double = 2.0 / 255.0
+    static let leafColorBurnGreen: Double = 17.0 / 255.0
+    static let leafColorBurnBlue: Double = 5.0 / 255.0
+    static let leafColorBurnOpacity: Double = 0.6
+    static let leafBackdropBlur: CGFloat = 12
+    static let leafGradientStartLocation: CGFloat = 0.50962
+    static let leafGradientEndOpacity: Double = 0.4
+    static let leafBorderWidth: CGFloat = 2
+}
+
 public enum LiquidGlassStyle {
     case root
     case leaf
@@ -40,12 +57,7 @@ public struct LiquidGlassButton<Content: View>: View {
         }
         .buttonStyle(.plain)
         .scaleEffect(isPressed ? 0.96 : 1.0)
-        .shadow(
-            color: .black.opacity(colorScheme == .dark ? 0.30 : 0.16),
-            radius: isPressed ? 5 : 9,
-            x: 0,
-            y: isPressed ? 2 : 5
-        )
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.20 : 0.14), radius: isPressed ? 4 : 7, x: 0, y: 4)
         .gesture(
             DragGesture(minimumDistance: 0)
                 .updating($isPressed) { _, state, _ in
@@ -63,107 +75,161 @@ public struct LiquidGlassButton<Content: View>: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(hex: "FF9DA7"),
-                            Color(hex: "FF6A77"),
-                            Color(hex: "FF5C69")
+                            Color(hex: "FFD4D9"),
+                            Color(hex: "FF9AA4"),
+                            Color(hex: "FF6F7B")
                         ],
-                        startPoint: .top,
+                        startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
+                .opacity(0.96)
+
+            Circle()
+                .fill(Color(hex: LiquidGlassFigmaTokens.rootBaseHex))
+                .opacity(0.22)
+                .blendMode(.plusLighter)
 
             Circle()
                 .fill(
-                    RadialGradient(
-                        colors: [.white.opacity(0.42), .clear],
-                        center: .top,
-                        startRadius: 0,
-                        endRadius: 58
+                    Color(
+                        red: 123.0 / 255.0,
+                        green: 0.0 / 255.0,
+                        blue: 2.0 / 255.0,
+                        opacity: LiquidGlassFigmaTokens.rootBurnOpacity
                     )
                 )
-                .blur(radius: 8)
+                .opacity(0.18)
+                .blendMode(.colorBurn)
 
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.25), Color.clear],
-                        startPoint: .topLeading,
+                        stops: [
+                            .init(
+                                color: Color(red: 102.0 / 255.0, green: 102.0 / 255.0, blue: 102.0 / 255.0, opacity: 0),
+                                location: LiquidGlassFigmaTokens.rootGradientStartLocation
+                            ),
+                            .init(
+                                color: Color(
+                                    red: 102.0 / 255.0,
+                                    green: 102.0 / 255.0,
+                                    blue: 102.0 / 255.0,
+                                    opacity: LiquidGlassFigmaTokens.rootGradientEndOpacity
+                                ),
+                                location: 1.0
+                            )
+                        ],
+                        startPoint: .top,
                         endPoint: .bottom
-                    ),
+                    )
                 )
                 .blendMode(.plusLighter)
 
             Circle()
-                .strokeBorder(Color.white.opacity(0.78), lineWidth: 1.6)
-                .blur(radius: 0.35)
+                .fill(Color.black)
+                .blur(radius: LiquidGlassFigmaTokens.rootBackdropBlur)
+                .opacity(0.36)
+                .blendMode(.plusLighter)
 
             Circle()
-                .strokeBorder(Color.black.opacity(0.12), lineWidth: 0.8)
-                .blendMode(.multiply)
+                .fill(
+                    RadialGradient(
+                        colors: [.white.opacity(0.34), .clear],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: 36
+                    )
+                )
+                .blur(radius: 4)
+
+            Circle()
+                .strokeBorder(Color.white.opacity(0.92), lineWidth: 1.15)
+                .blur(radius: 0.25)
+
+            Circle()
+                .strokeBorder(Color(hex: "B3B3B3").opacity(0.6), lineWidth: 0.8)
+                .blendMode(.overlay)
         }
-        .shadow(color: Color(hex: "FF5A67").opacity(0.48), radius: 18, x: 0, y: 8)
+        .shadow(color: Color(hex: "FF6A77").opacity(0.58), radius: 20, x: 0, y: 6)
         .overlay {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [.white.opacity(0.2), .clear],
+                        colors: [.white.opacity(0.3), .clear],
                         center: .topLeading,
                         startRadius: 1,
-                        endRadius: 26
+                        endRadius: 34
                     )
                 )
-                .blur(radius: 1.2)
+                .blur(radius: 1.8)
         }
     }
 
     private var leafGlassBase: some View {
         ZStack {
             Circle()
-                .fill(Color(hex: "193B27").opacity(colorScheme == .dark ? 0.85 : 0.82))
-
-            Circle()
                 .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "9CA79B").opacity(0.27),
-                            Color.clear
-                        ],
-                        startPoint: .top,
-                        endPoint: .center
+                    Color(
+                        red: LiquidGlassFigmaTokens.leafColorBurnRed,
+                        green: LiquidGlassFigmaTokens.leafColorBurnGreen,
+                        blue: LiquidGlassFigmaTokens.leafColorBurnBlue,
+                        opacity: LiquidGlassFigmaTokens.leafColorBurnOpacity
                     )
                 )
+                .blendMode(.colorBurn)
 
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [
-                            Color.clear,
-                            Color(hex: "97A498").opacity(0.38)
+                        stops: [
+                            .init(
+                                color: Color(
+                                    red: 102.0 / 255.0,
+                                    green: 102.0 / 255.0,
+                                    blue: 102.0 / 255.0,
+                                    opacity: 0
+                                ),
+                                location: LiquidGlassFigmaTokens.leafGradientStartLocation
+                            ),
+                            .init(
+                                color: Color(
+                                    red: 102.0 / 255.0,
+                                    green: 102.0 / 255.0,
+                                    blue: 102.0 / 255.0,
+                                    opacity: LiquidGlassFigmaTokens.leafGradientEndOpacity
+                                ),
+                                location: 1
+                            )
                         ],
-                        startPoint: .center,
+                        startPoint: .top,
                         endPoint: .bottom
                     )
                 )
+                .blur(radius: LiquidGlassFigmaTokens.leafBackdropBlur)
+                .blendMode(.plusLighter)
 
             Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [.white.opacity(0.18), .clear],
-                        center: .topLeading,
-                        startRadius: 0,
-                        endRadius: 42
-                    )
+                .strokeBorder(
+                    AngularGradient(
+                        stops: [
+                            .init(color: .white, location: 0.0),
+                            .init(color: .white, location: 0.3),
+                            .init(color: .white.opacity(0.12), location: 0.58),
+                            .init(color: .clear, location: 0.82),
+                            .init(color: .clear, location: 1.0)
+                        ],
+                        center: .center
+                    ),
+                    lineWidth: LiquidGlassFigmaTokens.leafBorderWidth
                 )
-                .blur(radius: 4.5)
+                .rotationEffect(.degrees(-45))
 
             Circle()
-                .strokeBorder(Color.white.opacity(0.84), lineWidth: 1.5)
-                .blur(radius: 0.28)
-
-            Circle()
-                .strokeBorder(Color.black.opacity(0.20), lineWidth: 0.8)
-                .blendMode(.multiply)
+                .strokeBorder(Color(hex: "B3B3B3").opacity(0.52), lineWidth: 0.75)
+                .blendMode(.overlay)
         }
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.24 : 0.18), radius: 10, x: 0, y: 6)
+        .compositingGroup()
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.20 : 0.16), radius: 9, x: 0, y: 5)
     }
 }
