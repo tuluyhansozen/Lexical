@@ -3,8 +3,24 @@ import Foundation
 public struct CalibrationResponse: Sendable {
     public let lemma: String
     public let rank: Int
-    public let recognized: Bool
+    public let recognitionScore: Double
     public let isDistractor: Bool
+
+    public var recognized: Bool {
+        recognitionScore >= 0.999
+    }
+
+    public init(
+        lemma: String,
+        rank: Int,
+        recognitionScore: Double,
+        isDistractor: Bool = false
+    ) {
+        self.lemma = lemma
+        self.rank = rank
+        self.recognitionScore = min(1.0, max(0.0, recognitionScore))
+        self.isDistractor = isDistractor
+    }
 
     public init(
         lemma: String,
@@ -14,7 +30,7 @@ public struct CalibrationResponse: Sendable {
     ) {
         self.lemma = lemma
         self.rank = rank
-        self.recognized = recognized
+        self.recognitionScore = recognized ? 1.0 : 0.0
         self.isDistractor = isDistractor
     }
 }
@@ -34,76 +50,102 @@ public struct LexicalCalibrationEngine {
     public let maxRank: Int
     public let bandSize: Int
     public let masteryThreshold: Double
+    public let logisticScale: Double
+    public let priorRegularizationWeight: Double
+    public let controlPenaltyScale: Double
+    public let controlPenaltyExponent: Double
+    public let controlPenaltyCap: Double
+    public let coarseSearchStep: Int
 
     public init(
         minRank: Int = 500,
         maxRank: Int = 20_000,
         bandSize: Int = 500,
-        masteryThreshold: Double = 0.7
+        masteryThreshold: Double = 0.7,
+        logisticScale: Double = 5_000,
+        priorRegularizationWeight: Double = 0.28,
+        controlPenaltyScale: Double = 2_500,
+        controlPenaltyExponent: Double = 1.3,
+        controlPenaltyCap: Double = 3_500,
+        coarseSearchStep: Int = 25
     ) {
         self.minRank = minRank
         self.maxRank = maxRank
         self.bandSize = bandSize
         self.masteryThreshold = masteryThreshold
+        self.logisticScale = max(1_500, logisticScale)
+        self.priorRegularizationWeight = max(0.0, priorRegularizationWeight)
+        self.controlPenaltyScale = max(0.0, controlPenaltyScale)
+        self.controlPenaltyExponent = max(1.0, controlPenaltyExponent)
+        self.controlPenaltyCap = max(0.0, controlPenaltyCap)
+        self.coarseSearchStep = max(1, coarseSearchStep)
     }
 
-    public func estimate(from responses: [CalibrationResponse]) -> LexicalCalibrationResult {
+    public func estimate(
+        from responses: [CalibrationResponse],
+        priorRank: Int? = nil
+    ) -> LexicalCalibrationResult {
         let realResponses = responses.filter { !$0.isDistractor }
         let distractorResponses = responses.filter(\.isDistractor)
 
         guard !realResponses.isEmpty else {
+            let fallback = clamp(priorRank ?? minRank)
             return LexicalCalibrationResult(
-                estimatedRank: minRank,
-                lowerBound: minRank,
-                upperBound: min(maxRank, minRank + 1500),
+                estimatedRank: fallback,
+                lowerBound: max(minRank, fallback - 1_500),
+                upperBound: min(maxRank, fallback + 1_500),
                 confidence: 0.25,
                 realItemCount: 0,
                 distractorOverclaimRate: 0.0
             )
         }
 
-        var buckets: [Int: (recognized: Int, total: Int)] = [:]
-        for response in realResponses {
-            let band = bandFloor(for: response.rank)
-            var bucket = buckets[band, default: (0, 0)]
-            if response.recognized { bucket.recognized += 1 }
-            bucket.total += 1
-            buckets[band] = bucket
-        }
-
-        let sortedBands = buckets.keys.sorted()
-        var masteredBand = minRank
-        for band in sortedBands {
-            guard let bucket = buckets[band], bucket.total > 0 else { continue }
-            let rate = Double(bucket.recognized) / Double(bucket.total)
-            // Require at least two samples in a band before allowing promotion.
-            if bucket.total >= 2 && rate >= masteryThreshold {
-                masteredBand = band
-            }
-        }
-
+        let normalizedPrior = clamp(priorRank ?? inferredPriorRank(from: realResponses))
+        let observedRank = bestFitRank(
+            from: realResponses,
+            priorRank: normalizedPrior
+        )
         let overclaimRate: Double = {
             guard !distractorResponses.isEmpty else { return 0.0 }
-            let overclaims = distractorResponses.filter(\.recognized).count
+            let overclaims = distractorResponses.filter { $0.recognitionScore >= 0.999 }.count
             return Double(overclaims) / Double(distractorResponses.count)
         }()
 
-        var estimated = min(maxRank, max(minRank, masteredBand + bandSize / 2))
-        // Penalize aggressive self-claims on distractors.
-        if overclaimRate > 0.25 {
-            estimated -= Int(Double(bandSize) * 1.5)
-        } else if overclaimRate > 0.1 {
-            estimated -= bandSize / 2
-        }
-        estimated = min(maxRank, max(minRank, estimated))
-
-        let sampleCoverage = min(1.0, Double(realResponses.count) / 40.0)
-        let confidence = max(
-            0.25,
-            min(0.95, 0.35 + (0.5 * sampleCoverage) - (0.25 * overclaimRate))
+        let controlPenalty = min(
+            controlPenaltyCap,
+            controlPenaltyScale * pow(overclaimRate, controlPenaltyExponent)
+        )
+        let penalizedObservedRank = clamp(
+            observedRank - Int(controlPenalty.rounded())
         )
 
-        let halfWidth = Int(Double(4000) * (1.0 - confidence)) + 250
+        let fitMSE = meanSquaredResidual(
+            from: realResponses,
+            estimatedRank: observedRank
+        )
+        let residualScore = 1.0 - min(1.0, fitMSE)
+        let sampleCoverage = min(1.0, Double(realResponses.count) / 8.0)
+        let confidence = min(
+            0.93,
+            max(
+                0.35,
+                0.35 +
+                (0.4 * residualScore) +
+                (0.2 * sampleCoverage) -
+                (0.17 * overclaimRate)
+            )
+        )
+
+        let estimated: Int = {
+            guard priorRank != nil else { return penalizedObservedRank }
+
+            let priorWeight = confidence >= 0.85 ? 0.5 : 0.7
+            let observedWeight = 1.0 - priorWeight
+            let blended = (priorWeight * Double(normalizedPrior)) + (observedWeight * Double(penalizedObservedRank))
+            return clamp(Int(blended.rounded()))
+        }()
+
+        let halfWidth = Int((Double(5_400) * (1.0 - confidence)).rounded()) + 800
         let lower = max(minRank, estimated - halfWidth)
         let upper = min(maxRank, estimated + halfWidth)
 
@@ -127,8 +169,85 @@ public struct LexicalCalibrationEngine {
         return lower...max(lower, upper)
     }
 
-    private func bandFloor(for rank: Int) -> Int {
-        let clamped = min(maxRank, max(minRank, rank))
-        return (clamped / bandSize) * bandSize
+    private func bestFitRank(
+        from responses: [CalibrationResponse],
+        priorRank: Int
+    ) -> Int {
+        var bestRank = priorRank
+        var bestScore = Double.greatestFiniteMagnitude
+
+        for candidate in stride(from: minRank, through: maxRank, by: coarseSearchStep) {
+            let score = objectiveScore(
+                for: responses,
+                candidateRank: candidate,
+                priorRank: priorRank
+            )
+            if score < bestScore {
+                bestScore = score
+                bestRank = candidate
+            }
+        }
+
+        let refineLower = max(minRank, bestRank - coarseSearchStep)
+        let refineUpper = min(maxRank, bestRank + coarseSearchStep)
+        for candidate in refineLower...refineUpper {
+            let score = objectiveScore(
+                for: responses,
+                candidateRank: candidate,
+                priorRank: priorRank
+            )
+            if score < bestScore {
+                bestScore = score
+                bestRank = candidate
+            }
+        }
+
+        return clamp(bestRank)
+    }
+
+    private func objectiveScore(
+        for responses: [CalibrationResponse],
+        candidateRank: Int,
+        priorRank: Int
+    ) -> Double {
+        let dataLoss = responses.reduce(into: 0.0) { loss, response in
+            let probability = recognitionProbability(wordRank: response.rank, estimateRank: candidateRank)
+            let residual = response.recognitionScore - probability
+            loss += residual * residual
+        }
+        let priorDelta = Double(candidateRank - priorRank) / logisticScale
+        let priorPenalty = priorRegularizationWeight * priorDelta * priorDelta
+        return dataLoss + priorPenalty
+    }
+
+    private func meanSquaredResidual(
+        from responses: [CalibrationResponse],
+        estimatedRank: Int
+    ) -> Double {
+        guard !responses.isEmpty else { return 1.0 }
+        let total = responses.reduce(into: 0.0) { sum, response in
+            let probability = recognitionProbability(wordRank: response.rank, estimateRank: estimatedRank)
+            let residual = response.recognitionScore - probability
+            sum += residual * residual
+        }
+        return total / Double(responses.count)
+    }
+
+    private func recognitionProbability(
+        wordRank: Int,
+        estimateRank: Int
+    ) -> Double {
+        let exponent = Double(wordRank - estimateRank) / logisticScale
+        return 1.0 / (1.0 + exp(exponent))
+    }
+
+    private func inferredPriorRank(from responses: [CalibrationResponse]) -> Int {
+        let sortedRanks = responses.map(\.rank).sorted()
+        guard !sortedRanks.isEmpty else { return minRank }
+        return sortedRanks[sortedRanks.count / 2]
+    }
+
+    private func clamp(_ rank: Int) -> Int {
+        min(maxRank, max(minRank, rank))
     }
 }

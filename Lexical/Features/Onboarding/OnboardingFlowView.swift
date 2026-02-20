@@ -4,6 +4,8 @@ import UserNotifications
 import LexicalCore
 
 struct OnboardingFlowView: View {
+    private let calibrationQuestionCount = 12
+
     @Environment(\.modelContext) private var modelContext
     @Query private var interestProfiles: [InterestProfile]
 
@@ -248,7 +250,7 @@ struct OnboardingFlowView: View {
     private var rankCalibrationStep: some View {
         stepContainer {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Set your starting rank in 10 quick checks.")
+                Text("Set your starting rank in \(calibrationQuestionCount) quick checks.")
                     .font(.display(size: 31, weight: .bold))
                     .foregroundStyle(Color(hex: "0A0A0A"))
                     .accessibilityIdentifier("onboarding.calibrationHeadline")
@@ -645,7 +647,8 @@ struct OnboardingFlowView: View {
     private var canAdvanceCurrentStep: Bool {
         switch OnboardingStep(rawValue: selectedStep) ?? .welcome {
         case .rankCalibration:
-            return calibrationQuestions.count == 10 && calibrationAnswers.count == calibrationQuestions.count
+            return calibrationQuestions.count == calibrationQuestionCount &&
+            calibrationAnswers.count == calibrationQuestions.count
         case .interests:
             return selectedInterests.count >= 2
         default:
@@ -669,7 +672,8 @@ struct OnboardingFlowView: View {
 
     private var hasCompletedCalibration: Bool {
         persistedCalibrationRank > 0 ||
-        (calibrationQuestions.count == 10 && calibrationAnswers.count == calibrationQuestions.count)
+        (calibrationQuestions.count == calibrationQuestionCount &&
+         calibrationAnswers.count == calibrationQuestions.count)
     }
 
     private var canShowSkip: Bool {
@@ -805,7 +809,10 @@ struct OnboardingFlowView: View {
         let lexemes = (try? modelContext.fetch(lexemeDescriptor)) ?? []
         let service = OnboardingRankAssessmentService()
 
-        calibrationQuestions = service.buildQuestions(from: lexemes, questionCount: 10)
+        calibrationQuestions = service.buildQuestions(
+            from: lexemes,
+            questionCount: calibrationQuestionCount
+        )
         calibrationQuestionIndex = min(
             calibrationQuestionIndex,
             max(0, calibrationQuestions.count - 1)
@@ -828,7 +835,8 @@ struct OnboardingFlowView: View {
         let service = OnboardingRankAssessmentService()
         calibrationResultPreview = service.evaluate(
             questions: calibrationQuestions,
-            answers: calibrationAnswers
+            answers: calibrationAnswers,
+            priorRank: calibrationPriorRank()
         )
     }
 
@@ -890,17 +898,27 @@ struct OnboardingFlowView: View {
     }
 
     private func applyCalibrationResultIfAvailable(to activeProfile: UserProfile) {
-        guard calibrationQuestions.count == 10 else { return }
+        guard calibrationQuestions.count == calibrationQuestionCount else { return }
         let service = OnboardingRankAssessmentService()
         guard let result = service.evaluate(
             questions: calibrationQuestions,
-            answers: calibrationAnswers
+            answers: calibrationAnswers,
+            priorRank: calibrationPriorRank(from: activeProfile)
         ) else { return }
 
         activeProfile.lexicalRank = result.estimatedRank
         activeProfile.stateUpdatedAt = Date()
         persistedCalibrationRank = result.estimatedRank
         persistedCalibrationConfidence = result.confidence
+    }
+
+    private func calibrationPriorRank(from activeProfile: UserProfile? = nil) -> Int? {
+        if persistedCalibrationRank > 0 {
+            return persistedCalibrationRank
+        }
+
+        let profile = activeProfile ?? UserProfile.resolveActiveProfile(modelContext: modelContext)
+        return profile.lexicalRank > 2_500 ? profile.lexicalRank : nil
     }
 
     private func finalizeOnboarding() {

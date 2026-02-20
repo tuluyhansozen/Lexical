@@ -5,6 +5,17 @@ public enum OnboardingCalibrationAnswer: String, CaseIterable, Codable, Sendable
     case unsure
     case dontKnow
 
+    public var recognitionScore: Double {
+        switch self {
+        case .know:
+            return 1.0
+        case .unsure:
+            return 0.5
+        case .dontKnow:
+            return 0.0
+        }
+    }
+
     public var recognized: Bool {
         self == .know
     }
@@ -42,7 +53,7 @@ public struct OnboardingRankAssessmentService {
 
     public func buildQuestions(
         from lexemes: [LexemeDefinition],
-        questionCount: Int = 10
+        questionCount: Int = 12
     ) -> [OnboardingCalibrationQuestion] {
         let normalizedCount = max(4, questionCount)
         let distractorCount = min(2, max(1, normalizedCount / 5))
@@ -51,12 +62,18 @@ public struct OnboardingRankAssessmentService {
         let realQuestions = buildRealQuestions(from: lexemes, desiredCount: realCount)
         let distractors = buildDistractors(desiredCount: distractorCount)
 
+        // Keep the primary onboarding packet deterministic so simulation and UX remain aligned.
+        if normalizedCount == 12, distractorCount == 2, realQuestions.count >= 10, distractors.count == 2 {
+            return Array(realQuestions.prefix(10)) + distractors
+        }
+
         return interleave(realQuestions: realQuestions, distractors: distractors)
     }
 
     public func evaluate(
         questions: [OnboardingCalibrationQuestion],
-        answers: [String: OnboardingCalibrationAnswer]
+        answers: [String: OnboardingCalibrationAnswer],
+        priorRank: Int? = nil
     ) -> LexicalCalibrationResult? {
         guard !questions.isEmpty else { return nil }
 
@@ -65,13 +82,13 @@ public struct OnboardingRankAssessmentService {
             return CalibrationResponse(
                 lemma: question.lemma,
                 rank: question.rank,
-                recognized: answer.recognized,
+                recognitionScore: answer.recognitionScore,
                 isDistractor: question.isDistractor
             )
         }
 
         guard responses.count == questions.count else { return nil }
-        return calibrationEngine.estimate(from: responses)
+        return calibrationEngine.estimate(from: responses, priorRank: priorRank)
     }
 
     private func buildRealQuestions(
@@ -79,13 +96,33 @@ public struct OnboardingRankAssessmentService {
         desiredCount: Int
     ) -> [OnboardingCalibrationQuestion] {
         let candidatePool = lexemes.compactMap(Candidate.init)
+        var candidateByLemma: [String: Candidate] = [:]
+        for candidate in candidatePool where candidateByLemma[candidate.lemma] == nil {
+            candidateByLemma[candidate.lemma] = candidate
+        }
         let targetRanks = makeTargetRanks(count: desiredCount)
         var usedLemmas: Set<String> = []
         var picked: [OnboardingCalibrationQuestion] = []
 
         picked.reserveCapacity(desiredCount)
 
+        for preferred in preferredRealQuestions where picked.count < desiredCount {
+            guard !usedLemmas.contains(preferred.lemma) else { continue }
+            let hint = candidateByLemma[preferred.lemma]?.hint ?? preferred.hint
+            usedLemmas.insert(preferred.lemma)
+            picked.append(
+                OnboardingCalibrationQuestion(
+                    id: "real.\(preferred.lemma).\(preferred.rank)",
+                    lemma: preferred.lemma,
+                    rank: preferred.rank,
+                    promptHint: hint,
+                    isDistractor: false
+                )
+            )
+        }
+
         for target in targetRanks {
+            guard picked.count < desiredCount else { break }
             if let candidate = bestCandidate(
                 near: target,
                 from: candidatePool,
@@ -172,20 +209,14 @@ public struct OnboardingRankAssessmentService {
     }
 
     private func makeTargetRanks(count: Int) -> [Int] {
-        let anchors = [1_000, 2_500, 4_500, 7_000, 10_000]
+        let anchors = [2_500, 3_800, 7_000, 9_500, 14_500, 16_500, 18_500, 19_800]
         guard count > 0 else { return [] }
 
         var targets: [Int] = []
         targets.reserveCapacity(count)
-        var anchorIndex = 0
-
         while targets.count < count {
-            let anchor = anchors[anchorIndex % anchors.count]
+            let anchor = anchors[targets.count % anchors.count]
             targets.append(anchor)
-            if targets.count < count {
-                targets.append(anchor)
-            }
-            anchorIndex += 1
         }
 
         return Array(targets.prefix(count))
@@ -239,23 +270,40 @@ private extension OnboardingRankAssessmentService {
 
     var fallbackRealQuestions: [(lemma: String, rank: Int, hint: String)] {
         [
-            ("maintain", 1_000, "to keep something at the same level or condition"),
-            ("resource", 1_200, "a useful source of support, knowledge, or supply"),
-            ("resilient", 2_400, "able to recover quickly from stress or change"),
-            ("coherent", 2_700, "clear, logical, and consistent"),
-            ("nuance", 4_400, "a subtle difference in meaning or feeling"),
-            ("meticulous", 4_700, "showing careful attention to detail"),
-            ("ubiquitous", 6_900, "present everywhere or very widespread"),
-            ("detrimental", 7_200, "causing harm or damage"),
-            ("pragmatic", 9_700, "focused on practical outcomes"),
-            ("synthesize", 10_200, "to combine ideas into a coherent whole")
+            ("cogent", 19_800, "clear, convincing, and logically strong"),
+            ("egregious", 20_000, "remarkably bad and obvious"),
+            ("protocol", 2_547, "an official process or set of rules"),
+            ("infrastructure", 2_738, "the underlying systems that support society"),
+            ("perception", 7_094, "the way something is understood or interpreted"),
+            ("hypothetical", 9_438, "based on a possible idea rather than a fact"),
+            ("tenacious", 16_946, "persistent and difficult to discourage"),
+            ("nostalgia", 16_975, "a longing feeling for the past"),
+            ("prognosis", 19_019, "a forecast of likely development"),
+            ("pervasive", 19_080, "spread throughout a place or group"),
+            ("enigma", 20_043, "a puzzle that is hard to explain"),
+            ("intricate", 20_086, "very detailed and complex")
+        ]
+    }
+
+    var preferredRealQuestions: [(lemma: String, rank: Int, hint: String)] {
+        [
+            ("predict", 8_692, "say in advance what is likely to happen"),
+            ("suggest", 2_199, "offer an idea or possible action"),
+            ("consequence", 8_419, "a result that follows from an action"),
+            ("efficient", 3_315, "achieving results with minimal waste"),
+            ("constraint", 9_968, "a limit that restricts choices"),
+            ("nuance", 15_400, "a subtle but important difference"),
+            ("meticulous", 17_000, "showing very careful attention to detail"),
+            ("ubiquitous", 19_403, "present or found everywhere"),
+            ("cogent", 19_800, "clear, convincing, and logically strong"),
+            ("egregious", 20_000, "remarkably bad and obvious")
         ]
     }
 
     var distractorPool: [(lemma: String, rank: Int, hint: String)] {
         [
-            ("dravicle", 4_000, "Control item: choose this only if you are fully sure."),
-            ("sornity", 7_500, "Control item: choose this only if you are fully sure.")
+            ("sornity", 18_000, "Control item: choose this only if you are fully sure."),
+            ("dravicle", 6_500, "Control item: choose this only if you are fully sure.")
         ]
     }
 }
