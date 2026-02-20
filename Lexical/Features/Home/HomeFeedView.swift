@@ -4,9 +4,11 @@ import LexicalCore
 
 struct HomeFeedView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel = ArticlesViewModel()
     @Query private var interestProfiles: [InterestProfile]
     @AppStorage(OnboardingStorageKeys.articleStylePreference) private var articleStylePreferenceRaw: String = ArticleStylePreference.balanced.rawValue
+    @AppStorage("notificationsEnabled") private var notificationsEnabled: Bool = true
 
     @State private var articleQuotaLabel: String?
     @State private var generationLimitMessage: String?
@@ -291,7 +293,7 @@ struct HomeFeedView: View {
             easyRatingVelocity: activeProfile.easyRatingVelocity
         )
 
-        let generated = await viewModel.generateNewArticle(
+        let generatedArticle = await viewModel.generateNewArticle(
             profile: profile,
             targetWords: targets,
             reinforcementWords: plan.reinforcementWords,
@@ -301,7 +303,14 @@ struct HomeFeedView: View {
             articleStylePreference: articleStylePreference.rawValue
         )
 
-        guard generated else { return }
+        guard let generatedArticle else { return }
+
+        BanditScheduler.shared.scheduleArticleReadyNotificationIfNeeded(
+            articleId: generatedArticle.id.uuidString,
+            title: generatedArticle.title,
+            notificationsEnabled: notificationsEnabled,
+            appIsActive: scenePhase == .active
+        )
 
         do {
             _ = try featureGateService.recordArticleGeneration(

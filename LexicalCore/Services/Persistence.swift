@@ -172,6 +172,7 @@ public struct Persistence {
         let signals = [
             "cannot use staged migration",
             "unknown model version",
+            "loadissuemodelcontainer",
             "incompatible",
             "134504",
             "134130",

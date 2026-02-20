@@ -2,6 +2,16 @@ import XCTest
 @testable import LexicalCore
 
 final class PersistenceRecoveryStrategyTests: XCTestCase {
+    private struct SwiftDataLoadIssueError: Error, CustomStringConvertible, LocalizedError {
+        var description: String {
+            "SwiftDataError(_error: SwiftData.SwiftDataError._Error.loadIssueModelContainer, _explanation: nil)"
+        }
+
+        var errorDescription: String? {
+            "The operation couldn’t be completed. (SwiftData.SwiftDataError error 1.)"
+        }
+    }
+
     func testIncompatibleStoreAllowsResetInDebugPath() {
         let error = NSError(domain: NSCocoaErrorDomain, code: 134504)
 
@@ -48,5 +58,15 @@ final class PersistenceRecoveryStrategyTests: XCTestCase {
         )
 
         XCTAssertEqual(action, .failFast)
+    }
+
+    func testLoadIssueModelContainerSignalUsesRecoveryPath() {
+        let action = Persistence.recoveryAction(
+            for: SwiftDataLoadIssueError(),
+            storeExists: true,
+            allowDestructiveReset: true
+        )
+
+        XCTAssertEqual(action, .resetAndRetry)
     }
 }

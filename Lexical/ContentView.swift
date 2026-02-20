@@ -53,15 +53,6 @@ struct ContentView: View {
                     .accessibilityHint("Starts a review session with due words.")
                     .accessibilityIdentifier("review.startSessionButton")
                     
-                    #if DEBUG
-                    Button("Trigger Notification (Bandit)") {
-                        banditScheduler.scheduleTestNotification()
-                    }
-                    .font(.caption)
-                    .foregroundStyle(Color.sonPrimary)
-                    .padding(.top)
-                    #endif
-                    
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -146,8 +137,15 @@ struct ContentView: View {
             let definition = notification.userInfo?["definition"] as? String
             openPromptCard(lemma: lemma, definition: definition)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .lexicalOpenReviewSession)) { _ in
+            openReviewSession()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lexicalOpenReadingTab)) { _ in
+            selectedTab = 0
+        }
         .onAppear {
             consumePendingPromptRouteIfNeeded()
+            consumePendingNotificationRouteIfNeeded()
         }
 #if DEBUG
         .onAppear {
@@ -182,6 +180,11 @@ struct ContentView: View {
         promptRoute = PromptCardRoute(lemma: lemma, definition: definition)
     }
 
+    private func openReviewSession() {
+        selectedTab = 2
+        showSession = true
+    }
+
     private func consumePendingPromptRouteIfNeeded() {
         let defaults = UserDefaults.standard
         guard let lemma = defaults.string(forKey: "lexical.pending_prompt_lemma"),
@@ -193,6 +196,18 @@ struct ContentView: View {
         defaults.removeObject(forKey: "lexical.pending_prompt_lemma")
         defaults.removeObject(forKey: "lexical.pending_prompt_definition")
         openPromptCard(lemma: lemma, definition: definition)
+    }
+
+    private func consumePendingNotificationRouteIfNeeded() {
+        guard let route = banditScheduler.consumePendingNotificationRoute() else { return }
+        switch route {
+        case BanditScheduler.routeReviewSession:
+            openReviewSession()
+        case BanditScheduler.routeReadingTab:
+            selectedTab = 0
+        default:
+            break
+        }
     }
 #if DEBUG
     private func startDebugAutoCycle() {

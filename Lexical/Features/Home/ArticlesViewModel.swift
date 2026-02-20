@@ -32,8 +32,8 @@ public class ArticlesViewModel: ObservableObject {
         adaptiveContext: AdaptivePromptContext? = nil,
         userId: String? = nil,
         articleStylePreference: String? = nil
-    ) async -> Bool {
-        guard !isGenerating else { return false }
+    ) async -> GeneratedArticle? {
+        guard !isGenerating else { return nil }
         isGenerating = true
 
         do {
@@ -48,11 +48,11 @@ public class ArticlesViewModel: ObservableObject {
             )
             self.articles.insert(article, at: 0)
             isGenerating = false
-            return true
+            return article
         } catch {
             print("Failed to generate article: \(error)")
             isGenerating = false
-            return false
+            return nil
         }
     }
 }
