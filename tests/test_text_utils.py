@@ -7,6 +7,9 @@ import unittest
 
 from tools.text_utils import (
     find_cloze_index,
+    has_near_duplicates,
+    pairwise_similarity,
+    sentence_skeleton,
     tokenize,
     validate_sentence,
     validate_set,
@@ -59,7 +62,7 @@ class TextUtilsTests(unittest.TestCase):
         )
         ok, reasons = validate_sentence(text, "way")
         self.assertFalse(ok)
-        self.assertIn("word_count_gt_25", reasons)
+        self.assertIn("word_count_gt_14", reasons)
 
     def test_validate_set_fails_same_start(self) -> None:
         ok, reasons = validate_set(
@@ -104,6 +107,19 @@ class TextUtilsTests(unittest.TestCase):
         )
         self.assertTrue(ok)
         self.assertEqual(reasons, [])
+
+    def test_sentence_skeleton_replaces_lemma_token(self) -> None:
+        text = "When management changed suddenly, management had to explain the decision twice."
+        skeleton = sentence_skeleton(text, "management")
+        self.assertIn("{LEMMA}", skeleton)
+        self.assertNotIn("management", skeleton.lower())
+
+    def test_pairwise_similarity_and_near_duplicates(self) -> None:
+        a = "The manager revised the plan after legal concerns appeared."
+        b = "The manager revised the plan after legal concerns appeared!"
+        c = "After the outage, the team documented causes and updated the runbook."
+        self.assertGreater(pairwise_similarity(a, b), 0.9)
+        self.assertTrue(has_near_duplicates([a, b, c], threshold=0.9))
 
 
 if __name__ == "__main__":

@@ -43,3 +43,13 @@ AWL.txt
 *.tar.bz2
 *.jsonl
 *.jsonl.gz
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Seed generation artifacts
+Lexical/Resources/Seeds/seed_data_refined*.partial.json
+Lexical/Resources/Seeds/sensitive_exclusions*.report.json
+Lexical/Resources/Seeds/seed_data_rerun_input.json
+Lexical/Resources/Seeds/seed_data_updated_rerun_v5.json

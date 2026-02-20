@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from difflib import SequenceMatcher
 import re
 from typing import Any
 
@@ -21,6 +22,8 @@ COMPLEX_MARKERS = {
     "though",
     "whereas",
 }
+MIN_WORDLIKE_COUNT = 8
+MAX_WORDLIKE_COUNT = 14
 
 
 def tokenize(text: Any) -> list[str]:
@@ -53,10 +56,10 @@ def validate_sentence(text: Any, lemma: Any) -> tuple[bool, list[str]]:
 
     if find_cloze_index(text, lemma) is None:
         reasons.append("lemma_missing")
-    if count < 8:
+    if count < MIN_WORDLIKE_COUNT:
         reasons.append("word_count_lt_8")
-    if count > 25:
-        reasons.append("word_count_gt_25")
+    if count > MAX_WORDLIKE_COUNT:
+        reasons.append("word_count_gt_14")
 
     return (len(reasons) == 0, reasons)
 
@@ -112,3 +115,35 @@ def validate_set(sentences_texts: list[str]) -> tuple[bool, list[str]]:
         reasons.append("set_all_same_punctuation_pattern")
 
     return (len(reasons) == 0, reasons)
+
+
+def sentence_skeleton(text: Any, lemma: Any) -> str:
+    """Normalize sentence shape by replacing exact lemma tokens with {LEMMA}."""
+    target = str(lemma or "").strip().lower()
+    tokens = tokenize(text)
+    normalized: list[str] = []
+    for token in tokens:
+        if target and token.lower() == target:
+            normalized.append("{LEMMA}")
+        else:
+            normalized.append(token.lower())
+    skeleton = " ".join(normalized)
+    return re.sub(r"\s+", " ", skeleton).strip()
+
+
+def pairwise_similarity(left: Any, right: Any) -> float:
+    """Compute normalized string similarity for near-duplicate checks."""
+    a = re.sub(r"\s+", " ", str(left or "").strip().lower())
+    b = re.sub(r"\s+", " ", str(right or "").strip().lower())
+    if not a and not b:
+        return 1.0
+    return SequenceMatcher(None, a, b).ratio()
+
+
+def has_near_duplicates(sentences: list[str], threshold: float = 0.9) -> bool:
+    """Detect whether any pair of sentences are near-duplicates by ratio."""
+    for i in range(len(sentences)):
+        for j in range(i + 1, len(sentences)):
+            if pairwise_similarity(sentences[i], sentences[j]) >= threshold:
+                return True
+    return False

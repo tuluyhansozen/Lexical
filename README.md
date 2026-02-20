@@ -76,3 +76,92 @@ Default outputs are written alongside input seed data:
 - `seed_data_updated.partial.json` (during chunked processing)
 
 At full completion, final validation runs and the partial snapshot is removed.
+
+## Stochastic Full Refactor (Lemma-Specific, Non-Deterministic)
+
+This repository also includes a full non-deterministic refactor pipeline:
+
+- `/Users/tuluyhan/projects/Lexical/improve_seed_stochastic.py`
+
+Design highlights:
+
+- full rewrite of sentence sets (3 per lemma) with local Ollama generation
+- conservative synonym cleanup/regeneration
+- no separate LLM reranker/review stage
+- local-first retries (`2`) then Gemini CLI escalation (`1`) on failures
+- sensitive lemma exclusion, ID resequencing, and `roots.json` remap
+- automated gates before canonical replacement
+
+Prerequisite for cloud escalation:
+
+```bash
+gemini --help
+```
+
+Example smoke run (limited subset, no canonical apply):
+
+```bash
+python3 /Users/tuluyhan/projects/Lexical/improve_seed_stochastic.py \
+  --limit 50 \
+  --apply false
+```
+
+Example full run (with atomic canonical apply and backup):
+
+```bash
+python3 /Users/tuluyhan/projects/Lexical/improve_seed_stochastic.py \
+  --workers 2 \
+  --cloud-workers 1 \
+  --local-retries 2 \
+  --cloud-retries 1 \
+  --global-skeleton-cap 24 \
+  --apply true \
+  --backup true
+```
+
+If local Ollama generation is too slow on your machine, use a cloud-heavy profile
+that keeps the same validation gates and resume/checkpoint behavior:
+
+```bash
+python3 /Users/tuluyhan/projects/Lexical/improve_seed_stochastic.py \
+  --workers 1 \
+  --local-retries 0 \
+  --cloud-retries 1 \
+  --cloud-workers 12 \
+  --cloud-timeout-s 90 \
+  --batch-size 24 \
+  --chunk-size 50 \
+  --gemini-invoke-mode auto \
+  --apply true \
+  --backup true
+```
+
+Observed benchmark in this repo context:
+
+- `--limit 50` with cloud-heavy profile: ~`0.32 items/sec` (about 3.1s/item)
+- practical full-run ETA: roughly `4.5-6 hours` depending on failure/escalation mix
+
+Useful tuning flags for throughput:
+
+- `--local-timeout-s`, `--local-num-predict`, `--local-keep-alive`
+- `--cloud-timeout-s`, `--gemini-invoke-mode` (`auto|prompt|positional`)
+- `--batch-size`, `--workers`, `--cloud-workers`
+- `--progress-interval-s`
+
+Key outputs:
+
+- staged seed: `seed_data_refined.json` (or custom `--output-seed`)
+- staged roots: `roots_refined.json` (or custom `--output-roots`)
+- checkpoint: `stochastic_checkpoint.jsonl`
+- exclusion report: `sensitive_exclusions.report.json`
+- partial snapshot during resume-safe processing: `seed_data_refined.partial.json`
+
+Stochastic checkpoint fields:
+
+- `id`
+- `status` (`changed`, `unchanged_failed_generation`, `excluded_sensitive`, etc.)
+- `attempts_local`
+- `attempts_cloud`
+- `changed`
+- `reason_codes`
+- `error_codes`

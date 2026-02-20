@@ -560,10 +560,10 @@ Complete onboarding UX/accessibility hardening and prepare release artifacts for
 
 ## Phase 12: Sentence Dataset Quality Refactor (Technical Debt)
 
-**Status:** 🟡 Planned (deferred technical debt; current dataset run accepted for delivery speed)
+**Status:** 🟡 In Progress (stochastic pipeline scaffolding + validation/tests landed on 2026-02-19; full production run pending)
 
 ### Section 1: Objective
-Refactor sentence generation/evaluation quality so contextual examples are natural, sense-faithful, and pedagogically strong while preserving deterministic validation and resume-safe processing.
+Refactor sentence/synonym generation quality so contextual examples are natural, sense-faithful, and lemma-specific via a non-deterministic pipeline, while preserving deterministic validation, safety gates, and resume-safe processing.
 
 ### Section 2: Key Activities
 - **12.1 Quality Rubric Upgrade:** Replace simplistic heuristic acceptance with stronger semantic checks (definition alignment, fixed-expression mismatch detection, collocation plausibility, register/naturalness).
@@ -575,10 +575,12 @@ Refactor sentence generation/evaluation quality so contextual examples are natur
 - **12.7 Acceptance Gate:** Define release gate using sampled human review + automated metrics (naturalness, sense precision, diversity compliance) before canonical dataset promotion.
 
 ### Section 3: Deliverables
-- [ ] `improve_sentences_inplace.py` quality engine v2 (sense-aware evaluator + confidence routing)
-- [ ] Expanded deterministic template bank with POS-safe variants and diversified topic domains
-- [ ] Stratified QA module + report artifact (`docs/word_db_quality_report.md` extension)
-- [ ] Regression tests for known weak lemmas and malformed generated patterns
+- [x] `improve_seed_stochastic.py` - non-deterministic full rewrite pipeline (local Ollama first, Gemini CLI escalation, no reranker)
+- [x] Resume-safe checkpoint + partial snapshot flow with reason/error codes only (no sentence history payload)
+- [x] Sensitive-lemma exclusion + ID resequencing + `roots.json` ID remap implementation
+- [x] Conservative synonym cleanup/regeneration path with POS-aware filtering
+- [x] Regression/unit tests for stochastic helpers (`tests/test_improve_seed_stochastic.py`, `tests/test_text_utils.py` updates)
+- [ ] Full production dataset run with 3-5h SLA target and automated-gate publish
 - [ ] Phase exit audit: quality benchmark report and failure taxonomy summary
 
 ---
@@ -595,7 +597,7 @@ Refactor sentence generation/evaluation quality so contextual examples are natur
 | Phase 10D | ✅ Complete | - | Topic/angle planning, novelty memory, and article quality diversity enforcement |
 | Phase 10E | ✅ Complete | - | Post-audit safety, correctness, and performance hardening shipped |
 | Phase 11 | 🔴 Critical (Active) | 1 week | Onboarding hardening + compliance/release packaging after UI + monetization baselines |
-| Phase 12 | 🟡 High (Technical Debt) | 1-2 weeks | Sentence dataset quality refactor (naturalness, sense alignment, QA rigor) |
+| Phase 12 | 🟡 High (In Progress) | 1-2 weeks | Non-deterministic sentence+synonym refactor with safety gates and dataset remap |
 
 ---
 
@@ -614,5 +616,5 @@ Refactor sentence generation/evaluation quality so contextual examples are natur
 ## Next Steps
 1. Complete Phase 11 release packaging: App Store metadata, required screenshot matrix, and TestFlight distribution checklist.
 2. Run full simulator + device validation sweep for monetization and onboarding before TestFlight submission.
-3. Execute Phase 12 technical-debt refactor for sentence quality before the next seed refresh cycle.
+3. Execute full Phase 12 production run (`improve_seed_stochastic.py`) and publish quality audit results.
 4. Resolve existing non-Phase-10B compiler warnings (`MotionService`, `RankPromotionEngine`, `FSRSV4Engine`) before release branch cut.
