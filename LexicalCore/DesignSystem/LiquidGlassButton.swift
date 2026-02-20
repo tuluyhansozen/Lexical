@@ -59,84 +59,111 @@ public struct LiquidGlassButton<Content: View>: View {
 
     private var rootGlassBase: some View {
         ZStack {
-            // Base Fill (Coral)
             Circle()
                 .fill(
                     LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(hex: "E85D6C").opacity(0.15),
-                            Color(hex: "E85D6C").opacity(0.05)
-                        ]),
-                        startPoint: .topLeading,
+                        colors: [
+                            Color(hex: "FF9DA7"),
+                            Color(hex: "FF6A77"),
+                            Color(hex: "FF5C69")
+                        ],
+                        startPoint: .top,
                         endPoint: .bottomTrailing
                     )
                 )
 
-            // Specular Highlight (Radial)
             Circle()
                 .fill(
                     RadialGradient(
-                        gradient: Gradient(colors: [.white.opacity(0.4), .clear]),
-                        center: .topLeading,
+                        colors: [.white.opacity(0.42), .clear],
+                        center: .top,
                         startRadius: 0,
-                        endRadius: 50
+                        endRadius: 58
                     )
                 )
-                .blur(radius: 5)
+                .blur(radius: 8)
 
-            // Border (Angular)
             Circle()
-                .strokeBorder(
-                    AngularGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: .white.opacity(0.9), location: 0.1),
-                            .init(color: .white.opacity(0.2), location: 0.4),
-                            .init(color: .clear, location: 0.6)
-                        ]),
-                        center: .center
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.25), Color.clear],
+                        startPoint: .topLeading,
+                        endPoint: .bottom
                     ),
-                    lineWidth: 1.5
                 )
+                .blendMode(.plusLighter)
+
+            Circle()
+                .strokeBorder(Color.white.opacity(0.78), lineWidth: 1.6)
+                .blur(radius: 0.35)
+
+            Circle()
+                .strokeBorder(Color.black.opacity(0.12), lineWidth: 0.8)
+                .blendMode(.multiply)
+        }
+        .shadow(color: Color(hex: "FF5A67").opacity(0.48), radius: 18, x: 0, y: 8)
+        .overlay {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [.white.opacity(0.2), .clear],
+                        center: .topLeading,
+                        startRadius: 1,
+                        endRadius: 26
+                    )
+                )
+                .blur(radius: 1.2)
         }
     }
 
     private var leafGlassBase: some View {
         ZStack {
-            // Background 3: Deep Dark Green (Base)
             Circle()
-                .fill(Color(red: 0.01, green: 0.06, blue: 0.02).opacity(0.75))
+                .fill(Color(hex: "193B27").opacity(colorScheme == .dark ? 0.85 : 0.82))
 
-            // Background 2: Bottom-heavy metallic gradient
             Circle()
                 .fill(
                     LinearGradient(
-                        stops: [
-                            .init(color: Color(red: 0.4, green: 0.4, blue: 0.4).opacity(0), location: 0.51),
-                            .init(color: Color(red: 0.4, green: 0.4, blue: 0.4).opacity(0.4), location: 1.00)
+                        colors: [
+                            Color(hex: "9CA79B").opacity(0.27),
+                            Color.clear
                         ],
                         startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.clear,
+                            Color(hex: "97A498").opacity(0.38)
+                        ],
+                        startPoint: .center,
                         endPoint: .bottom
                     )
                 )
 
-            // Background 1: Top-heavy subtle gradient
             Circle()
                 .fill(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(red: 0.45, green: 0.45, blue: 0.45).opacity(0.3), location: 0.00),
-                            .init(color: Color(red: 0.4, green: 0.4, blue: 0.4).opacity(0), location: 0.24)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+                    RadialGradient(
+                        colors: [.white.opacity(0.18), .clear],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: 42
                     )
                 )
+                .blur(radius: 4.5)
 
-            // Overlay Stroke (White, inset)
             Circle()
-                .inset(by: 1)
-                .stroke(Color.white.opacity(0.85), lineWidth: 2)
-                .blur(radius: 0.5)
+                .strokeBorder(Color.white.opacity(0.84), lineWidth: 1.5)
+                .blur(radius: 0.28)
+
+            Circle()
+                .strokeBorder(Color.black.opacity(0.20), lineWidth: 0.8)
+                .blendMode(.multiply)
         }
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.24 : 0.18), radius: 10, x: 0, y: 6)
     }
 }
