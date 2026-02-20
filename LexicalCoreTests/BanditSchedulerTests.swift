@@ -6,14 +6,6 @@ import XCTest
 
 @MainActor
 final class BanditSchedulerTests: XCTestCase {
-    private let successCountsKey = "bandit_success_counts_v3"
-    private let totalCountsKey = "bandit_total_counts_v3"
-    private let legacyTotalRewardsKey = "bandit_total_rewards_v3"
-    private let lastEngagedKey = "bandit_last_engaged_date"
-    private let ignoreStreakKey = "bandit_ignore_streak"
-    private let lastScheduledKey = "bandit_last_scheduled"
-    private let pendingPromptLemmaKey = "lexical.pending_prompt_lemma"
-    private let pendingPromptDefinitionKey = "lexical.pending_prompt_definition"
     private let activeUserDefaultsKey = UserProfile.activeUserDefaultsKey
 
     override func setUp() {
@@ -30,158 +22,439 @@ final class BanditSchedulerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testMigratesLegacyIntSuccessCountsToDoubleDictionary() throws {
-        let key = makeKey(.morning, .curious)
-        let legacySuccess = [key: 3]
-        let totals = [key: 5]
-
-        UserDefaults.standard.set(try JSONEncoder().encode(legacySuccess), forKey: successCountsKey)
-        UserDefaults.standard.set(try JSONEncoder().encode(totals), forKey: totalCountsKey)
-
+    func testReminderSlotsForInactivityDayZeroAreThree() {
         let scheduler = BanditScheduler()
-
-        XCTAssertEqual(scheduler.successCounts[key], 3.0)
-        XCTAssertEqual(scheduler.totalCounts[key], 5)
+        let slots = scheduler.reminderSlots(forInactiveDay: 0)
+        XCTAssertEqual(slots, [.nineAM, .twoPM, .eightPM])
     }
 
-    func testSelectArmPrefersOnlyUnpulledArm() async throws {
+    func testReminderSlotsForInactivityDayThreeAreTwo() {
+        let scheduler = BanditScheduler()
+        let slots = scheduler.reminderSlots(forInactiveDay: 3)
+        XCTAssertEqual(slots, [.twoPM, .eightPM])
+    }
+
+    func testReminderSlotsForInactivityDaySevenIsOne() {
+        let scheduler = BanditScheduler()
+        let slots = scheduler.reminderSlots(forInactiveDay: 7)
+        XCTAssertEqual(slots, [.eightPM])
+    }
+
+    func testReminderSlotsForInactivityDayTwelveUsesWeeklyPattern() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+
+        let tuesday = calendar.date(from: DateComponents(year: 2026, month: 2, day: 24))!
+        let wednesday = calendar.date(from: DateComponents(year: 2026, month: 2, day: 25))!
+        let thursday = calendar.date(from: DateComponents(year: 2026, month: 2, day: 26))!
+        let sunday = calendar.date(from: DateComponents(year: 2026, month: 3, day: 1))!
+
+        XCTAssertTrue(scheduler.shouldScheduleWeeklyNudge(forDate: tuesday))
+        XCTAssertFalse(scheduler.shouldScheduleWeeklyNudge(forDate: wednesday))
+        XCTAssertTrue(scheduler.shouldScheduleWeeklyNudge(forDate: thursday))
+        XCTAssertTrue(scheduler.shouldScheduleWeeklyNudge(forDate: sunday))
+    }
+
+    func testSlotIntentMappingNineAndTwoAreSuggestionsEightIsReview() {
+        XCTAssertEqual(BanditScheduler.ReminderSlot.nineAM.deliveryKind, .suggestion)
+        XCTAssertEqual(BanditScheduler.ReminderSlot.twoPM.deliveryKind, .suggestion)
+        XCTAssertEqual(BanditScheduler.ReminderSlot.eightPM.deliveryKind, .reviewReminder)
+    }
+
+    func testBuildRollingRemindersGeneratesExpectedCountForActiveUser() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+
+        let plan = scheduler.buildReminderPlan(
+            now: now,
+            lastInteractiveDate: now,
+            horizonDays: 2,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(plan.count, 6)
+    }
+
+    func testBuildRollingRemindersTapersAcrossFutureDays() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+        let lastInteractive = calendar.date(byAdding: .day, value: -1, to: now)!
+
+        let plan = scheduler.buildReminderPlan(
+            now: now,
+            lastInteractiveDate: lastInteractive,
+            horizonDays: 5,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(plan.count, 10)
+    }
+
+    func testReminderIdentifiersAreDeterministicByDateAndSlot() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+
+        let plan = scheduler.buildReminderPlan(
+            now: now,
+            lastInteractiveDate: now,
+            horizonDays: 1,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(plan.map(\.identifier), [
+            "LEXICAL_REMINDER_20260220_0900",
+            "LEXICAL_REMINDER_20260220_1400",
+            "LEXICAL_REMINDER_20260220_2000"
+        ])
+    }
+
+    func testReviewedDaySkipsReviewReminderButKeepsSuggestionSlots() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+        let reviewedDay = Set([calendar.startOfDay(for: now)])
+
+        let plan = scheduler.buildReminderPlan(
+            now: now,
+            lastInteractiveDate: now,
+            reviewedInteractiveDays: reviewedDay,
+            horizonDays: 1,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(plan.map(\.slot), [.nineAM, .twoPM])
+        XCTAssertTrue(plan.allSatisfy { $0.deliveryKind == .suggestion })
+    }
+
+    func testLastInteractiveReviewDateIgnoresImplicitExposure() throws {
         let originalContainer = Persistence.sharedModelContainer
         defer { Persistence.sharedModelContainer = originalContainer }
 
         Persistence.sharedModelContainer = try makeInMemoryContainer()
-        try seedActiveUser(rank: 1_000, userId: uniqueUserID(prefix: "bandit.unpulled"))
-
-        let expectedKey = makeKey(.night, .quick)
-        var totalCounts = Dictionary(uniqueKeysWithValues: allArmKeys().map { ($0, 3) })
-        totalCounts[expectedKey] = 0
-
-        seedBanditState(successCounts: [:], totalCounts: totalCounts, ignoreStreak: 0)
-
         let scheduler = BanditScheduler()
-        let baseline = scheduler.totalCounts
-        scheduler.scheduleTestNotification()
+        let context = Persistence.sharedModelContainer.mainContext
+        let userId = uniqueUserID(prefix: "bandit.interactive")
+        let active = UserProfile(userId: userId, lexicalRank: 1_200)
+        context.insert(active)
+        try context.save()
+        setActiveUser(userId)
 
-        let selectedKey = try await waitForSelectedArmKey(scheduler: scheduler, baseline: baseline)
-        XCTAssertEqual(selectedKey, expectedKey)
+        let now = Date()
+        let interactiveDate = Calendar.current.date(byAdding: .day, value: -5, to: now)!
+        let implicitDate = Calendar.current.date(byAdding: .day, value: -1, to: now)!
+
+        context.insert(
+            ReviewEvent(
+                userId: userId,
+                lemma: "alpha",
+                grade: 3,
+                reviewDate: interactiveDate,
+                durationMs: 600,
+                scheduledDays: 1.0,
+                reviewState: "good"
+            )
+        )
+        context.insert(
+            ReviewEvent(
+                userId: userId,
+                lemma: "beta",
+                grade: 3,
+                reviewDate: implicitDate,
+                durationMs: 600,
+                scheduledDays: 1.0,
+                reviewState: ReviewEvent.implicitExposureState
+            )
+        )
+        try context.save()
+
+        let latest = scheduler.latestInteractiveReviewDate(userId: userId, modelContext: context)
+        XCTAssertEqual(latest, interactiveDate)
     }
 
-    func testSelectArmPrefersHighestMeanRewardWhenPullsEqual() async throws {
-        let originalContainer = Persistence.sharedModelContainer
-        defer { Persistence.sharedModelContainer = originalContainer }
-
-        Persistence.sharedModelContainer = try makeInMemoryContainer()
-        try seedActiveUser(rank: 1_000, userId: uniqueUserID(prefix: "bandit.exploit"))
-
-        let expectedKey = makeKey(.morning, .curious)
-        let totalCounts = Dictionary(uniqueKeysWithValues: allArmKeys().map { ($0, 10) })
-        var successCounts = Dictionary(uniqueKeysWithValues: allArmKeys().map { ($0, 1.0) })
-        successCounts[expectedKey] = 9.0
-
-        seedBanditState(successCounts: successCounts, totalCounts: totalCounts, ignoreStreak: 0)
-
+    func testNoInteractiveHistoryDefaultsToDayZeroInactivity() {
         let scheduler = BanditScheduler()
-        let baseline = scheduler.totalCounts
-        scheduler.scheduleTestNotification()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
 
-        let selectedKey = try await waitForSelectedArmKey(scheduler: scheduler, baseline: baseline)
-        XCTAssertEqual(selectedKey, expectedKey)
+        let plan = scheduler.buildReminderPlan(
+            now: now,
+            lastInteractiveDate: nil,
+            horizonDays: 14,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(plan.count, 20)
     }
 
-    func testRankAwareRewardBoostsAlignedRankByOnePointFive() async throws {
-        let originalContainer = Persistence.sharedModelContainer
-        defer { Persistence.sharedModelContainer = originalContainer }
-
-        Persistence.sharedModelContainer = try makeInMemoryContainer()
-        try seedActiveUser(rank: 1_000, userId: uniqueUserID(prefix: "bandit.rank"))
-
-        seedBanditState(successCounts: [:], totalCounts: [:], ignoreStreak: 0)
-
+    func testInactivityDaysComputedFromLatestInteractiveEvent() {
         let scheduler = BanditScheduler()
-        let rewardKey = makeKey(.morning, .curious)
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+        let lastInteractive = calendar.date(byAdding: .day, value: -5, to: now)!
 
-        let withinBand = try makeNotificationResponse(
-            actionIdentifier: "bandit.test.success",
+        let plan = scheduler.buildReminderPlan(
+            now: now,
+            lastInteractiveDate: lastInteractive,
+            horizonDays: 1,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(plan.count, 1)
+        XCTAssertEqual(plan.first?.identifier, "LEXICAL_REMINDER_20260220_2000")
+    }
+
+    func testSyncSchedulesRollingReminderRequestsInsteadOfRepeatingFixedThree() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+
+        scheduler.syncOutOfAppReminderNotifications(
+            notificationsEnabled: true,
+            authorizationStatusOverride: .authorized,
+            nowOverride: now,
+            lastInteractiveDateOverride: now,
+            calendar: calendar
+        )
+
+        let scheduled = scheduler.debugReminderIdentifiersForTesting()
+        XCTAssertEqual(scheduled.count, 20)
+        XCTAssertTrue(scheduled.allSatisfy { $0.hasPrefix("LEXICAL_REMINDER_") })
+    }
+
+    func testSyncIsIdempotentForRollingIdentifiers() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+
+        scheduler.syncOutOfAppReminderNotifications(
+            notificationsEnabled: true,
+            authorizationStatusOverride: .authorized,
+            nowOverride: now,
+            lastInteractiveDateOverride: now,
+            calendar: calendar
+        )
+        scheduler.syncOutOfAppReminderNotifications(
+            notificationsEnabled: true,
+            authorizationStatusOverride: .authorized,
+            nowOverride: now,
+            lastInteractiveDateOverride: now,
+            calendar: calendar
+        )
+
+        let identifiers = scheduler.debugReminderIdentifiersForTesting()
+        XCTAssertEqual(identifiers.count, Set(identifiers).count)
+        XCTAssertEqual(identifiers.count, 20)
+    }
+
+    func testSyncRemovesLegacyReminderIdentifiers() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+
+        UserDefaults.standard.set([
+            "LEXICAL_REMINDER_0900",
+            "LEXICAL_REMINDER_1400",
+            "LEXICAL_REMINDER_2000"
+        ], forKey: "bandit_test_reminder_ids_v1")
+
+        scheduler.syncOutOfAppReminderNotifications(
+            notificationsEnabled: true,
+            authorizationStatusOverride: .authorized,
+            nowOverride: now,
+            lastInteractiveDateOverride: now,
+            calendar: calendar
+        )
+
+        let identifiers = scheduler.debugReminderIdentifiersForTesting()
+        XCTAssertFalse(identifiers.contains("LEXICAL_REMINDER_0900"))
+        XCTAssertFalse(identifiers.contains("LEXICAL_REMINDER_1400"))
+        XCTAssertFalse(identifiers.contains("LEXICAL_REMINDER_2000"))
+    }
+
+    func testToggleOffCancelsAllFixedReminderRequests() {
+        let scheduler = BanditScheduler()
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 2, day: 20, hour: 0, minute: 1))!
+
+        scheduler.syncOutOfAppReminderNotifications(
+            notificationsEnabled: true,
+            authorizationStatusOverride: .authorized,
+            nowOverride: now,
+            lastInteractiveDateOverride: now,
+            calendar: calendar
+        )
+        scheduler.syncOutOfAppReminderNotifications(
+            notificationsEnabled: false,
+            authorizationStatusOverride: .authorized,
+            nowOverride: now,
+            lastInteractiveDateOverride: now,
+            calendar: calendar
+        )
+
+        XCTAssertTrue(scheduler.debugReminderIdentifiersForTesting().isEmpty)
+    }
+
+    func testDeniedAuthorizationSkipsReminderScheduling() {
+        let scheduler = BanditScheduler()
+
+        scheduler.syncOutOfAppReminderNotifications(
+            notificationsEnabled: true,
+            authorizationStatusOverride: .denied,
+            nowOverride: Date(),
+            lastInteractiveDateOverride: Date()
+        )
+
+        XCTAssertTrue(scheduler.debugReminderIdentifiersForTesting().isEmpty)
+    }
+
+    func testReminderTapRoutesToReviewSessionEvent() throws {
+        let scheduler = BanditScheduler()
+        let expectation = expectation(description: "Routes to review session")
+
+        let observer = NotificationCenter.default.addObserver(
+            forName: .lexicalOpenReviewSession,
+            object: nil,
+            queue: .main
+        ) { _ in
+            expectation.fulfill()
+        }
+
+        let response = try makeNotificationResponse(
+            actionIdentifier: UNNotificationDefaultActionIdentifier,
             userInfo: [
-                "bandit_slot": TimeSlot.morning.rawValue,
-                "bandit_template": NotificationTemplate.curious.rawValue,
-                "lemma": "alpha",
-                "definition": "A",
-                "rank": 1_200
+                "route": BanditScheduler.routeReviewSession
             ]
         )
-        scheduler.handleNotificationResponse(withinBand)
-        let withinApplied = await waitUntil { abs((scheduler.successCounts[rewardKey] ?? 0.0) - 1.5) < 0.0001 }
-        XCTAssertTrue(withinApplied)
 
-        let outsideBand = try makeNotificationResponse(
-            actionIdentifier: "bandit.test.success",
-            userInfo: [
-                "bandit_slot": TimeSlot.morning.rawValue,
-                "bandit_template": NotificationTemplate.curious.rawValue,
-                "lemma": "beta",
-                "definition": "B",
-                "rank": 2_000
-            ]
-        )
-        scheduler.handleNotificationResponse(outsideBand)
-        let outsideApplied = await waitUntil { abs((scheduler.successCounts[rewardKey] ?? 0.0) - 2.5) < 0.0001 }
-        XCTAssertTrue(outsideApplied)
-
-        XCTAssertEqual(scheduler.successCounts[rewardKey] ?? 0.0, 2.5, accuracy: 0.0001)
-
-        let persistedData = try XCTUnwrap(UserDefaults.standard.data(forKey: successCountsKey))
-        let persistedSuccess = try JSONDecoder().decode([String: Double].self, from: persistedData)
-        XCTAssertEqual(persistedSuccess[rewardKey] ?? 0.0, 2.5, accuracy: 0.0001)
+        scheduler.handleNotificationResponse(response)
+        wait(for: [expectation], timeout: 1.0)
+        NotificationCenter.default.removeObserver(observer)
     }
 
-    func testIgnoreStreakBoostsExplorationFactor() async throws {
-        let originalContainer = Persistence.sharedModelContainer
-        defer { Persistence.sharedModelContainer = originalContainer }
+    func testSuggestionTapRoutesToPromptCardPendingPayload() throws {
+        let scheduler = BanditScheduler()
+        let expectation = expectation(description: "Routes to prompt card")
 
-        Persistence.sharedModelContainer = try makeInMemoryContainer()
-        try seedActiveUser(rank: 1_000, userId: uniqueUserID(prefix: "bandit.ignoreboost"))
+        let observer = NotificationCenter.default.addObserver(
+            forName: .lexicalOpenPromptCard,
+            object: nil,
+            queue: .main
+        ) { notification in
+            XCTAssertEqual(notification.userInfo?["lemma"] as? String, "orbit")
+            expectation.fulfill()
+        }
 
-        let explorationKey = makeKey(.morning, .curious)
-        let exploitationKey = makeKey(.afternoon, .streak)
+        let response = try makeNotificationResponse(
+            actionIdentifier: UNNotificationDefaultActionIdentifier,
+            userInfo: [
+                "route": BanditScheduler.routePromptCard,
+                "lemma": "Orbit",
+                "definition": "Path around a body",
+                "rank": 1200
+            ]
+        )
 
-        var totalCounts = Dictionary(uniqueKeysWithValues: allArmKeys().map { ($0, 20) })
-        var successCounts = Dictionary(uniqueKeysWithValues: allArmKeys().map { ($0, 2.0) })
+        scheduler.handleNotificationResponse(response)
+        wait(for: [expectation], timeout: 1.0)
+        NotificationCenter.default.removeObserver(observer)
 
-        totalCounts[explorationKey] = 5
-        successCounts[explorationKey] = 0.0
-        successCounts[exploitationKey] = 20.0
+        XCTAssertEqual(UserDefaults.standard.string(forKey: "lexical.pending_prompt_lemma"), "orbit")
+        XCTAssertEqual(
+            UserDefaults.standard.string(forKey: "lexical.pending_prompt_definition"),
+            "Path around a body"
+        )
+    }
 
-        seedBanditState(successCounts: successCounts, totalCounts: totalCounts, ignoreStreak: 0)
+    func testForegroundSuppressionIncludesSuggestionCategory() {
+        XCTAssertTrue(
+            BanditScheduler.foregroundSuppressedCategories.contains(
+                BanditScheduler.suggestionCategoryIdentifier
+            )
+        )
+    }
 
-        let lowIgnoreScheduler = BanditScheduler()
-        let lowIgnoreBaseline = lowIgnoreScheduler.totalCounts
-        lowIgnoreScheduler.scheduleTestNotification()
-        let lowIgnoreSelected = try await waitForSelectedArmKey(scheduler: lowIgnoreScheduler, baseline: lowIgnoreBaseline)
-        XCTAssertEqual(lowIgnoreSelected, exploitationKey)
+    func testArticleReadyScheduledWhenGenerationCompletesOutOfApp() {
+        let scheduler = BanditScheduler()
 
-        seedBanditState(successCounts: successCounts, totalCounts: totalCounts, ignoreStreak: 4)
+        scheduler.scheduleArticleReadyNotificationIfNeeded(
+            articleId: "article-1",
+            title: "Fresh Lexical Article",
+            notificationsEnabled: true,
+            appIsActive: false
+        )
 
-        let highIgnoreScheduler = BanditScheduler()
-        let highIgnoreBaseline = highIgnoreScheduler.totalCounts
-        highIgnoreScheduler.scheduleTestNotification()
-        let highIgnoreSelected = try await waitForSelectedArmKey(scheduler: highIgnoreScheduler, baseline: highIgnoreBaseline)
-        XCTAssertEqual(highIgnoreSelected, explorationKey)
+        XCTAssertEqual(
+            scheduler.debugArticleReadyIdentifiersForTesting(),
+            ["LEXICAL_ARTICLE_READY_article-1"]
+        )
+    }
+
+    func testArticleReadyNotScheduledWhenAppActive() {
+        let scheduler = BanditScheduler()
+
+        scheduler.scheduleArticleReadyNotificationIfNeeded(
+            articleId: "article-1",
+            title: "Fresh Lexical Article",
+            notificationsEnabled: true,
+            appIsActive: true
+        )
+
+        XCTAssertTrue(scheduler.debugArticleReadyIdentifiersForTesting().isEmpty)
+    }
+
+    func testArticleReadyIdentifierDedupesPerArticleId() {
+        let scheduler = BanditScheduler()
+
+        scheduler.scheduleArticleReadyNotificationIfNeeded(
+            articleId: "article-1",
+            title: "Fresh Lexical Article",
+            notificationsEnabled: true,
+            appIsActive: false
+        )
+        scheduler.scheduleArticleReadyNotificationIfNeeded(
+            articleId: "article-1",
+            title: "Fresh Lexical Article",
+            notificationsEnabled: true,
+            appIsActive: false
+        )
+
+        XCTAssertEqual(
+            scheduler.debugArticleReadyIdentifiersForTesting(),
+            ["LEXICAL_ARTICLE_READY_article-1"]
+        )
+    }
+
+    func testArticleReadyTapRoutesToReadingTabEvent() throws {
+        let scheduler = BanditScheduler()
+        let expectation = expectation(description: "Routes to reading tab")
+
+        let observer = NotificationCenter.default.addObserver(
+            forName: .lexicalOpenReadingTab,
+            object: nil,
+            queue: .main
+        ) { _ in
+            expectation.fulfill()
+        }
+
+        let response = try makeNotificationResponse(
+            actionIdentifier: UNNotificationDefaultActionIdentifier,
+            userInfo: [
+                "route": BanditScheduler.routeReadingTab
+            ]
+        )
+
+        scheduler.handleNotificationResponse(response)
+        wait(for: [expectation], timeout: 1.0)
+        NotificationCenter.default.removeObserver(observer)
     }
 
     private func makeInMemoryContainer() throws -> ModelContainer {
         let schema = Schema(LexicalSchemaV3.models)
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [configuration])
-    }
-
-    private func seedBanditState(
-        successCounts: [String: Double],
-        totalCounts: [String: Int],
-        ignoreStreak: Int
-    ) {
-        UserDefaults.standard.set(try? JSONEncoder().encode(successCounts), forKey: successCountsKey)
-        UserDefaults.standard.set(try? JSONEncoder().encode(totalCounts), forKey: totalCountsKey)
-        UserDefaults.standard.set(ignoreStreak, forKey: ignoreStreakKey)
     }
 
     private func seedActiveUser(rank: Int, userId: String) throws {
@@ -218,63 +491,6 @@ final class BanditSchedulerTests: XCTestCase {
         return response
     }
 
-    private func waitForSelectedArmKey(
-        scheduler: BanditScheduler,
-        baseline: [String: Int],
-        timeout: TimeInterval = 1.0
-    ) async throws -> String {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if let selected = selectedArmKey(baseline: baseline, updated: scheduler.totalCounts) {
-                return selected
-            }
-            try? await Task.sleep(nanoseconds: 20_000_000)
-        }
-
-        if let selected = selectedArmKey(baseline: baseline, updated: scheduler.totalCounts) {
-            return selected
-        }
-        throw TestError.selectionTimedOut
-    }
-
-    private func selectedArmKey(baseline: [String: Int], updated: [String: Int]) -> String? {
-        let allKeys = Set(baseline.keys).union(updated.keys)
-        let deltas = allKeys.compactMap { key -> (String, Int)? in
-            let delta = (updated[key] ?? 0) - (baseline[key] ?? 0)
-            return delta == 0 ? nil : (key, delta)
-        }
-
-        guard deltas.count == 1, deltas[0].1 == 1 else { return nil }
-        return deltas[0].0
-    }
-
-    private func waitUntil(
-        timeout: TimeInterval = 1.0,
-        pollNanoseconds: UInt64 = 20_000_000,
-        condition: () -> Bool
-    ) async -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if condition() {
-                return true
-            }
-            try? await Task.sleep(nanoseconds: pollNanoseconds)
-        }
-        return condition()
-    }
-
-    private func allArmKeys() -> [String] {
-        TimeSlot.allCases.flatMap { slot in
-            NotificationTemplate.allCases.map { template in
-                makeKey(slot, template)
-            }
-        }
-    }
-
-    private func makeKey(_ slot: TimeSlot, _ template: NotificationTemplate) -> String {
-        "\(slot.rawValue)_\(template.rawValue)"
-    }
-
     private func setActiveUser(_ userId: String) {
         if let suiteDefaults = UserDefaults(suiteName: Persistence.appGroupIdentifier) {
             suiteDefaults.set(userId, forKey: activeUserDefaultsKey)
@@ -292,14 +508,11 @@ final class BanditSchedulerTests: XCTestCase {
     private func clearBanditDefaults() {
         let defaults = UserDefaults.standard
         [
-            successCountsKey,
-            totalCountsKey,
-            legacyTotalRewardsKey,
-            lastEngagedKey,
-            ignoreStreakKey,
-            lastScheduledKey,
-            pendingPromptLemmaKey,
-            pendingPromptDefinitionKey
+            "bandit_test_reminder_ids_v1",
+            "bandit_test_article_ready_ids_v1",
+            "lexical.pending_notification_route",
+            "lexical.pending_prompt_lemma",
+            "lexical.pending_prompt_definition"
         ].forEach { defaults.removeObject(forKey: $0) }
     }
 
@@ -332,6 +545,5 @@ final class BanditSchedulerTests: XCTestCase {
     private enum TestError: Error {
         case runtimeClassUnavailable
         case responseCastFailed
-        case selectionTimedOut
     }
 }

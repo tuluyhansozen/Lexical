@@ -11,11 +11,28 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         _ = BanditScheduler.shared
+        let notificationsEnabled = UserDefaults.standard.object(forKey: "notificationsEnabled") as? Bool ?? true
+        BanditScheduler.shared.syncOutOfAppReminderNotifications(notificationsEnabled: notificationsEnabled)
         return true
     }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        let notificationsEnabled = UserDefaults.standard.object(forKey: "notificationsEnabled") as? Bool ?? true
+        BanditScheduler.shared.syncOutOfAppReminderNotifications(notificationsEnabled: notificationsEnabled)
+    }
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        let notificationsEnabled = UserDefaults.standard.object(forKey: "notificationsEnabled") as? Bool ?? true
+        BanditScheduler.shared.syncOutOfAppReminderNotifications(notificationsEnabled: notificationsEnabled)
+    }
     
-    // Show in foreground
+    // Suppress app-owned reminder/ready notifications while foregrounded.
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let category = notification.request.content.categoryIdentifier
+        if BanditScheduler.foregroundSuppressedCategories.contains(category) {
+            completionHandler([])
+            return
+        }
         completionHandler([.banner, .sound, .badge])
     }
 

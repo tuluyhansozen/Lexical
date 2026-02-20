@@ -10,6 +10,7 @@ struct OnboardingFlowView: View {
     @AppStorage(OnboardingStorageKeys.currentStep) private var persistedStep: Int = 0
     @AppStorage(OnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
     @AppStorage(OnboardingStorageKeys.notificationPrompted) private var hasPromptedNotifications = false
+    @AppStorage("notificationsEnabled") private var notificationsEnabled: Bool = true
     @AppStorage(OnboardingStorageKeys.articleStylePreference) private var articleStylePreferenceRaw: String = ArticleStylePreference.balanced.rawValue
     @AppStorage(OnboardingStorageKeys.calibrationRank) private var persistedCalibrationRank: Int = 0
     @AppStorage(OnboardingStorageKeys.calibrationConfidence) private var persistedCalibrationConfidence: Double = 0.0
@@ -554,15 +555,15 @@ struct OnboardingFlowView: View {
                     .font(.display(size: 31, weight: .bold))
                     .foregroundStyle(Color(hex: "0A0A0A"))
 
-                Text("Lexical schedules reminders with Bandit timing so you get fewer but higher-value prompts.")
+                Text("Lexical sends out-of-app nudges with an inactivity-aware schedule and rank-fit word suggestions.")
                     .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(Color(hex: "364153"))
                     .lineSpacing(4)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Label("No spam cadence", systemImage: "bell.badge")
-                    Label("Review at high-interruptibility moments", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
-                    Label("Actionable prompts: Reveal, Add, Ignore", systemImage: "bolt.horizontal.circle")
+                    Label("09:00 and 14:00: rank-fit new word suggestions", systemImage: "sparkles")
+                    Label("20:00: review reminder (skipped if you already reviewed today)", systemImage: "clock.badge.checkmark")
+                    Label("Tap a suggestion to open the single-word card", systemImage: "rectangle.on.rectangle")
                 }
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color(hex: "3A4758"))
@@ -918,6 +919,9 @@ struct OnboardingFlowView: View {
             _ = await BanditScheduler.shared.requestNotificationAuthorization()
             await refreshNotificationStatus()
             await MainActor.run {
+                if notificationsEnabled && isNotificationEnabled(notificationStatus) {
+                    BanditScheduler.shared.syncOutOfAppReminderNotifications(notificationsEnabled: true)
+                }
                 isRequestingNotificationPermission = false
             }
         }

@@ -1,127 +1,76 @@
 import Foundation
 import UserNotifications
-import CoreMotion
 import SwiftData
-#if canImport(UIKit)
-import UIKit
-#endif
 
 public extension Notification.Name {
+    // Kept for compatibility with existing prompt-card flow outside notification scheduling.
     static let lexicalOpenPromptCard = Notification.Name("LexicalOpenPromptCard")
-}
-
-/// Time slots for notification scheduling.
-public enum TimeSlot: String, CaseIterable, Codable {
-    case morning = "morning"
-    case afternoon = "afternoon"
-    case evening = "evening"
-    case night = "night"
-
-    var hour: Int {
-        switch self {
-        case .morning: return 8
-        case .afternoon: return 14
-        case .evening: return 18
-        case .night: return 21
-        }
-    }
-
-    var displayName: String {
-        switch self {
-        case .morning: return "Morning (8 AM)"
-        case .afternoon: return "Afternoon (2 PM)"
-        case .evening: return "Evening (6 PM)"
-        case .night: return "Night (9 PM)"
-        }
-    }
-}
-
-/// Notification templates (bandit arms).
-public enum NotificationTemplate: String, CaseIterable, Codable {
-    case curious = "curious"
-    case streak = "streak"
-    case value = "value"
-    case quick = "quick"
-
-    var title: String {
-        switch self {
-        case .curious: return "Time for a challenge?"
-        case .streak: return "Streak check"
-        case .value: return "Micro-dose ready"
-        case .quick: return "Quick review?"
-        }
-    }
-
-    var body: String {
-        switch self {
-        case .curious: return "Try recalling this target word."
-        case .streak: return "Keep your momentum going with one card."
-        case .value: return "A useful word is waiting for you."
-        case .quick: return "Two minutes is enough for one prompt."
-        }
-    }
+    static let lexicalOpenReviewSession = Notification.Name("LexicalOpenReviewSession")
+    static let lexicalOpenReadingTab = Notification.Name("LexicalOpenReadingTab")
 }
 
 public final class BanditScheduler: NSObject, ObservableObject {
     public static let shared = BanditScheduler()
 
-    public static let notificationCategoryIdentifier = "LEXICAL_MICRODOSE_CATEGORY"
-    public static let actionRevealIdentifier = "LEXICAL_ACTION_REVEAL"
-    public static let actionAddIdentifier = "LEXICAL_ACTION_ADD"
-    public static let actionIgnoreIdentifier = "LEXICAL_ACTION_IGNORE"
+    public static let reminderCategoryIdentifier = "LEXICAL_REMINDER_CATEGORY"
+    public static let suggestionCategoryIdentifier = "LEXICAL_SUGGESTION_CATEGORY"
+    public static let articleReadyCategoryIdentifier = "LEXICAL_ARTICLE_READY_CATEGORY"
 
-    private let defaultExplorationFactor: Double = 1.0
-    private let ignoreBoostedExplorationFactor: Double = 2.0
+    public static let routeReviewSession = "review_session"
+    public static let routePromptCard = "prompt_card"
+    public static let routeReadingTab = "reading_tab"
 
-    private let successCountsKey = "bandit_success_counts_v3"
-    private let totalCountsKey = "bandit_total_counts_v3"
-    private let lastEngagedKey = "bandit_last_engaged_date"
-    private let ignoreStreakKey = "bandit_ignore_streak"
+    public static let foregroundSuppressedCategories: Set<String> = [
+        reminderCategoryIdentifier,
+        suggestionCategoryIdentifier,
+        articleReadyCategoryIdentifier
+    ]
 
-    @Published private(set) var successCounts: [String: Double]
-    @Published private(set) var totalCounts: [String: Int]
+    private let reminderIdentifierPrefix = "LEXICAL_REMINDER_"
+    private let pendingRouteKey = "lexical.pending_notification_route"
+    private let testReminderIDsKey = "bandit_test_reminder_ids_v1"
+    private let testArticleReadyIDsKey = "bandit_test_article_ready_ids_v1"
 
-    #if os(iOS)
-    private let motionActivityManager = CMMotionActivityManager()
-    #endif
-    private var foregroundObserver: NSObjectProtocol?
-    private let triageService = NotificationTriageService()
+    enum ReminderDeliveryKind: Equatable {
+        case suggestion
+        case reviewReminder
+    }
 
-    private struct NotificationCandidate {
-        let lemma: String
-        let definition: String?
-        let rank: Int?
-        let context: String?
+    enum ReminderSlot: String, CaseIterable {
+        case nineAM = "0900"
+        case twoPM = "1400"
+        case eightPM = "2000"
+
+        var hour: Int {
+            switch self {
+            case .nineAM: return 9
+            case .twoPM: return 14
+            case .eightPM: return 20
+            }
+        }
+
+        var minute: Int { 0 }
+
+        var deliveryKind: ReminderDeliveryKind {
+            switch self {
+            case .nineAM, .twoPM:
+                return .suggestion
+            case .eightPM:
+                return .reviewReminder
+            }
+        }
+    }
+
+    struct ReminderRequestPlan: Equatable {
+        let identifier: String
+        let dateComponents: DateComponents
+        let slot: ReminderSlot
+        let deliveryKind: ReminderDeliveryKind
     }
 
     public override init() {
-        if let successData = UserDefaults.standard.data(forKey: successCountsKey) {
-            if let success = try? JSONDecoder().decode([String: Double].self, from: successData) {
-                self.successCounts = success
-            } else if let legacySuccess = try? JSONDecoder().decode([String: Int].self, from: successData) {
-                self.successCounts = legacySuccess.mapValues(Double.init)
-            } else {
-                self.successCounts = [:]
-            }
-        } else {
-            self.successCounts = [:]
-        }
-        if let totalData = UserDefaults.standard.data(forKey: totalCountsKey),
-           let total = try? JSONDecoder().decode([String: Int].self, from: totalData) {
-            self.totalCounts = total
-        } else {
-            self.totalCounts = [:]
-        }
-
         super.init()
         setupNotifications()
-        setupForegroundScheduling()
-    }
-
-    deinit {
-        if let foregroundObserver {
-            NotificationCenter.default.removeObserver(foregroundObserver)
-        }
     }
 
     private func setupNotifications() {
@@ -130,28 +79,25 @@ public final class BanditScheduler: NSObject, ObservableObject {
         }
 
         let center = UNUserNotificationCenter.current()
-        let reveal = UNNotificationAction(
-            identifier: Self.actionRevealIdentifier,
-            title: "Reveal",
-            options: []
-        )
-        let add = UNNotificationAction(
-            identifier: Self.actionAddIdentifier,
-            title: "Add to Deck",
-            options: []
-        )
-        let ignore = UNNotificationAction(
-            identifier: Self.actionIgnoreIdentifier,
-            title: "Ignore",
-            options: [.destructive]
-        )
-        let category = UNNotificationCategory(
-            identifier: Self.notificationCategoryIdentifier,
-            actions: [reveal, add, ignore],
+        let reminderCategory = UNNotificationCategory(
+            identifier: Self.reminderCategoryIdentifier,
+            actions: [],
             intentIdentifiers: [],
             options: []
         )
-        center.setNotificationCategories([category])
+        let suggestionCategory = UNNotificationCategory(
+            identifier: Self.suggestionCategoryIdentifier,
+            actions: [],
+            intentIdentifiers: [],
+            options: []
+        )
+        let articleReadyCategory = UNNotificationCategory(
+            identifier: Self.articleReadyCategoryIdentifier,
+            actions: [],
+            intentIdentifiers: [],
+            options: []
+        )
+        center.setNotificationCategories([reminderCategory, suggestionCategory, articleReadyCategory])
     }
 
     private var isRunningTests: Bool {
@@ -186,381 +132,535 @@ public final class BanditScheduler: NSObject, ObservableObject {
         }
     }
 
-    private func setupForegroundScheduling() {
-        #if canImport(UIKit)
-        foregroundObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.scheduleNextNotification()
-        }
-        #endif
-    }
-
-    public func scheduleNextNotification() {
-        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
-            if !requests.isEmpty { return }
-            self.performSchedule()
-        }
-    }
-
-    public func scheduleTestNotification() {
-        Task { @MainActor in
-            let (slot, template) = selectArm()
-            let candidate = selectNotificationCandidate()
-            scheduleNotification(
-                slot: slot,
-                template: template,
-                candidate: candidate,
-                delay: 2,
-                isTest: true
+    @MainActor
+    public func syncOutOfAppReminderNotifications(notificationsEnabled: Bool) {
+        if isRunningTests {
+            syncOutOfAppReminderNotifications(
+                notificationsEnabled: notificationsEnabled,
+                authorizationStatusOverride: .authorized,
+                nowOverride: Date(),
+                lastInteractiveDateOverride: Date()
             )
-        }
-    }
-
-    #if os(iOS)
-    private func checkInterruptibility(completion: @escaping (Bool) -> Void) {
-        guard CMMotionActivityManager.isActivityAvailable() else {
-            completion(true)
             return
         }
 
-        motionActivityManager.queryActivityStarting(
-            from: Date().addingTimeInterval(-60),
-            to: Date(),
-            to: .main
-        ) { activities, _ in
-            guard let activity = activities?.last else {
-                completion(true)
-                return
-            }
-
-            completion(!(activity.running || activity.automotive))
-        }
-    }
-    #else
-    private func checkInterruptibility(completion: @escaping (Bool) -> Void) {
-        completion(true)
-    }
-    #endif
-
-    private func performSchedule() {
-        let ignoreStreak = UserDefaults.standard.integer(forKey: ignoreStreakKey)
-        if ignoreStreak > 3 {
-            let lastScheduled = UserDefaults.standard.object(forKey: "bandit_last_scheduled") as? Date ?? .distantPast
-            if Date().timeIntervalSince(lastScheduled) < 48 * 3600 {
-                print("BanditScheduler: cooldown active.")
-                return
-            }
-        }
-
-        checkInterruptibility { [weak self] interruptible in
-            guard let self, interruptible else { return }
-
-            Task { @MainActor in
-                let (slot, template) = self.selectArm()
-                let candidate = self.selectNotificationCandidate()
-                self.scheduleNotification(
-                    slot: slot,
-                    template: template,
-                    candidate: candidate,
-                    delay: nil,
-                    isTest: false
-                )
-            }
-        }
-    }
-
-    @MainActor
-    private func selectNotificationCandidate() -> NotificationCandidate? {
-        let context = ModelContext(Persistence.sharedModelContainer)
-        let targetService = LexicalTargetingService()
-        if let candidate = targetService.notificationCandidate(modelContext: context) {
-            return NotificationCandidate(
-                lemma: candidate.lemma,
-                definition: candidate.definition,
-                rank: candidate.rank,
-                context: candidate.contextSentence
+        Task { @MainActor in
+            let status = await notificationAuthorizationStatus()
+            syncOutOfAppReminderNotifications(
+                notificationsEnabled: notificationsEnabled,
+                authorizationStatusOverride: status,
+                nowOverride: Date()
             )
         }
+    }
 
-        let activeProfile = UserProfile.resolveActiveProfile(modelContext: context)
-        let now = Date()
-        let dueState = (try? context.fetch(FetchDescriptor<UserWordState>()))?
-            .filter { state in
-                state.userId == activeProfile.userId &&
-                state.status != .ignored &&
-                (state.nextReviewDate ?? now) <= now
+    @MainActor
+    public func cancelOutOfAppReminderNotifications() {
+        if isRunningTests {
+            UserDefaults.standard.removeObject(forKey: testReminderIDsKey)
+            return
+        }
+
+        removeAppOwnedReminderRequests()
+    }
+
+    @MainActor
+    func syncOutOfAppReminderNotifications(
+        notificationsEnabled: Bool,
+        authorizationStatusOverride: UNAuthorizationStatus? = nil,
+        nowOverride: Date? = nil,
+        lastInteractiveDateOverride: Date? = nil,
+        interactiveReviewDatesOverride: [Date]? = nil,
+        calendar: Calendar = .current
+    ) {
+        let referenceDate = nowOverride ?? Date()
+
+        if isRunningTests {
+            let status = authorizationStatusOverride ?? .authorized
+            if notificationsEnabled && authorizationAllowsDelivery(status) {
+                let reviewedInteractiveDays = normalizedDaySet(
+                    from: interactiveReviewDatesOverride ?? [],
+                    calendar: calendar
+                )
+                let plans = buildReminderPlan(
+                    now: referenceDate,
+                    lastInteractiveDate: lastInteractiveDateOverride,
+                    reviewedInteractiveDays: reviewedInteractiveDays,
+                    horizonDays: 14,
+                    calendar: calendar
+                )
+                UserDefaults.standard.set(plans.map(\.identifier), forKey: testReminderIDsKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: testReminderIDsKey)
             }
-            .sorted { ($0.nextReviewDate ?? now) < ($1.nextReviewDate ?? now) }
-            .first
+            return
+        }
 
-        guard let dueState else { return nil }
-        let dueLemma = dueState.lemma
-        let lexemeDescriptor = FetchDescriptor<LexemeDefinition>(
-            predicate: #Predicate { $0.lemma == dueLemma }
+        guard notificationsEnabled else {
+            cancelOutOfAppReminderNotifications()
+            return
+        }
+
+        let status = authorizationStatusOverride ?? .notDetermined
+        guard authorizationAllowsDelivery(status) else {
+            cancelOutOfAppReminderNotifications()
+            return
+        }
+
+        let modelContext = ModelContext(Persistence.sharedModelContainer)
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let lastInteractiveDate = lastInteractiveDateOverride ?? latestInteractiveReviewDate(
+            userId: activeProfile.userId,
+            modelContext: modelContext
         )
-        let lexeme = try? context.fetch(lexemeDescriptor).first
-        return NotificationCandidate(
-            lemma: dueState.lemma,
-            definition: lexeme?.basicMeaning,
-            rank: lexeme?.rank,
-            context: lexeme?.sampleSentence
+        let reviewedInteractiveDays = normalizedDaySet(
+            from: interactiveReviewDatesOverride ?? interactiveReviewDates(
+                userId: activeProfile.userId,
+                modelContext: modelContext
+            ),
+            calendar: calendar
+        )
+
+        let plans = buildReminderPlan(
+            now: referenceDate,
+            lastInteractiveDate: lastInteractiveDate,
+            reviewedInteractiveDays: reviewedInteractiveDays,
+            horizonDays: 14,
+            calendar: calendar
+        )
+        let suggestionPayloadByIdentifier = suggestionPayloadByPlanIdentifier(
+            plans: plans,
+            modelContext: modelContext,
+            calendar: calendar
+        )
+        scheduleReminderPlans(
+            plans,
+            suggestionPayloadByIdentifier: suggestionPayloadByIdentifier
         )
     }
 
     @MainActor
-    private func scheduleNotification(
-        slot: TimeSlot,
-        template: NotificationTemplate,
-        candidate: NotificationCandidate?,
-        delay: TimeInterval?,
-        isTest: Bool
+    public func scheduleArticleReadyNotificationIfNeeded(
+        articleId: String,
+        title: String,
+        notificationsEnabled: Bool,
+        appIsActive: Bool
     ) {
-        let content = UNMutableNotificationContent()
-        content.categoryIdentifier = Self.notificationCategoryIdentifier
-        content.sound = .default
-        let modelContext = ModelContext(Persistence.sharedModelContainer)
-        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
-        let userRank = activeProfile.lexicalRank
-
-        if let candidate {
-            let rankText = candidate.rank.map { " (r\($0))" } ?? ""
-            let rankDelta = candidate.rank.map { $0 - userRank } ?? 0
-            content.title = isTest ? "[TEST] \(template.title)" : template.title
-            content.body = "\(candidate.lemma.capitalized)\(rankText): \(template.body)"
-            content.userInfo = [
-                "lemma": candidate.lemma,
-                "definition": candidate.definition ?? "",
-                "rank": candidate.rank ?? -1,
-                "user_rank": userRank,
-                "rank_delta": rankDelta,
-                "context": candidate.context ?? "",
-                "bandit_slot": slot.rawValue,
-                "bandit_template": template.rawValue,
-                "timestamp": Date().timeIntervalSince1970
-            ]
-        } else {
-            content.title = isTest ? "[TEST] \(template.title)" : template.title
-            content.body = template.body
-            content.userInfo = [
-                "lemma": "",
-                "definition": "",
-                "rank": -1,
-                "user_rank": userRank,
-                "rank_delta": 0,
-                "context": "",
-                "bandit_slot": slot.rawValue,
-                "bandit_template": template.rawValue,
-                "timestamp": Date().timeIntervalSince1970
-            ]
+        if isRunningTests {
+            scheduleArticleReadyNotificationIfNeeded(
+                articleId: articleId,
+                title: title,
+                notificationsEnabled: notificationsEnabled,
+                appIsActive: appIsActive,
+                authorizationStatusOverride: .authorized
+            )
+            return
         }
 
-        let trigger: UNNotificationTrigger
-        if let delay {
-            trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
-        } else {
-            var dateComponents = DateComponents()
-            dateComponents.hour = slot.hour
-            dateComponents.minute = Int.random(in: 0...30)
-            trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+        Task { @MainActor in
+            let status = await notificationAuthorizationStatus()
+            scheduleArticleReadyNotificationIfNeeded(
+                articleId: articleId,
+                title: title,
+                notificationsEnabled: notificationsEnabled,
+                appIsActive: appIsActive,
+                authorizationStatusOverride: status
+            )
         }
+    }
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: trigger
-        )
+    @MainActor
+    func scheduleArticleReadyNotificationIfNeeded(
+        articleId: String,
+        title: String,
+        notificationsEnabled: Bool,
+        appIsActive: Bool,
+        authorizationStatusOverride: UNAuthorizationStatus? = nil
+    ) {
+        guard notificationsEnabled else { return }
+        guard !appIsActive else { return }
+
+        let normalizedArticleId = articleId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedArticleId.isEmpty else { return }
+
+        let status = authorizationStatusOverride ?? .notDetermined
+        guard authorizationAllowsDelivery(status) else { return }
+
+        let identifier = "LEXICAL_ARTICLE_READY_\(normalizedArticleId)"
 
         if isRunningTests {
-            UserDefaults.standard.set(Date(), forKey: "bandit_last_scheduled")
-        } else {
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error {
-                    print("BanditScheduler: failed to schedule notification: \(error)")
-                } else {
-                    UserDefaults.standard.set(Date(), forKey: "bandit_last_scheduled")
-                }
+            var ids = debugArticleReadyIdentifiersForTesting()
+            if !ids.contains(identifier) {
+                ids.append(identifier)
+                UserDefaults.standard.set(ids, forKey: testArticleReadyIDsKey)
             }
+            return
         }
 
-        let key = makeKey(slot, template)
-        totalCounts[key, default: 0] += 1
-        persist()
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let content = UNMutableNotificationContent()
+        content.title = "New article is ready"
+        content.body = trimmedTitle.isEmpty ? "Your latest reading article is ready." : trimmedTitle
+        content.sound = .default
+        content.categoryIdentifier = Self.articleReadyCategoryIdentifier
+        content.userInfo = [
+            "route": Self.routeReadingTab,
+            "article_id": normalizedArticleId
+        ]
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1.0, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                print("BanditScheduler: failed to schedule article-ready notification: \(error)")
+            }
+        }
     }
 
-    private func selectArm() -> (TimeSlot, NotificationTemplate) {
-        let arms = product(TimeSlot.allCases, NotificationTemplate.allCases)
-        if let unpulledArm = arms.first(where: { arm in
-            let key = makeKey(arm.0, arm.1)
-            return (totalCounts[key] ?? 0) == 0
-        }) {
-            return unpulledArm
-        }
-
-        return bestArm(from: arms)
+    func debugReminderIdentifiersForTesting() -> [String] {
+        UserDefaults.standard.stringArray(forKey: testReminderIDsKey) ?? []
     }
 
-    private func bestArm(from arms: [(TimeSlot, NotificationTemplate)]) -> (TimeSlot, NotificationTemplate) {
-        var best = arms.first ?? (.morning, .curious)
-        var bestScore = -Double.infinity
-        let totalGlobalCalls = max(1, totalCounts.values.reduce(0, +))
-        let ignoreStreak = UserDefaults.standard.integer(forKey: ignoreStreakKey)
-        let explorationFactor = ignoreStreak > 3 ? ignoreBoostedExplorationFactor : defaultExplorationFactor
+    func debugArticleReadyIdentifiersForTesting() -> [String] {
+        UserDefaults.standard.stringArray(forKey: testArticleReadyIDsKey) ?? []
+    }
 
-        for arm in arms {
-            let key = makeKey(arm.0, arm.1)
-            let armPulls = totalCounts[key] ?? 0
-            if armPulls == 0 {
-                return arm
-            }
-
-            let weightedSuccess = successCounts[key] ?? 0.0
-            let meanReward = weightedSuccess / Double(armPulls)
-            let exploration = explorationFactor * sqrt((2.0 * log(Double(totalGlobalCalls))) / Double(armPulls))
-            let score = meanReward + exploration
-
-            if score > bestScore {
-                bestScore = score
-                best = arm
-            }
+    public func consumePendingNotificationRoute() -> String? {
+        let defaults = UserDefaults.standard
+        guard let route = defaults.string(forKey: pendingRouteKey) else {
+            return nil
         }
-        return best
+        defaults.removeObject(forKey: pendingRouteKey)
+        return route
     }
 
     public func handleNotificationResponse(_ response: UNNotificationResponse) {
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else {
+            return
+        }
+
         let userInfo = response.notification.request.content.userInfo
-        let payload = triageService.payload(from: userInfo)
+        let route = userInfo["route"] as? String
 
-        let slot = (userInfo["bandit_slot"] as? String).flatMap(TimeSlot.init(rawValue:))
-        let template = (userInfo["bandit_template"] as? String).flatMap(NotificationTemplate.init(rawValue:))
-        let lemma = payload.normalizedLemma
-        let definition = payload.definition
+        if route == Self.routeReviewSession {
+            stageRoute(Self.routeReviewSession, event: .lexicalOpenReviewSession)
+            return
+        }
 
-        if let slot, let template,
-           response.actionIdentifier != Self.actionIgnoreIdentifier &&
-           response.actionIdentifier != UNNotificationDismissActionIdentifier {
-            Task { @MainActor in
-                let modelContext = ModelContext(Persistence.sharedModelContainer)
-                let activeUser = UserProfile.resolveActiveProfile(modelContext: modelContext)
-                self.recordSuccess(
-                    slot: slot,
-                    template: template,
-                    candidateRank: payload.rank,
-                    userRank: activeUser.lexicalRank
+        if route == Self.routePromptCard {
+            let triageService = NotificationTriageService()
+            let payload = triageService.payload(from: userInfo)
+            triageService.stagePromptRoute(payload)
+            return
+        }
+
+        if route == Self.routeReadingTab {
+            stageRoute(Self.routeReadingTab, event: .lexicalOpenReadingTab)
+        }
+    }
+
+    func reminderSlots(forInactiveDay inactiveDay: Int) -> [ReminderSlot] {
+        if inactiveDay <= 1 {
+            return [.nineAM, .twoPM, .eightPM]
+        }
+        if inactiveDay <= 4 {
+            return [.twoPM, .eightPM]
+        }
+        if inactiveDay <= 10 {
+            return [.eightPM]
+        }
+        return []
+    }
+
+    func shouldScheduleWeeklyNudge(
+        forDate date: Date,
+        calendar: Calendar = .current
+    ) -> Bool {
+        let weekday = calendar.component(.weekday, from: date)
+        return weekday == 3 || weekday == 5 || weekday == 1
+    }
+
+    func buildReminderPlan(
+        now: Date = Date(),
+        lastInteractiveDate: Date?,
+        reviewedInteractiveDays: Set<Date> = [],
+        horizonDays: Int = 14,
+        calendar: Calendar = .current
+    ) -> [ReminderRequestPlan] {
+        let effectiveHorizon = max(0, horizonDays)
+        guard effectiveHorizon > 0 else { return [] }
+
+        let startOfToday = calendar.startOfDay(for: now)
+        let lastInteractiveDay = lastInteractiveDate.map { calendar.startOfDay(for: $0) } ?? startOfToday
+
+        var plans: [ReminderRequestPlan] = []
+        for dayOffset in 0..<effectiveHorizon {
+            guard let dayDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfToday) else {
+                continue
+            }
+
+            let inactiveDay = inactiveDayCount(
+                for: dayDate,
+                lastInteractiveDay: lastInteractiveDay,
+                calendar: calendar
+            )
+
+            let slots: [ReminderSlot] = {
+                if inactiveDay >= 11 {
+                    return shouldScheduleWeeklyNudge(forDate: dayDate, calendar: calendar) ? [.eightPM] : []
+                }
+                return reminderSlots(forInactiveDay: inactiveDay)
+            }()
+
+            for slot in slots {
+                let dayStart = calendar.startOfDay(for: dayDate)
+                let deliveryKind = slot.deliveryKind
+                if deliveryKind == .reviewReminder && reviewedInteractiveDays.contains(dayStart) {
+                    continue
+                }
+
+                var components = calendar.dateComponents([.year, .month, .day], from: dayDate)
+                components.hour = slot.hour
+                components.minute = slot.minute
+                components.second = 0
+
+                guard let fireDate = calendar.date(from: components), fireDate > now else {
+                    continue
+                }
+
+                let year = components.year ?? 0
+                let month = components.month ?? 0
+                let day = components.day ?? 0
+                let identifier = String(
+                    format: "LEXICAL_REMINDER_%04d%02d%02d_%@",
+                    year,
+                    month,
+                    day,
+                    slot.rawValue
+                )
+
+                plans.append(
+                    ReminderRequestPlan(
+                        identifier: identifier,
+                        dateComponents: components,
+                        slot: slot,
+                        deliveryKind: deliveryKind
+                    )
                 )
             }
         }
 
-        switch response.actionIdentifier {
-        case Self.actionRevealIdentifier:
-            if let lemma, !lemma.isEmpty {
-                scheduleRevealNotification(lemma: lemma, definition: definition)
-            }
-        case Self.actionAddIdentifier:
-            guard let lemma, !lemma.isEmpty else { return }
-            Task { @MainActor in
-                do {
-                    _ = try self.triageService.addToDeck(
-                        NotificationTriagePayload(lemma: lemma, definition: definition, rank: payload.rank),
-                        modelContext: ModelContext(Persistence.sharedModelContainer)
-                    )
-                } catch {
-                    print("BanditScheduler: failed to add '\(lemma)' to deck: \(error)")
-                }
-            }
-        case Self.actionIgnoreIdentifier:
-            guard let lemma, !lemma.isEmpty else { return }
-            Task { @MainActor in
-                do {
-                    _ = try self.triageService.ignoreWord(
-                        NotificationTriagePayload(lemma: lemma, definition: definition, rank: payload.rank),
-                        modelContext: ModelContext(Persistence.sharedModelContainer)
-                    )
-                } catch {
-                    print("BanditScheduler: failed to ignore '\(lemma)': \(error)")
-                }
-            }
-            incrementIgnoreStreak()
-        case UNNotificationDismissActionIdentifier:
-            incrementIgnoreStreak()
-        case UNNotificationDefaultActionIdentifier:
-            guard let lemma, !lemma.isEmpty else { return }
-            triageService.stagePromptRoute(
-                NotificationTriagePayload(lemma: lemma, definition: definition, rank: payload.rank)
-            )
-        default:
-            break
-        }
+        return plans
     }
 
     @MainActor
-    private func recordSuccess(
-        slot: TimeSlot,
-        template: NotificationTemplate,
-        candidateRank: Int?,
-        userRank: Int?
-    ) {
-        let key = makeKey(slot, template)
-        let baseReward = 1.0
-        let reward: Double = {
-            guard let userRank else { return baseReward }
-            let multiplier = triageService.rewardMultiplier(
-                candidateRank: candidateRank,
-                lexicalRank: userRank,
-                tolerance: 500
-            )
-            return baseReward * multiplier
-        }()
-
-        successCounts[key, default: 0.0] += reward
-        UserDefaults.standard.set(Date(), forKey: lastEngagedKey)
-        UserDefaults.standard.set(0, forKey: ignoreStreakKey)
-        persist()
-    }
-
-    private func scheduleRevealNotification(lemma: String, definition: String?) {
-        let content = UNMutableNotificationContent()
-        content.title = "\(lemma.capitalized)"
-        content.body = definition?.isEmpty == false ? (definition ?? "") : "No definition available yet."
-        content.sound = .default
-
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1.0, repeats: false)
+    func latestInteractiveReviewDate(userId: String, modelContext: ModelContext) -> Date? {
+        let descriptor = FetchDescriptor<ReviewEvent>(
+            predicate: #Predicate { event in
+                event.userId == userId
+            },
+            sortBy: [SortDescriptor(\ReviewEvent.reviewDate, order: .reverse)]
         )
-        if isRunningTests {
-            return
+        let events = (try? modelContext.fetch(descriptor)) ?? []
+        return events.first(where: { event in
+            isInteractiveReviewEvent(event)
+        })?.reviewDate
+    }
+
+    @MainActor
+    func interactiveReviewDates(userId: String, modelContext: ModelContext) -> [Date] {
+        let descriptor = FetchDescriptor<ReviewEvent>(
+            predicate: #Predicate { event in
+                event.userId == userId
+            }
+        )
+        let events = (try? modelContext.fetch(descriptor)) ?? []
+        return events
+            .filter(isInteractiveReviewEvent)
+            .map(\.reviewDate)
+    }
+
+    private func inactiveDayCount(
+        for scheduleDay: Date,
+        lastInteractiveDay: Date,
+        calendar: Calendar
+    ) -> Int {
+        let components = calendar.dateComponents([.day], from: lastInteractiveDay, to: scheduleDay)
+        return max(0, components.day ?? 0)
+    }
+
+    @MainActor
+    private func suggestionPayloadByPlanIdentifier(
+        plans: [ReminderRequestPlan],
+        modelContext: ModelContext,
+        calendar: Calendar
+    ) -> [String: LexicalTargetCandidate] {
+        let suggestionPlans = plans
+            .filter { $0.deliveryKind == .suggestion }
+            .sorted { lhs, rhs in
+                let lhsDate = reminderFireDate(for: lhs, calendar: calendar) ?? Date.distantFuture
+                let rhsDate = reminderFireDate(for: rhs, calendar: calendar) ?? Date.distantFuture
+                if lhsDate != rhsDate { return lhsDate < rhsDate }
+                return lhs.identifier < rhs.identifier
+            }
+
+        guard !suggestionPlans.isEmpty else { return [:] }
+
+        let targetingService = LexicalTargetingService()
+        let candidates = targetingService.newWordSuggestionCandidates(
+            modelContext: modelContext,
+            limit: max(suggestionPlans.count * 3, 12),
+            excludedLemmas: []
+        )
+        guard !candidates.isEmpty else { return [:] }
+
+        var plansByDay: [Date: [ReminderRequestPlan]] = [:]
+        for plan in suggestionPlans {
+            guard let fireDate = reminderFireDate(for: plan, calendar: calendar) else { continue }
+            let day = calendar.startOfDay(for: fireDate)
+            plansByDay[day, default: []].append(plan)
         }
-        UNUserNotificationCenter.current().add(request)
-    }
 
-    private func incrementIgnoreStreak() {
-        let current = UserDefaults.standard.integer(forKey: ignoreStreakKey)
-        UserDefaults.standard.set(current + 1, forKey: ignoreStreakKey)
-    }
+        let sortedDays = plansByDay.keys.sorted()
+        var assigned: [String: LexicalTargetCandidate] = [:]
+        for day in sortedDays {
+            guard var dayPlans = plansByDay[day] else { continue }
+            dayPlans.sort { lhs, rhs in
+                if lhs.slot.hour != rhs.slot.hour { return lhs.slot.hour < rhs.slot.hour }
+                return lhs.identifier < rhs.identifier
+            }
 
-    private func makeKey(_ slot: TimeSlot, _ template: NotificationTemplate) -> String {
-        "\(slot.rawValue)_\(template.rawValue)"
-    }
-
-    private func product<A, B>(_ a: [A], _ b: [B]) -> [(A, B)] {
-        var result: [(A, B)] = []
-        for elementA in a {
-            for elementB in b {
-                result.append((elementA, elementB))
+            var usedToday = Set<String>()
+            for plan in dayPlans {
+                let preferred = candidates.first { !usedToday.contains($0.lemma) }
+                let fallback = candidates.first
+                guard let chosen = preferred ?? fallback else { continue }
+                assigned[plan.identifier] = chosen
+                usedToday.insert(chosen.lemma)
             }
         }
-        return result
+
+        return assigned
     }
 
-    private func persist() {
-        if let successData = try? JSONEncoder().encode(successCounts),
-           let totalData = try? JSONEncoder().encode(totalCounts) {
-            UserDefaults.standard.set(successData, forKey: successCountsKey)
-            UserDefaults.standard.set(totalData, forKey: totalCountsKey)
+    private func scheduleReminderPlans(
+        _ plans: [ReminderRequestPlan],
+        suggestionPayloadByIdentifier: [String: LexicalTargetCandidate]
+    ) {
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { [plans, suggestionPayloadByIdentifier] requests in
+            let existingAppReminderIDs = requests.compactMap { request in
+                if self.isAppOwnedReminderRequest(request) {
+                    return request.identifier
+                }
+                return nil
+            }
+
+            if !existingAppReminderIDs.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: existingAppReminderIDs)
+                center.removeDeliveredNotifications(withIdentifiers: existingAppReminderIDs)
+            }
+
+            for plan in plans {
+                let content = UNMutableNotificationContent()
+                content.sound = .default
+
+                switch plan.deliveryKind {
+                case .reviewReminder:
+                    content.title = "Time to practice"
+                    content.body = "Open Lexical and run a quick review session."
+                    content.categoryIdentifier = Self.reminderCategoryIdentifier
+                    content.userInfo = [
+                        "route": Self.routeReviewSession,
+                        "reminder_id": plan.identifier
+                    ]
+
+                case .suggestion:
+                    guard let payload = suggestionPayloadByIdentifier[plan.identifier] else {
+                        continue
+                    }
+
+                    let trimmedDefinition = payload.definition?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    let titleLemma = payload.lemma.capitalized
+
+                    content.title = "New word suggestion"
+                    content.body = trimmedDefinition.isEmpty
+                        ? "Try \(titleLemma) now."
+                        : "\(titleLemma): \(trimmedDefinition)"
+                    content.categoryIdentifier = Self.suggestionCategoryIdentifier
+
+                    var userInfo: [String: Any] = [
+                        "route": Self.routePromptCard,
+                        "lemma": payload.lemma,
+                        "reminder_id": plan.identifier
+                    ]
+                    if !trimmedDefinition.isEmpty {
+                        userInfo["definition"] = trimmedDefinition
+                    }
+                    if let rank = payload.rank {
+                        userInfo["rank"] = rank
+                    }
+                    content.userInfo = userInfo
+                }
+
+                let trigger = UNCalendarNotificationTrigger(dateMatching: plan.dateComponents, repeats: false)
+                let request = UNNotificationRequest(identifier: plan.identifier, content: content, trigger: trigger)
+                center.add(request) { error in
+                    if let error {
+                        print("BanditScheduler: failed to schedule reminder \(plan.identifier): \(error)")
+                    }
+                }
+            }
         }
+    }
+
+    private func removeAppOwnedReminderRequests() {
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { requests in
+            let reminderIDs = requests.compactMap { request in
+                if self.isAppOwnedReminderRequest(request) {
+                    return request.identifier
+                }
+                return nil
+            }
+            guard !reminderIDs.isEmpty else { return }
+            center.removePendingNotificationRequests(withIdentifiers: reminderIDs)
+            center.removeDeliveredNotifications(withIdentifiers: reminderIDs)
+        }
+    }
+
+    private func authorizationAllowsDelivery(_ status: UNAuthorizationStatus) -> Bool {
+        status == .authorized || status == .provisional
+    }
+
+    private func isInteractiveReviewEvent(_ event: ReviewEvent) -> Bool {
+        ReviewEvent.isInteractiveReviewState(event.reviewState) &&
+        !ReviewEvent.isImplicitExposureState(event.reviewState)
+    }
+
+    private func normalizedDaySet(from dates: [Date], calendar: Calendar) -> Set<Date> {
+        Set(dates.map { calendar.startOfDay(for: $0) })
+    }
+
+    private func reminderFireDate(
+        for plan: ReminderRequestPlan,
+        calendar: Calendar
+    ) -> Date? {
+        calendar.date(from: plan.dateComponents)
+    }
+
+    private func isAppOwnedReminderRequest(_ request: UNNotificationRequest) -> Bool {
+        if request.content.categoryIdentifier == Self.reminderCategoryIdentifier {
+            return true
+        }
+        if request.content.categoryIdentifier == Self.suggestionCategoryIdentifier {
+            return true
+        }
+        return request.identifier.hasPrefix(reminderIdentifierPrefix)
+    }
+
+    private func stageRoute(_ route: String, event: Notification.Name) {
+        UserDefaults.standard.set(route, forKey: pendingRouteKey)
+        NotificationCenter.default.post(name: event, object: nil)
     }
 }

@@ -71,6 +71,11 @@ struct SettingsView: View {
         .onAppear {
             ensureInterestProfileExists()
         }
+        .onChange(of: notificationsEnabled) { _, isEnabled in
+            Task { @MainActor in
+                await handleNotificationToggleChange(isEnabled)
+            }
+        }
         .alert("Reset All Progress?", isPresented: $showingResetAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Reset", role: .destructive) {
@@ -265,7 +270,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Timing", systemImage: "clock.fill")
                     Spacer()
-                    Text("Smart (Bandit)")
+                    Text("09:00/14:00 suggestions • 20:00 review")
                         .foregroundStyle(Color.adaptiveTextSecondary)
                 }
             }
@@ -444,6 +449,32 @@ struct SettingsView: View {
             } catch {
                 restorePurchasesMessage = "Restore failed: \(error.localizedDescription)"
             }
+        }
+    }
+
+    @MainActor
+    private func handleNotificationToggleChange(_ isEnabled: Bool) async {
+        if !isEnabled {
+            BanditScheduler.shared.cancelOutOfAppReminderNotifications()
+            return
+        }
+
+        let scheduler = BanditScheduler.shared
+        let status = await scheduler.notificationAuthorizationStatus()
+        switch status {
+        case .authorized, .provisional:
+            scheduler.syncOutOfAppReminderNotifications(notificationsEnabled: true)
+        case .notDetermined:
+            let granted = await scheduler.requestNotificationAuthorization()
+            if granted {
+                scheduler.syncOutOfAppReminderNotifications(notificationsEnabled: true)
+            } else {
+                notificationsEnabled = false
+                scheduler.cancelOutOfAppReminderNotifications()
+            }
+        default:
+            notificationsEnabled = false
+            scheduler.cancelOutOfAppReminderNotifications()
         }
     }
 }

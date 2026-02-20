@@ -80,6 +80,115 @@ public struct LexicalTargetingService {
         rankedCandidates(modelContext: modelContext, limit: 1).first
     }
 
+    public func newWordSuggestionCandidates(
+        modelContext: ModelContext,
+        limit: Int,
+        excludedLemmas: Set<String> = []
+    ) -> [LexicalTargetCandidate] {
+        guard limit > 0 else { return [] }
+
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let ignored = Set(activeProfile.ignoredWords.map { $0.lowercased() })
+        let normalizedExcluded = Set(excludedLemmas.map(normalizeLemma))
+        let targetRange = proximalRange(for: activeProfile)
+
+        let states = (try? modelContext.fetch(FetchDescriptor<UserWordState>())) ?? []
+        let userStates = states.filter { $0.userId == activeProfile.userId }
+        let trackedLemmas = Set(userStates.map(\.lemma))
+        let newStateLemmas = Set(
+            userStates
+                .filter { $0.status == .new }
+                .map(\.lemma)
+        )
+
+        let lexemes = (try? modelContext.fetch(FetchDescriptor<LexemeDefinition>())) ?? []
+        var lexemeByLemma: [String: LexemeDefinition] = [:]
+        lexemeByLemma.reserveCapacity(lexemes.count)
+        for lexeme in lexemes {
+            lexemeByLemma[lexeme.lemma] = lexeme
+        }
+
+        struct ScoredCandidate {
+            let candidate: LexicalTargetCandidate
+            let isInRange: Bool
+            let poolPriority: Int
+            let distanceScore: Int
+        }
+
+        func distanceScore(for rank: Int?) -> Int {
+            guard let rank else { return Int.max / 2 }
+            return abs(rank - activeProfile.lexicalRank)
+        }
+
+        func scoredCandidate(
+            lemma: String,
+            lexeme: LexemeDefinition,
+            poolPriority: Int
+        ) -> ScoredCandidate? {
+            guard !ignored.contains(lemma) else { return nil }
+            guard !normalizedExcluded.contains(lemma) else { return nil }
+            guard isPromptEligibleLexeme(
+                lemma: lemma,
+                rank: lexeme.rank,
+                definition: lexeme.basicMeaning
+            ) else { return nil }
+
+            let rank = lexeme.rank
+            let candidate = LexicalTargetCandidate(
+                lemma: lemma,
+                rank: rank,
+                definition: lexeme.basicMeaning,
+                contextSentence: lexeme.sampleSentence
+            )
+
+            return ScoredCandidate(
+                candidate: candidate,
+                isInRange: rank.map { targetRange.contains($0) } ?? false,
+                poolPriority: poolPriority,
+                distanceScore: distanceScore(for: rank)
+            )
+        }
+
+        var scored: [ScoredCandidate] = []
+        scored.reserveCapacity(newStateLemmas.count + lexemes.count)
+
+        for lemma in newStateLemmas.sorted() {
+            guard let lexeme = lexemeByLemma[lemma] else { continue }
+            if let candidate = scoredCandidate(lemma: lemma, lexeme: lexeme, poolPriority: 0) {
+                scored.append(candidate)
+            }
+        }
+
+        for lexeme in lexemes where !trackedLemmas.contains(lexeme.lemma) {
+            if let candidate = scoredCandidate(lemma: lexeme.lemma, lexeme: lexeme, poolPriority: 1) {
+                scored.append(candidate)
+            }
+        }
+
+        scored.sort { lhs, rhs in
+            if lhs.isInRange != rhs.isInRange { return lhs.isInRange && !rhs.isInRange }
+            if lhs.poolPriority != rhs.poolPriority { return lhs.poolPriority < rhs.poolPriority }
+            if lhs.distanceScore != rhs.distanceScore { return lhs.distanceScore < rhs.distanceScore }
+            return lhs.candidate.lemma < rhs.candidate.lemma
+        }
+
+        var results: [LexicalTargetCandidate] = []
+        var seen = Set<String>()
+        results.reserveCapacity(limit)
+
+        for entry in scored {
+            let lemma = entry.candidate.lemma
+            guard !seen.contains(lemma) else { continue }
+            results.append(entry.candidate)
+            seen.insert(lemma)
+            if results.count >= limit {
+                break
+            }
+        }
+
+        return results
+    }
+
     private func rankedCandidates(
         modelContext: ModelContext,
         limit: Int
@@ -313,5 +422,9 @@ public struct LexicalTargetingService {
 
         let normalizedDefinition = definition?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return !normalizedDefinition.isEmpty
+    }
+
+    private func normalizeLemma(_ lemma: String) -> String {
+        lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
