@@ -194,23 +194,31 @@ test_onboarding_visible() {
 
   wait_for_id onboarding.title
   wait_for_id onboarding.welcomeHeadline
-  wait_for_id onboarding.skipButton
+  wait_for_id onboarding.primaryButton
+  assert_label_for_id_contains onboarding.primaryButton "Continue"
+  assert_id_absent onboarding.skipButton
 
   screenshot "01_onboarding_visible"
   terminate_app
 }
 
-test_onboarding_skip_to_reading() {
-  log "Running test_onboarding_skip_to_reading"
+test_onboarding_primary_progress() {
+  log "Running test_onboarding_primary_progress"
   launch_app --lexical-e2e-reset-state --lexical-e2e-show-onboarding
 
-  tap_id onboarding.skipButton
   wait_for_id onboarding.primaryButton
-  assert_label_for_id_contains onboarding.primaryButton "Start Learning"
+  assert_label_for_id_contains onboarding.primaryButton "Continue"
   tap_id onboarding.primaryButton
+  wait_for_id onboarding.primaryButton
+  assert_id_absent onboarding.welcomeHeadline
 
-  wait_for_id reading.headerTitle
-  screenshot "02_onboarding_skip_to_reading"
+  tap_id onboarding.primaryButton
+  wait_for_id onboarding.calibrationHeadline
+  wait_for_id onboarding.primaryButton
+  assert_label_for_id_contains onboarding.primaryButton "Continue"
+  assert_id_absent onboarding.skipButton
+
+  screenshot "02_onboarding_primary_progress"
   terminate_app
 }
 
@@ -270,7 +278,7 @@ main() {
   install_fresh
 
   test_onboarding_visible
-  test_onboarding_skip_to_reading
+  test_onboarding_primary_progress
   test_free_limit_state
   test_premium_state
   test_prompt_route_open_and_close

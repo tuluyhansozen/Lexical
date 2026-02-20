@@ -94,12 +94,12 @@ install_fresh() {
 }
 
 launch_app() {
-  local args=("$@")
+  local base_args=("--lexical-ui-tests" "--lexical-e2e-no-bootstrap")
   xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
-  if (( ${#args[@]} > 0 )); then
-    xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" --args "${args[@]}" >/dev/null
+  if (( $# > 0 )); then
+    xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" --args "${base_args[@]}" "$@" >/dev/null
   else
-    xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" >/dev/null
+    xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" --args "${base_args[@]}" >/dev/null
   fi
 }
 
@@ -292,12 +292,7 @@ test_free_and_premium_gate_state() {
 
 test_pending_prompt_route_consumption() {
   log "Running test_pending_prompt_route_consumption"
-  prepare_main_app_state
-
-  plist_set_string "lexical.pending_prompt_lemma" "know"
-  plist_set_string "lexical.pending_prompt_definition" "to perceive the truth or factuality of something"
-
-  launch_app
+  launch_app --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-e2e-pending-prompt
   sleep 3
   screenshot "05_prompt_route_consumed"
   terminate_app
@@ -314,7 +309,7 @@ test_regular_usage_day28_burst_perspective() {
   log "Running test_regular_usage_day28_burst_perspective"
   install_fresh
 
-  launch_app --lexical-ui-tests --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-e2e-scenario-regular-2words-day28-articles4
+  launch_app --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-e2e-scenario-regular-2words-day28-articles4
   sleep 4
   screenshot "06_regular_usage_day28_reading"
   terminate_app
@@ -342,7 +337,7 @@ test_regular_usage_day28_burst_perspective() {
   fi
   log "[PASS] Review event volume looks realistic => $events"
 
-  launch_app --lexical-ui-tests --lexical-e2e-complete-onboarding --lexical-e2e-scenario-regular-2words-day28-articles4 --lexical-debug-open-stats
+  launch_app --lexical-e2e-complete-onboarding --lexical-e2e-scenario-regular-2words-day28-articles4 --lexical-debug-open-stats
   sleep 4
   screenshot "07_regular_usage_day28_stats"
   terminate_app

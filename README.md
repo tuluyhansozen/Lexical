@@ -165,3 +165,25 @@ Stochastic checkpoint fields:
 - `changed`
 - `reason_codes`
 - `error_codes`
+
+## Project Verification (Simulator-first)
+
+For app/runtime verification, use simulator-backed `xcodebuild` commands:
+
+```bash
+xcodebuild -scheme Lexical-Package \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 16e' \
+  -derivedDataPath /Users/tuluyhan/projects/Lexical/build/derived_data \
+  test
+```
+
+```bash
+xcodebuild -scheme Lexical \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 16e' \
+  -derivedDataPath /Users/tuluyhan/projects/Lexical/build/derived_data \
+  build
+```
+
+`swift test` is not the authoritative path for this project’s SwiftData-backed app verification; prefer simulator `xcodebuild` commands.

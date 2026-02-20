@@ -11,7 +11,7 @@ This runner uses `idb ui` to perform real UI actions (tap + accessibility tree a
 ### 5 automated flows
 
 1. `onboarding_visible`: fresh launch shows onboarding welcome.
-2. `onboarding_skip_to_reading`: taps Skip, then Start Learning, lands on Reading.
+2. `onboarding_primary_progress`: uses primary controls to progress onboarding to the calibration gate.
 3. `free_limit_state`: verifies free quota (`0/1`) and upgrade CTA.
 4. `premium_state`: verifies unlimited quota and generate CTA.
 5. `prompt_route_open_and_close`: opens prompt card then closes back to Review.
@@ -28,7 +28,7 @@ Key files:
 - `report.txt`
 - `build.log`
 - `01_onboarding_visible.png`
-- `02_onboarding_skip_to_reading.png`
+- `02_onboarding_primary_progress.png`
 - `03_free_limit_state.png`
 - `04_premium_unlimited_state.png`
 - `05_prompt_open.png`
@@ -59,5 +59,6 @@ This harness uses `simctl` + SQLite/plist assertions + screenshots.
 
 - `XCUIApplication`-based tests require an Xcode UI test bundle target; SwiftPM unit-test bundles cannot host those directly.
 - The `idb` runner is therefore the practical true UI automation path for this repo layout.
+- Onboarding Skip is calibration-gated; the true UI harness should not expect `onboarding.skipButton` on first launch.
 - Simulator target defaults to:
   - `98FACCED-3F83-4A94-8D7B-F8905AAF08D1`
