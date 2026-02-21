@@ -15,6 +15,12 @@ struct LiquidGlassFigmaTokens {
     static let leafGradientStartLocation: CGFloat = 0.50962
     static let leafGradientEndOpacity: Double = 0.4
     static let leafBorderWidth: CGFloat = 2
+
+    static let grayChannel: Double = 102.0 / 255.0
+    static let leafLayerOneBurnOpacity: Double = 0.57
+    static let leafLayerOneTopFadeStop: CGFloat = 0.32692
+    static let rootInsetHighlightOpacity: Double = 0.5
+    static let rootInsetLowlightOpacity: Double = 0.6
 }
 
 public enum LiquidGlassStyle {
@@ -57,7 +63,14 @@ public struct LiquidGlassButton<Content: View>: View {
         }
         .buttonStyle(.plain)
         .scaleEffect(isPressed ? 0.96 : 1.0)
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.20 : 0.14), radius: isPressed ? 4 : 7, x: 0, y: 4)
+        .shadow(
+            color: style == .leaf
+                ? .black.opacity(colorScheme == .dark ? 0.24 : 0.16)
+                : .clear,
+            radius: style == .leaf ? (isPressed ? 6 : 10) : 0,
+            x: 0,
+            y: style == .leaf ? 5 : 0
+        )
         .gesture(
             DragGesture(minimumDistance: 0)
                 .updating($isPressed) { _, state, _ in
@@ -75,19 +88,18 @@ public struct LiquidGlassButton<Content: View>: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(hex: "FFD4D9"),
-                            Color(hex: "FF9AA4"),
-                            Color(hex: "FF6F7B")
+                            Color(hex: "FFC6D0"),
+                            Color(hex: "FF8FA1"),
+                            Color(hex: "FF6E82")
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .opacity(0.96)
 
             Circle()
                 .fill(Color(hex: LiquidGlassFigmaTokens.rootBaseHex))
-                .opacity(0.22)
+                .opacity(0.06)
                 .blendMode(.plusLighter)
 
             Circle()
@@ -99,7 +111,7 @@ public struct LiquidGlassButton<Content: View>: View {
                         opacity: LiquidGlassFigmaTokens.rootBurnOpacity
                     )
                 )
-                .opacity(0.18)
+                .opacity(colorScheme == .dark ? 0.08 : 0.05)
                 .blendMode(.colorBurn)
 
             Circle()
@@ -107,15 +119,20 @@ public struct LiquidGlassButton<Content: View>: View {
                     LinearGradient(
                         stops: [
                             .init(
-                                color: Color(red: 102.0 / 255.0, green: 102.0 / 255.0, blue: 102.0 / 255.0, opacity: 0),
+                                color: Color(
+                                    red: LiquidGlassFigmaTokens.grayChannel,
+                                    green: LiquidGlassFigmaTokens.grayChannel,
+                                    blue: LiquidGlassFigmaTokens.grayChannel,
+                                    opacity: 0
+                                ),
                                 location: LiquidGlassFigmaTokens.rootGradientStartLocation
                             ),
                             .init(
                                 color: Color(
-                                    red: 102.0 / 255.0,
-                                    green: 102.0 / 255.0,
-                                    blue: 102.0 / 255.0,
-                                    opacity: LiquidGlassFigmaTokens.rootGradientEndOpacity
+                                    red: LiquidGlassFigmaTokens.grayChannel,
+                                    green: LiquidGlassFigmaTokens.grayChannel,
+                                    blue: LiquidGlassFigmaTokens.grayChannel,
+                                    opacity: LiquidGlassFigmaTokens.rootGradientEndOpacity * 0.85
                                 ),
                                 location: 1.0
                             )
@@ -127,42 +144,56 @@ public struct LiquidGlassButton<Content: View>: View {
                 .blendMode(.plusLighter)
 
             Circle()
-                .fill(Color.black)
+                .fill(.ultraThinMaterial)
                 .blur(radius: LiquidGlassFigmaTokens.rootBackdropBlur)
-                .opacity(0.36)
+                .opacity(colorScheme == .dark ? 0.46 : 0.32)
                 .blendMode(.plusLighter)
 
             Circle()
                 .fill(
-                    RadialGradient(
-                        colors: [.white.opacity(0.34), .clear],
-                        center: .topLeading,
-                        startRadius: 0,
-                        endRadius: 36
-                    )
+                    Color.white
+                        .opacity(colorScheme == .dark ? 0.16 : 0.15)
                 )
-                .blur(radius: 4)
+                .blur(radius: 6)
+                .blendMode(.screen)
 
             Circle()
-                .strokeBorder(Color.white.opacity(0.92), lineWidth: 1.15)
-                .blur(radius: 0.25)
+                .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.86 : 0.78), lineWidth: 1.05)
+                .blur(radius: 0.2)
 
             Circle()
-                .strokeBorder(Color(hex: "B3B3B3").opacity(0.6), lineWidth: 0.8)
+                .strokeBorder(Color(hex: "B3B3B3").opacity(colorScheme == .dark ? 0.52 : 0.42), lineWidth: 0.75)
                 .blendMode(.overlay)
         }
-        .shadow(color: Color(hex: "FF6A77").opacity(0.58), radius: 20, x: 0, y: 6)
-        .overlay {
+        .shadow(
+            color: Color(hex: "FF6A77").opacity(colorScheme == .dark ? 0.56 : 0.44),
+            radius: colorScheme == .dark ? 24 : 22,
+            x: 0,
+            y: colorScheme == .dark ? 1 : 4
+        )
+        .shadow(
+            color: Color(hex: "67101D").opacity(colorScheme == .dark ? 0.42 : 0.18),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
+    }
+
+    private var leafTopLeftBorder: some View {
+        ZStack {
             Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [.white.opacity(0.3), .clear],
-                        center: .topLeading,
-                        startRadius: 1,
-                        endRadius: 34
-                    )
+                .trim(from: 0.5, to: 1.0)
+                .stroke(
+                    Color.white.opacity(colorScheme == .dark ? 0.88 : 0.66),
+                    style: StrokeStyle(lineWidth: LiquidGlassFigmaTokens.leafBorderWidth, lineCap: .round, lineJoin: .round)
                 )
-                .blur(radius: 1.8)
+
+            Circle()
+                .trim(from: 0.25, to: 0.75)
+                .stroke(
+                    Color.white.opacity(colorScheme == .dark ? 0.88 : 0.66),
+                    style: StrokeStyle(lineWidth: LiquidGlassFigmaTokens.leafBorderWidth, lineCap: .round, lineJoin: .round)
+                )
         }
     }
 
@@ -174,7 +205,7 @@ public struct LiquidGlassButton<Content: View>: View {
                         red: LiquidGlassFigmaTokens.leafColorBurnRed,
                         green: LiquidGlassFigmaTokens.leafColorBurnGreen,
                         blue: LiquidGlassFigmaTokens.leafColorBurnBlue,
-                        opacity: LiquidGlassFigmaTokens.leafColorBurnOpacity
+                        opacity: colorScheme == .dark ? 0.68 : LiquidGlassFigmaTokens.leafColorBurnOpacity
                     )
                 )
                 .blendMode(.colorBurn)
@@ -185,18 +216,18 @@ public struct LiquidGlassButton<Content: View>: View {
                         stops: [
                             .init(
                                 color: Color(
-                                    red: 102.0 / 255.0,
-                                    green: 102.0 / 255.0,
-                                    blue: 102.0 / 255.0,
+                                    red: LiquidGlassFigmaTokens.grayChannel,
+                                    green: LiquidGlassFigmaTokens.grayChannel,
+                                    blue: LiquidGlassFigmaTokens.grayChannel,
                                     opacity: 0
                                 ),
                                 location: LiquidGlassFigmaTokens.leafGradientStartLocation
                             ),
                             .init(
                                 color: Color(
-                                    red: 102.0 / 255.0,
-                                    green: 102.0 / 255.0,
-                                    blue: 102.0 / 255.0,
+                                    red: LiquidGlassFigmaTokens.grayChannel,
+                                    green: LiquidGlassFigmaTokens.grayChannel,
+                                    blue: LiquidGlassFigmaTokens.grayChannel,
                                     opacity: LiquidGlassFigmaTokens.leafGradientEndOpacity
                                 ),
                                 location: 1
@@ -226,10 +257,25 @@ public struct LiquidGlassButton<Content: View>: View {
                 .rotationEffect(.degrees(-45))
 
             Circle()
-                .strokeBorder(Color(hex: "B3B3B3").opacity(0.52), lineWidth: 0.75)
+                .strokeBorder(Color(hex: "B3B3B3").opacity(colorScheme == .dark ? 0.58 : 0.52), lineWidth: 0.75)
                 .blendMode(.overlay)
         }
         .compositingGroup()
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.20 : 0.16), radius: 9, x: 0, y: 5)
+    }
+
+    private func insetStroke(
+        color: Color,
+        lineWidth: CGFloat,
+        blurRadius: CGFloat,
+        x: CGFloat,
+        y: CGFloat,
+        blendMode: BlendMode
+    ) -> some View {
+        Circle()
+            .stroke(color, lineWidth: lineWidth)
+            .blur(radius: blurRadius)
+            .offset(x: x, y: y)
+            .blendMode(blendMode)
+            .mask(Circle())
     }
 }

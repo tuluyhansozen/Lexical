@@ -7,7 +7,7 @@ struct ContentView: View {
     @EnvironmentObject var banditScheduler: BanditScheduler
     @AppStorage("darkModeEnabled") private var darkModeEnabled: Bool = false
     @State private var selectedTab: Int = 0
-    @State private var showSession: Bool = false
+    @State private var reviewStartSignal: UInt64 = 0
     @State private var promptRoute: PromptCardRoute?
 #if DEBUG
     @State private var didAutoCycle: Bool = false
@@ -23,50 +23,14 @@ struct ContentView: View {
                 
                 ExploreView()
                     .tag(1)
-                
-                VStack(spacing: 20) {
-                    Spacer()
-                    
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 80))
-                        .foregroundStyle(Color.sonPrimary)
-                    
-                    Text("Ready to Review?")
-                        .font(.display(.largeTitle, weight: .bold))
-                        .foregroundStyle(Color.adaptiveText)
-                        .accessibilityAddTraits(.isHeader)
-                        .accessibilityIdentifier("review.readyTitle")
-                    
-                    Text("Your retention engine is primed.")
-                        .font(.bodyText)
-                        .foregroundStyle(Color.adaptiveTextSecondary)
-                    
-                    Button("Start Session") {
-                        showSession = true
+
+                ReviewSessionView(
+                    startSignal: reviewStartSignal,
+                    onNavigateToReading: {
+                        selectedTab = 0
                     }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding()
-                    .frame(maxWidth: 200)
-                    .background(Color.sonPrimary)
-                    .clipShape(.rect(cornerRadius: 16))
-                    .accessibilityHint("Starts a review session with due words.")
-                    .accessibilityIdentifier("review.startSessionButton")
-                    
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.adaptiveBackground)
+                )
                 .tag(2)
-                #if os(iOS)
-                .fullScreenCover(isPresented: $showSession) {
-                    ReviewSessionView()
-                }
-                #else
-                .sheet(isPresented: $showSession) {
-                    ReviewSessionView()
-                }
-                #endif
                 
                 StatsView()
                     .tag(3)
@@ -176,13 +140,22 @@ struct ContentView: View {
     }
 
     private func openPromptCard(lemma: String, definition: String?) {
-        selectedTab = 2
+        let routed = ReviewSessionRouting.routeToPrompt(
+            selectedTab: selectedTab,
+            reviewStartSignal: reviewStartSignal
+        )
+        selectedTab = routed.selectedTab
+        reviewStartSignal = routed.reviewStartSignal
         promptRoute = PromptCardRoute(lemma: lemma, definition: definition)
     }
 
     private func openReviewSession() {
-        selectedTab = 2
-        showSession = true
+        let routed = ReviewSessionRouting.routeToReview(
+            selectedTab: selectedTab,
+            reviewStartSignal: reviewStartSignal
+        )
+        selectedTab = routed.selectedTab
+        reviewStartSignal = routed.reviewStartSignal
     }
 
     private func consumePendingPromptRouteIfNeeded() {

@@ -30,7 +30,8 @@ let package = Package(
                 .process("Resources/ArticleTemplateBank.json"),
                 .process("Resources/Seeds/seed_data.json"),
                 .process("Resources/Seeds/roots.json"),
-                .process("Resources/StoreKit/Lexical.storekit")
+                .process("Resources/StoreKit/Lexical.storekit"),
+                .process("Resources/Icons/Tab")
             ],
             linkerSettings: [
                 .unsafeFlags([
