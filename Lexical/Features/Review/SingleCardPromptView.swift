@@ -9,117 +9,96 @@ struct SingleCardPromptView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var card: ReviewCard?
-    @State private var isFlipped: Bool = false
-    @State private var isLoading: Bool = true
+    @State private var revealAnswer = false
+    @State private var isLoading = true
     @State private var completionText: String?
     @State private var infoData: WordDetailData?
 
+    private let spec = RecallFigmaSpec()
+
     var body: some View {
-        ZStack {
-            Color.adaptiveBackground.ignoresSafeArea()
+        GeometryReader { geometry in
+            let scale = spec.scale(for: geometry.size.width)
 
-            if let completionText {
-                VStack(spacing: 16) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 54))
-                        .foregroundStyle(.green)
-                    Text(completionText)
-                        .font(.headline)
-                        .foregroundStyle(Color.adaptiveText)
-                        .accessibilityAddTraits(.isHeader)
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Color.sonPrimary)
-                    .clipShape(Capsule())
-                }
-                .padding()
-            } else if isLoading {
-                ProgressView("Loading card...")
-            } else if let card {
-                VStack {
-                    HStack {
-                        Text("Prompt Card")
-                            .font(.headline)
-                            .foregroundStyle(Color.adaptiveTextSecondary)
-                            .accessibilityAddTraits(.isHeader)
-                            .accessibilityIdentifier("prompt.title")
-                        Spacer()
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 12)
+            ZStack {
+                spec.backgroundColor(for: colorScheme).ignoresSafeArea()
 
-                    Spacer()
+                if let completionText {
+                    completionView(message: completionText, scale: scale)
+                } else if isLoading {
+                    ProgressView("Loading card...")
+                } else if let card {
+                    VStack(spacing: 0) {
+                        RecallHeaderView(
+                            spec: spec,
+                            colorScheme: colorScheme,
+                            scale: scale,
+                            title: "Prompt Card",
+                            subtitle: "Single-card recall check"
+                        )
+                        .accessibilityIdentifier("prompt.title")
+                        .padding(.top, spec.headerTopPadding * scale)
+                        .padding(.bottom, spec.headerBottomPadding * scale)
+                        .padding(.horizontal, spec.horizontalPadding * scale)
 
-                    FlashcardView(
-                        item: card,
-                        onFlip: { },
-                        isFlipped: $isFlipped
-                    )
-                    .id(card.lemma)
+                        RecallProgressTrackView(
+                            spec: spec,
+                            colorScheme: colorScheme,
+                            value: revealAnswer ? 1 : 0,
+                            total: 1
+                        )
+                        .padding(.horizontal, spec.horizontalPadding * scale)
+                        .padding(.bottom, spec.contentTopSpacing * scale)
 
-                    Spacer()
+                        Spacer(minLength: 8 * scale)
 
-                    if isFlipped {
-                        VStack(spacing: 12) {
-                            HStack(spacing: 12) {
-                                Button {
-                                    infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
-                                } label: {
-                                    Label("Info", systemImage: "info.circle")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(Color.sonPrimary)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Color.sonPrimary.opacity(0.12))
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        if revealAnswer {
+                            RecallAnswerCardView(
+                                spec: spec,
+                                colorScheme: colorScheme,
+                                scale: scale,
+                                card: card
+                            )
+                            .padding(.horizontal, spec.horizontalPadding * scale)
+
+                            Spacer(minLength: 16 * scale)
+                            answerActions(card: card, scale: scale)
+                            Spacer(minLength: 8 * scale)
+                        } else {
+                            RecallQuestionCardView(
+                                spec: spec,
+                                colorScheme: colorScheme,
+                                scale: scale,
+                                card: card
+                            )
+                            .padding(.horizontal, spec.horizontalPadding * scale)
+
+                            Spacer(minLength: 22 * scale)
+                            RecallPrimaryActionButton(
+                                spec: spec,
+                                colorScheme: colorScheme,
+                                scale: scale,
+                                title: "Reveal Answer"
+                            ) {
+                                withAnimation(.easeInOut(duration: spec.revealDuration)) {
+                                    revealAnswer = true
                                 }
-                                .accessibilityLabel("Word info")
-                                .accessibilityHint("Shows full details for this word.")
-
-                                Button(role: .destructive) {
-                                    removeFromDeck(card)
-                                } label: {
-                                    Label("Remove from Deck", systemImage: "trash")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Color.red.opacity(0.12))
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                }
-                                .accessibilityHint("Removes this word from your learning deck.")
                             }
-
-                            HStack(spacing: 12) {
-                                GradeButton(title: "Again", color: .red) { submit(1) }
-                                GradeButton(title: "Hard", color: .orange) { submit(2) }
-                                GradeButton(title: "Good", color: .blue) { submit(3) }
-                                GradeButton(title: "Easy", color: .green) { submit(4) }
-                            }
+                            .accessibilityIdentifier("prompt.revealButton")
+                            .padding(.horizontal, spec.horizontalPadding * scale)
+                            Spacer(minLength: 12 * scale)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 28)
-                    } else {
-                        Text("Tap card to reveal")
-                        .font(.caption)
-                        .foregroundStyle(Color.adaptiveTextSecondary)
-                        .padding(.bottom, 28)
                     }
-                }
-            } else {
-                VStack(spacing: 12) {
-                    Text("Unable to load card.")
-                        .font(.headline)
-                    Button("Close") {
-                        dismiss()
+                } else {
+                    VStack(spacing: 12) {
+                        Text("Unable to load card.")
+                            .font(.headline)
+                        Button("Close") {
+                            dismiss()
+                        }
                     }
                 }
             }
@@ -131,6 +110,100 @@ struct SingleCardPromptView: View {
             WordDetailSheet(data: detail)
                 .presentationDetents([.medium, .large])
         }
+    }
+
+    private func completionView(message: String, scale: CGFloat) -> some View {
+        VStack(spacing: 16 * scale) {
+            RecallCardSurface(spec: spec, colorScheme: colorScheme, scale: scale) {
+                VStack(alignment: .leading, spacing: 12 * scale) {
+                    Text("Saved")
+                        .font(.system(size: 30 * scale, weight: .semibold, design: .rounded))
+                        .foregroundStyle(spec.titleColor(for: colorScheme))
+                    Text(message)
+                        .font(.system(size: 16 * scale, weight: .regular))
+                        .foregroundStyle(spec.subtitleColor(for: colorScheme))
+                }
+            }
+
+            RecallPrimaryActionButton(
+                spec: spec,
+                colorScheme: colorScheme,
+                scale: scale,
+                title: "Done"
+            ) {
+                dismiss()
+            }
+            .accessibilityIdentifier("prompt.doneButton")
+        }
+        .padding(.horizontal, spec.horizontalPadding * scale)
+    }
+
+    private func answerActions(card: ReviewCard, scale: CGFloat) -> some View {
+        VStack(spacing: 12 * scale) {
+            HStack(spacing: 12 * scale) {
+                RecallNeutralActionButton(
+                    spec: spec,
+                    colorScheme: colorScheme,
+                    scale: scale,
+                    title: "Info"
+                ) {
+                    infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+                }
+                .accessibilityIdentifier("prompt.infoButton")
+                .accessibilityLabel("Word info")
+                .accessibilityHint("Shows full details for this word.")
+
+                RecallNeutralActionButton(
+                    spec: spec,
+                    colorScheme: colorScheme,
+                    scale: scale,
+                    title: "Remove From Deck"
+                ) {
+                    removeFromDeck(card)
+                }
+                .accessibilityIdentifier("prompt.removeButton")
+                .accessibilityHint("Removes this word from your learning deck.")
+            }
+
+            HStack(spacing: 10 * scale) {
+                RecallGradeActionButton(
+                    spec: spec,
+                    colorScheme: colorScheme,
+                    scale: scale,
+                    grade: 1,
+                    title: "Again"
+                ) { submit(1) }
+                .accessibilityIdentifier("prompt.gradeAgain")
+
+                RecallGradeActionButton(
+                    spec: spec,
+                    colorScheme: colorScheme,
+                    scale: scale,
+                    grade: 2,
+                    title: "Hard"
+                ) { submit(2) }
+                .accessibilityIdentifier("prompt.gradeHard")
+
+                RecallGradeActionButton(
+                    spec: spec,
+                    colorScheme: colorScheme,
+                    scale: scale,
+                    grade: 3,
+                    title: "Good"
+                ) { submit(3) }
+                .accessibilityIdentifier("prompt.gradeGood")
+
+                RecallGradeActionButton(
+                    spec: spec,
+                    colorScheme: colorScheme,
+                    scale: scale,
+                    grade: 4,
+                    title: "Easy"
+                ) { submit(4) }
+                .accessibilityIdentifier("prompt.gradeEasy")
+            }
+        }
+        .padding(.horizontal, spec.horizontalPadding * scale)
     }
 
     @MainActor

@@ -5,7 +5,7 @@ import LexicalCore
 /// Explore renders a fixed-topology daily matrix aligned to the iPhone 16-3 Figma composition.
 struct ExploreView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     @Query private var roots: [MorphologicalRoot]
     @Query private var lexemes: [LexemeDefinition]
@@ -19,7 +19,7 @@ struct ExploreView: View {
     @State private var actionMessage: ExploreActionMessage?
 
     private let dailyRootResolver = DailyRootResolver()
-    private let figmaReference = FigmaReferenceMatrix()
+    private let figmaSpec = ExploreFigmaSpec()
     private let triageService = NotificationTriageService()
 
     private var profile: UserProfile {
@@ -30,7 +30,7 @@ struct ExploreView: View {
         GeometryReader { geometry in
             let layoutWidth = geometry.size.width
             ZStack {
-                Color(hex: "F5F5F7").ignoresSafeArea()
+                backgroundColor.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     headerView(layoutWidth: layoutWidth)
@@ -59,19 +59,32 @@ struct ExploreView: View {
 
     private func headerView(layoutWidth: CGFloat) -> some View {
         let scale = headerScale(for: layoutWidth)
-        return HStack(spacing: 0) {
-            Text("Word Matrix")
-                .font(.system(size: titleFontSize(for: layoutWidth), weight: .bold))
-                .kerning(0.3955 * scale)
-                .foregroundStyle(Color(hex: "0A0A0A"))
+        let titleColor = colorScheme == .dark
+            ? Color(hex: figmaSpec.titleDarkHex)
+            : Color(hex: figmaSpec.titleLightHex)
+        let subtitleColor = colorScheme == .dark
+            ? Color(hex: figmaSpec.subtitleDarkHex)
+            : Color(hex: figmaSpec.subtitleLightHex)
+
+        return VStack(alignment: .leading, spacing: 6 * scale) {
+            Text(figmaSpec.titleText)
+                .font(.system(size: figmaSpec.titleFontSize * scale, weight: .semibold))
+                .kerning(figmaSpec.titleKerning * scale)
+                .foregroundStyle(titleColor)
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
-                .frame(width: 236 * scale, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 0)
+            Text(figmaSpec.subtitleText)
+                .font(.system(size: figmaSpec.subtitleFontSize * scale, weight: .light))
+                .foregroundStyle(subtitleColor)
+                .minimumScaleFactor(0.85)
+                .lineLimit(1)
+                .accessibilityIdentifier("explore.subtitle")
         }
-        .frame(height: 67 * scale)
-        .padding(.horizontal, 18 * scale)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 16 * scale)
+        .padding(.horizontal, 24 * scale)
+        .padding(.bottom, 18 * scale)
     }
 
     private var matrixView: some View {
@@ -84,14 +97,15 @@ struct ExploreView: View {
                     nodeButton(for: node, figmaScale: figmaScale, size: geometry.size)
                 }
             }
-            .padding(.horizontal, 2)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 1)
+            .padding(.top, 4)
+            .padding(.bottom, 14)
         }
     }
 
     private func nodeButton(for node: ExploreMatrixNode, figmaScale: CGFloat, size: CGSize) -> some View {
         LiquidGlassButton(
-            style: node.role == .root ? .root : .leaf,
+            style: node.role == .root ? figmaSpec.rootLiquidGlassStyle : figmaSpec.leafLiquidGlassStyle,
             action: {
                 let card = reviewCard(for: node)
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
@@ -101,24 +115,32 @@ struct ExploreView: View {
             }
         ) {
             if node.role == .root {
-                Text(node.label)
-                    .font(.system(size: 18 * figmaScale, weight: .semibold, design: .serif))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
+                VStack(spacing: 2 * figmaScale) {
+                    Text(node.label.lowercased())
+                        .font(.system(size: figmaSpec.rootPrimaryFontSize * figmaScale, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                    Text("root")
+                        .font(.system(size: figmaSpec.rootSecondaryFontSize * figmaScale, weight: .regular))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                .foregroundStyle(.white)
             } else {
                 VStack(spacing: 2) {
-                    Text(node.label.capitalized)
-                        .font(.system(size: 9 * figmaScale, weight: .regular))
+                    Text(node.label)
+                        .font(.system(size: figmaSpec.leafFontSize * figmaScale, weight: .regular))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.62)
+                        .minimumScaleFactor(0.7)
                         .padding(.horizontal, 4)
                 }
                 .overlay(
                     Group {
                         if let status = nodeStatusByID[node.id], status.isLearned {
                             Circle()
-                                .stroke(Color.green.opacity(0.6), lineWidth: 2)
+                                .stroke(Color(hex: "8ADD95").opacity(0.64), lineWidth: 2)
                                 .frame(width: node.diameter * figmaScale + 6, height: node.diameter * figmaScale + 6)
                         }
                     }
@@ -144,9 +166,12 @@ struct ExploreView: View {
                 path.move(to: rootPos)
                 path.addLine(to: leafPos)
 
+                let lineOpacity = colorScheme == .dark
+                    ? figmaSpec.connectorOpacityDark
+                    : figmaSpec.connectorOpacityLight
                 let gradient = Gradient(colors: [
-                    Color(hex: "C9A8A8").opacity(0.42),
-                    Color(hex: "A8B5AA").opacity(0.32)
+                    Color(hex: figmaSpec.connectorStartHex).opacity(lineOpacity),
+                    Color(hex: figmaSpec.connectorEndHex).opacity(lineOpacity * 0.9)
                 ])
                 context.stroke(
                     path,
@@ -155,16 +180,16 @@ struct ExploreView: View {
                         startPoint: rootPos,
                         endPoint: leafPos
                     ),
-                    style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round)
+                    style: StrokeStyle(lineWidth: figmaSpec.connectorLineWidth, lineCap: .round, lineJoin: .round)
                 )
             }
         }
     }
 
     private func position(for node: ExploreMatrixNode, in size: CGSize) -> CGPoint {
-        let horizontalInset: CGFloat = 10
-        let topInset: CGFloat = 6
-        let bottomInset: CGFloat = 22
+        let horizontalInset = figmaSpec.matrixHorizontalInset
+        let topInset = figmaSpec.matrixTopInset
+        let bottomInset = figmaSpec.matrixBottomInset
         let width = max(1, size.width - (horizontalInset * 2))
         let height = max(1, size.height - topInset - bottomInset)
 
@@ -174,19 +199,21 @@ struct ExploreView: View {
         )
     }
 
-    private func titleFontSize(for layoutWidth: CGFloat) -> CGFloat {
-        let scale = layoutWidth / 272.0
-        return (25 * scale).clamped(to: 30...39)
-    }
-
     private func headerScale(for layoutWidth: CGFloat) -> CGFloat {
-        let scale = layoutWidth / 272.0
-        return scale.clamped(to: 1.05...1.55)
+        let scale = layoutWidth / 393.0
+        return scale.clamped(to: 0.88...1.2)
     }
 
     private func matrixScale(for size: CGSize) -> CGFloat {
-        let scale = size.width / 272.0
-        return scale.clamped(to: 1.0...1.55)
+        let scale = size.width / 393.0
+        return scale.clamped(to: 0.86...1.2)
+    }
+
+    private var backgroundColor: Color {
+        if colorScheme == .dark {
+            return Color(hex: figmaSpec.darkBackgroundHex)
+        }
+        return Color(hex: figmaSpec.lightBackgroundHex)
     }
 
     private var userStatesRevisionKey: Int {
@@ -219,15 +246,15 @@ struct ExploreView: View {
                 id: rootID,
                 label: resolution.centerLemma.lowercased(),
                 role: .root,
-                position: figmaReference.rootPosition,
-                diameter: figmaReference.rootDiameter
+                position: figmaSpec.rootPosition,
+                diameter: figmaSpec.rootDiameter
             )
         ]
 
         var statusMap: [String: UserWordStatus] = [:]
-        let satellites = Array(resolution.satellites.prefix(figmaReference.leaves.count))
+        let satellites = Array(resolution.satellites.prefix(figmaSpec.leaves.count))
 
-        for (index, slot) in figmaReference.leaves.enumerated() {
+        for (index, slot) in figmaSpec.leaves.enumerated() {
             let satellite = satellites[safe: index]
             let title = satellite.map { displayLabel($0.lemma) } ?? slot.label
             let nodeID = "leaf:\(title.lowercased()):\(index)"
@@ -251,23 +278,23 @@ struct ExploreView: View {
         selectedNodeID = selectedNodeID.flatMap { previous in
             matrixNodes.contains(where: { $0.id == previous }) ? previous : nil
         } ?? rootID
-        rootMeaning = resolution.rootMeaning.isEmpty ? figmaReference.rootMeaning : resolution.rootMeaning
+        rootMeaning = resolution.rootMeaning.isEmpty ? figmaSpec.rootMeaning : resolution.rootMeaning
         nodeStatusByID = statusMap
     }
 
     private func renderFallbackMatrix() {
-        let rootID = "root:\(figmaReference.rootLabel)"
+        let rootID = "root:\(figmaSpec.rootLabel)"
         var matrixNodes: [ExploreMatrixNode] = [
             ExploreMatrixNode(
                 id: rootID,
-                label: figmaReference.rootLabel,
+                label: figmaSpec.rootLabel,
                 role: .root,
-                position: figmaReference.rootPosition,
-                diameter: figmaReference.rootDiameter
+                position: figmaSpec.rootPosition,
+                diameter: figmaSpec.rootDiameter
             )
         ]
 
-        for (index, leaf) in figmaReference.leaves.enumerated() {
+        for (index, leaf) in figmaSpec.leaves.enumerated() {
             matrixNodes.append(
                 ExploreMatrixNode(
                     id: "leaf:\(leaf.label.lowercased()):\(index)",
@@ -281,7 +308,7 @@ struct ExploreView: View {
 
         nodes = matrixNodes
         selectedNodeID = rootID
-        rootMeaning = figmaReference.rootMeaning
+        rootMeaning = figmaSpec.rootMeaning
         nodeStatusByID = [:]
     }
 
@@ -344,28 +371,57 @@ struct ExploreView: View {
             )
         }
     }
+}
 
-    private struct FigmaReferenceMatrix {
-        struct Leaf {
-            let label: String
-            let position: CGPoint
-            let diameter: CGFloat
-        }
-
-        let rootLabel = "spec"
-        let rootMeaning = "A morphological root tied to seeing, looking, and observation."
-        let rootPosition = CGPoint(x: 0.50, y: 0.4432)
-        let rootDiameter: CGFloat = 74
-
-        let leaves: [Leaf] = [
-            Leaf(label: "Spectator", position: CGPoint(x: 0.3143, y: 0.1473), diameter: 55),
-            Leaf(label: "Retrospect", position: CGPoint(x: 0.6985, y: 0.1787), diameter: 66),
-            Leaf(label: "Spectacle", position: CGPoint(x: 0.1710, y: 0.3260), diameter: 55),
-            Leaf(label: "Conspicious", position: CGPoint(x: 0.7868, y: 0.5615), diameter: 62),
-            Leaf(label: "Perspective", position: CGPoint(x: 0.2114, y: 0.6323), diameter: 67),
-            Leaf(label: "Inspect", position: CGPoint(x: 0.4908, y: 0.7367), diameter: 55)
-        ]
+struct ExploreFigmaSpec {
+    struct Leaf {
+        let label: String
+        let position: CGPoint
+        let diameter: CGFloat
     }
+
+    let titleText = "Explore"
+    let subtitleText = "Daily word families for you"
+    let titleFontSize: CGFloat = 32
+    let subtitleFontSize: CGFloat = 16
+    let titleKerning: CGFloat = 0.3955
+    let rootPrimaryFontSize: CGFloat = 16
+    let rootSecondaryFontSize: CGFloat = 10
+    let leafFontSize: CGFloat = 9
+    let lightBackgroundHex = "F5F5F7"
+    let darkBackgroundHex = "121417"
+    let titleLightHex = "0A0A0A"
+    let titleDarkHex = "F5F5F7"
+    let subtitleLightHex = "4A4A4A"
+    let subtitleDarkHex = "97A1AC"
+    let connectorStartHex = "D4D7DD"
+    let connectorEndHex = "BCC3CB"
+    let connectorOpacityLight: Double = 0.57
+    let connectorOpacityDark: Double = 0.32
+    let connectorLineWidth: CGFloat = 1
+    let rootNodeStyleKey = "rootCoralGlass"
+    let leafNodeStyleKey = "leafGreenGlass"
+
+    let matrixHorizontalInset: CGFloat = 12
+    let matrixTopInset: CGFloat = 16
+    let matrixBottomInset: CGFloat = 30
+
+    let rootLabel = "spec"
+    let rootMeaning = "A morphological root tied to seeing, looking, and observation."
+    let rootPosition = CGPoint(x: 0.50, y: 0.4432)
+    let rootDiameter: CGFloat = 99
+
+    let leaves: [Leaf] = [
+        Leaf(label: "Spectator", position: CGPoint(x: 0.3143, y: 0.1473), diameter: 73),
+        Leaf(label: "Retrospect", position: CGPoint(x: 0.6985, y: 0.1787), diameter: 88),
+        Leaf(label: "Spectacle", position: CGPoint(x: 0.1710, y: 0.3260), diameter: 73),
+        Leaf(label: "Conspicious", position: CGPoint(x: 0.7868, y: 0.5615), diameter: 82),
+        Leaf(label: "Perspective", position: CGPoint(x: 0.2114, y: 0.6323), diameter: 89),
+        Leaf(label: "Inspect", position: CGPoint(x: 0.4908, y: 0.7367), diameter: 73)
+    ]
+
+    var rootLiquidGlassStyle: LiquidGlassStyle { .root }
+    var leafLiquidGlassStyle: LiquidGlassStyle { .leaf }
 }
 
 private struct ExploreMatrixNode: Identifiable {

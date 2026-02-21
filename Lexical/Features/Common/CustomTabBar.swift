@@ -1,40 +1,43 @@
 import SwiftUI
 import LexicalCore
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
-    private let tabs: [(id: Int, icon: String, label: String, testID: String)] = [
-        (id: 0, icon: "clipboard", label: "Learn", testID: "tab.learn"),
-        (id: 1, icon: "safari", label: "Explore", testID: "tab.explore"),
-        (id: 2, icon: "menucard", label: "Practice", testID: "tab.review"),
-        (id: 3, icon: "chart.bar.xaxis", label: "Stats", testID: "tab.stats"),
-        (id: 4, icon: "person", label: "Profile", testID: "tab.profile")
+    private let spec = TabBarFigmaSpec()
+    private let tabs: [TabIconItem] = [
+        .init(id: 0, iconAsset: "tab-learn", fallbackSymbol: "bag", label: "Learn", testID: "tab.learn"),
+        .init(id: 1, iconAsset: "tab-explore", fallbackSymbol: "safari", label: "Explore", testID: "tab.explore"),
+        .init(id: 2, iconAsset: "tab-practice", fallbackSymbol: "menucard", label: "Practice", testID: "tab.review"),
+        .init(id: 3, iconAsset: "tab-stats", fallbackSymbol: "chart.bar.xaxis", label: "Stats", testID: "tab.stats"),
+        .init(id: 4, iconAsset: "tab-profile", fallbackSymbol: "person", label: "Profile", testID: "tab.profile")
     ]
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(tabs, id: \.id) { tab in
+            ForEach(tabs) { tab in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.18)) {
+                    withAnimation(.easeInOut(duration: spec.selectionDuration)) {
                         selectedTab = tab.id
                     }
                 } label: {
                     ZStack {
                         if selectedTab == tab.id {
-                            selectedGlassCircle
-                                .frame(width: 24, height: 24)
+                            Circle()
+                                .stroke(spec.selectedRingColor(for: colorScheme), lineWidth: spec.selectedRingLineWidth)
+                                .frame(width: spec.selectionRingSize, height: spec.selectionRingSize)
                         }
 
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 18, weight: .regular))
+                        tabIcon(tab)
                             .foregroundStyle(
                                 selectedTab == tab.id
-                                ? Color(hex: "0A0A0A")
-                                : Color(hex: "6F747B")
+                                ? spec.selectedIconColor(for: colorScheme)
+                                : spec.unselectedIconColor(for: colorScheme)
                             )
-                            .offset(y: -0.5)
                     }
                     .frame(maxWidth: .infinity, minHeight: 31)
                 }
@@ -45,44 +48,79 @@ struct CustomTabBar: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 61)
-        .background(Color.white)
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 15, topTrailingRadius: 15))
+        .frame(height: spec.height)
+        .background(spec.backgroundColor(for: colorScheme))
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: spec.topCornerRadius, topTrailingRadius: spec.topCornerRadius))
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(Color(hex: "D1D5DC"))
+                .fill(spec.topBorderColor(for: colorScheme))
                 .frame(height: 1)
         }
-        .background(Color.white.ignoresSafeArea(edges: .bottom))
+        .background(spec.backgroundColor(for: colorScheme).ignoresSafeArea(edges: .bottom))
     }
 
     @ViewBuilder
-    private var selectedGlassCircle: some View {
-        if reduceTransparency {
-            Circle()
-                .fill(Color.white.opacity(0.94))
-                .overlay(
-                    Circle()
-                        .stroke(Color(hex: "0A0A0A").opacity(0.85), lineWidth: 1)
-                )
-        } else if #available(iOS 26.0, macOS 26.0, *) {
-            Circle()
-                .fill(.clear)
-                .glassEffect(.regular.tint(Color.white.opacity(0.06)).interactive(), in: Circle())
-                .overlay(
-                    Circle()
-                        .stroke(Color(hex: "0A0A0A").opacity(0.88), lineWidth: 1)
-                )
+    private func tabIcon(_ tab: TabIconItem) -> some View {
+        let useBundledIcons = false
+
+        #if canImport(UIKit)
+        if useBundledIcons, UIImage(named: tab.iconAsset, in: .module, with: nil) != nil {
+            Image(tab.iconAsset, bundle: .module)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: spec.iconSize, height: spec.iconSize)
         } else {
-            GlassEffectContainer(material: .regular) {
-                Circle()
-                    .fill(Color.white.opacity(0.22))
-            }
-            .clipShape(Circle())
-            .overlay(
-                Circle()
-                    .stroke(Color(hex: "0A0A0A").opacity(0.88), lineWidth: 1)
-            )
+            Image(systemName: tab.fallbackSymbol)
+                .font(.system(size: spec.iconSize, weight: .regular))
         }
+        #else
+        Image(systemName: tab.fallbackSymbol)
+            .font(.system(size: spec.iconSize, weight: .regular))
+        #endif
     }
+}
+
+struct TabBarFigmaSpec {
+    let height: CGFloat = 61
+    let topCornerRadius: CGFloat = 15
+    let iconSize: CGFloat = 18
+    let selectionRingSize: CGFloat = 24
+    let selectedRingLineWidth: CGFloat = 1.3
+    let selectionDuration: Double = 0.16
+
+    let lightBackgroundHex = "F9F9FA"
+    let darkBackgroundHex = "F9F9FA"
+    let lightTopBorderHex = "D1D5DC"
+    let darkTopBorderHex = "D1D5DC"
+    let selectedIconHex = "181C21"
+    let unselectedIconHex = "70757E"
+
+    func backgroundColor(for colorScheme: ColorScheme) -> Color {
+        Color(hex: colorScheme == .dark ? darkBackgroundHex : lightBackgroundHex)
+    }
+
+    func topBorderColor(for colorScheme: ColorScheme) -> Color {
+        Color(hex: colorScheme == .dark ? darkTopBorderHex : lightTopBorderHex)
+    }
+
+    func selectedIconColor(for colorScheme: ColorScheme) -> Color {
+        Color(hex: selectedIconHex)
+    }
+
+    func unselectedIconColor(for colorScheme: ColorScheme) -> Color {
+        Color(hex: unselectedIconHex)
+    }
+
+    func selectedRingColor(for colorScheme: ColorScheme) -> Color {
+        Color(hex: selectedIconHex).opacity(colorScheme == .dark ? 0.92 : 0.88)
+    }
+}
+
+private struct TabIconItem: Identifiable {
+    let id: Int
+    let iconAsset: String
+    let fallbackSymbol: String
+    let label: String
+    let testID: String
 }

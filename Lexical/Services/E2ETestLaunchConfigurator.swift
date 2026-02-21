@@ -53,6 +53,7 @@ enum E2ETestLaunchConfigurator {
             "userName",
             "lexical.pending_prompt_lemma",
             "lexical.pending_prompt_definition",
+            "lexical.pending_notification_route",
             UserProfile.activeUserDefaultsKey
         ]
 
