@@ -1,5 +1,8 @@
 // swift-tools-version: 5.9
 import PackageDescription
+import Foundation
+
+let packageRootPath = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
 
 let package = Package(
     name: "Lexical",
@@ -14,8 +17,8 @@ let package = Package(
         .target(
             name: "LexicalCore",
             path: "LexicalCore",
-            resources: [
-                .process("DesignSystem/LiquidGlassShader.metal")
+            exclude: [
+                "DesignSystem/LiquidGlassShader.metal"
             ]
         ),
         .executableTarget(
@@ -38,7 +41,7 @@ let package = Package(
                     "-Xlinker", "-sectcreate",
                     "-Xlinker", "__TEXT",
                     "-Xlinker", "__info_plist",
-                    "-Xlinker", "Lexical/Info.plist"
+                    "-Xlinker", "\(packageRootPath)/Lexical/Info.plist"
                 ], .when(platforms: [.iOS]))
             ]
         ),
@@ -55,7 +58,7 @@ let package = Package(
                     "-Xlinker", "-sectcreate",
                     "-Xlinker", "__TEXT",
                     "-Xlinker", "__info_plist",
-                    "-Xlinker", "LexicalWidget/Info.plist"
+                    "-Xlinker", "\(packageRootPath)/LexicalWidget/Info.plist"
                 ], .when(platforms: [.iOS]))
             ]
         ),
@@ -68,6 +71,12 @@ let package = Package(
             name: "LexicalTests",
             dependencies: ["Lexical", "LexicalCore"],
             path: "LexicalTests"
+        ),
+        .executableTarget(
+            name: "Seeder",
+            dependencies: ["LexicalCore"],
+            path: "Seeder"
         )
+
     ]
 )

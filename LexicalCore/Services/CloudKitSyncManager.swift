@@ -388,7 +388,7 @@ public actor CloudKitSyncManager {
     private static func hasCloudKitEntitlement() -> Bool {
         #if targetEnvironment(simulator)
         return false
-        #else
+        #elseif os(macOS)
         guard let task = SecTaskCreateFromSelf(nil) else {
             return false
         }
@@ -406,6 +406,11 @@ public actor CloudKitSyncManager {
         let hasCloudKitService = cloudKitServices?.contains("CloudKit") ?? false
         let hasContainer = !(containers?.isEmpty ?? true)
         return hasCloudKitService && hasContainer
+        #else
+        // iOS Physical Devices: SecTaskCreateFromSelf is not available.
+        // We assume true if we successfully provision the app on target.
+        // The subsequent verification step `fetchAccountStatus()` will handle real CK availability.
+        return true
         #endif
     }
 
