@@ -30,7 +30,7 @@ public struct FeatureGateService {
     public static let freeArticleLimitPerWindow = 1
     public static let freeArticleWindowDays = 7
     public static let freeWidgetProfileLimit = 1
-    public static let freeStatsPeriods: [StatsPeriod] = [.last30]
+    public static let freeStatsPeriods: [StatsPeriod] = [.week, .month, .year]
 
     private let calendar: Calendar
 
