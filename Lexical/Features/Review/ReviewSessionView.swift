@@ -154,24 +154,9 @@ struct SessionContent: View {
 
                 Spacer(minLength: 16 * scale)
                 
-                if revealAnswer {
-                    answerActions(card: card, scale: scale)
-                } else {
-                    RecallPrimaryActionButton(
-                        spec: spec,
-                        colorScheme: colorScheme,
-                        scale: scale,
-                        title: "Reveal Answer"
-                    ) {
-                        // FlashcardView handles the flip animation internally on tap,
-                        // but we preserve the physical button as an alternative tap target.
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
-                            revealAnswer = true
-                        }
-                    }
-                    .accessibilityIdentifier("review.revealButton")
-                    .padding(.horizontal, spec.horizontalPadding * scale)
-                }
+                answerActions(card: card, scale: scale)
+                    .opacity(revealAnswer ? 1 : 0)
+                    .disabled(!revealAnswer)
                 Spacer(minLength: 8 * scale)
             }
 
@@ -440,6 +425,25 @@ struct SessionContent: View {
     
     let userProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
     container.mainContext.insert(userProfile)
+
+    // Mock UI Data for Canvas
+    let words = [
+        ("serendipity", "occurrence and development of events by chance in a happy or beneficial way", "The discovery of the new star was a moment of serendipity."),
+        ("ephemeral", "lasting for a very short time", "The autumn colors were beautiful but so ephemeral."),
+        ("ubiquitous", "present, appearing, or found everywhere", "The smartphones have become ubiquitous in modern society.")
+    ]
+    
+    for (word, definition, sentence) in words {
+        let lexeme = LexemeDefinition(lemma: word)
+        lexeme.basicMeaning = definition
+        lexeme.sampleSentence = sentence
+        container.mainContext.insert(lexeme)
+        
+        let state = UserWordState(userId: userProfile.userId, lemma: word)
+        state.status = .learning
+        state.nextReviewDate = Date().addingTimeInterval(-86400) // Due yesterday
+        container.mainContext.insert(state)
+    }
 
     return ReviewSessionView(startSignal: 0, onNavigateToReading: {})
         .modelContainer(container)

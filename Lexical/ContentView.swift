@@ -141,7 +141,6 @@ struct ContentView: View {
 
     private func openPromptCard(lemma: String, definition: String?) {
         let routed = ReviewSessionRouting.routeToPrompt(
-            selectedTab: selectedTab,
             reviewStartSignal: reviewStartSignal
         )
         selectedTab = routed.selectedTab
@@ -151,7 +150,6 @@ struct ContentView: View {
 
     private func openReviewSession() {
         let routed = ReviewSessionRouting.routeToReview(
-            selectedTab: selectedTab,
             reviewStartSignal: reviewStartSignal
         )
         selectedTab = routed.selectedTab

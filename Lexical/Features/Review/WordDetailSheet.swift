@@ -6,7 +6,6 @@ import LexicalCore
 struct WordDetailData: Identifiable, Equatable {
     let lemma: String
     let partOfSpeech: String?
-    let ipa: String?
     let definition: String?
     let synonyms: [String]
     let sentences: [String]
@@ -53,7 +52,6 @@ enum WordDetailDataBuilder {
         return WordDetailData(
             lemma: normalizedLemma,
             partOfSpeech: normalizedPartOfSpeech(firstNonEmpty(lexeme?.partOfSpeech, discovered?.partOfSpeech)),
-            ipa: firstNonEmpty(lexeme?.ipa, discovered?.ipa, seed?.ipa),
             definition: definition,
             synonyms: synonyms,
             sentences: sentences
@@ -473,7 +471,6 @@ private struct WordInfoCardStyle: ViewModifier {
         data: WordDetailData(
             lemma: "spectator",
             partOfSpeech: "noun",
-            ipa: "/ˈspektātər/",
             definition: "A person who watches at a show, game, or other event.",
             synonyms: ["onlooker", "viewer", "observer", "watcher"],
             sentences: [

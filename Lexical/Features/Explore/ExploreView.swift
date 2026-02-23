@@ -399,8 +399,6 @@ struct ExploreFigmaSpec {
     let connectorOpacityLight: Double = 0.57
     let connectorOpacityDark: Double = 0.32
     let connectorLineWidth: CGFloat = 1
-    let rootNodeStyleKey = "rootCoralGlass"
-    let leafNodeStyleKey = "leafGreenGlass"
 
     let matrixHorizontalInset: CGFloat = 12
     let matrixTopInset: CGFloat = 16

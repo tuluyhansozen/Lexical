@@ -112,7 +112,6 @@
 		DF6C96C30752A223263D7FFD /* FlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD305FE231DAA80856274DE /* FlashcardView.swift */; };
 		E3F097D45101C5B8AB9EFB04 /* ArticlePromptPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2998F1B8E185DDF43C100D38 /* ArticlePromptPlanner.swift */; };
 		E4761095E83122389B7C4D8D /* HomeFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E254CE3A92335DC7FCD8D9D7 /* HomeFeedView.swift */; };
-		E6300017F348AF6646CE5E4B /* WidgetPreviewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18C773CFB53F316960D4460 /* WidgetPreviewScreen.swift */; };
 		E70551F80DEA3D566037DFCA /* LexicalCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 560ACD50D9B656B2DEDF1BAE /* LexicalCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E7077C79ACB53723B9F02799 /* LexicalSchemaMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21CE0D562293B54C2CE192F /* LexicalSchemaMigration.swift */; };
 		E84DB6F37F3C26532D5B689E /* ExploreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20B1F75E1DDD9A1E376A227D /* ExploreView.swift */; };
@@ -124,7 +123,6 @@
 		F5869BEBF13051F417E6A71F /* UsageLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D1E7E54B85031C959E5183 /* UsageLedger.swift */; };
 		F5BE485E8A703D806769FB4D /* GlassEffectContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A3899E38D1D9AC5A9AC11 /* GlassEffectContainer.swift */; };
 		FA0E1E7D8ED0A78145A59067 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4229DB5E539A842963352765 /* ContentView.swift */; };
-		FA85AE4F928480447B1726D2 /* WordCaptureSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0692012B4706315B52BE02D3 /* WordCaptureSheet.swift */; };
 		FCA86D3AF545EBCE24E5C7AE /* explore.svg in Resources */ = {isa = PBXBuildFile; fileRef = FCFBE184DF267993A535485A /* explore.svg */; };
 		FCB177152125E24D0AAF2200 /* ReaderTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7D50333AC91B429DE144FC /* ReaderTextView.swift */; };
 		FD5CBA4F7D43C52052B26130 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC1DD44A481AF8F6B86E256 /* StatsView.swift */; };
@@ -159,7 +157,6 @@
 		009090C765D95EA6F4C4767D /* WidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetViews.swift; sourceTree = "<group>"; };
 		02C04EAAB2AA7098DA998B83 /* ManageInterestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageInterestsView.swift; sourceTree = "<group>"; };
 		03F725EDEA294BD88026D446 /* BanditScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BanditScheduler.swift; sourceTree = "<group>"; };
-		0692012B4706315B52BE02D3 /* WordCaptureSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordCaptureSheet.swift; sourceTree = "<group>"; };
 		09EBCAAE296B152DE7E17EEC /* CloudKitSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSyncManager.swift; sourceTree = "<group>"; };
 		0AA08179C90945772F75FD89 /* certificate.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = certificate.p12; sourceTree = "<group>"; };
 		0B32E31DD5BE9B2315E65ABF /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -241,7 +238,7 @@
 		A648C1DB0FCE8AAADDEE7997 /* ReviewLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewLog.swift; sourceTree = "<group>"; };
 		AB4217F51BF5A6DD7427357C /* SubscriptionEntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionEntitlementService.swift; sourceTree = "<group>"; };
 		AD0D0CEA8041577C5CB2440E /* OnboardingRankAssessmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRankAssessmentService.swift; sourceTree = "<group>"; };
-		AE3A578EA3C31368013CDC08 /* Lexical.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lexical.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE3A578EA3C31368013CDC08 /* Lexical.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lexical.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE72BBB2DE4CCEBCA86E1616 /* SyncConflictResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncConflictResolver.swift; sourceTree = "<group>"; };
 		B90F296F81E336F227C97677 /* InterestProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterestProfile.swift; sourceTree = "<group>"; };
 		BAEBA6FFBB3D66A4EBC1B3E6 /* ReviewSessionRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewSessionRouting.swift; sourceTree = "<group>"; };
@@ -256,7 +253,6 @@
 		CC6EB92F9486502B3F146244 /* ArticlesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticlesViewModel.swift; sourceTree = "<group>"; };
 		CD740CE77DEF665F9E283C50 /* DailyRootResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRootResolver.swift; sourceTree = "<group>"; };
 		CDB9DBED62F7D1BFA4C1D47D /* InterestCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterestCatalog.swift; sourceTree = "<group>"; };
-		D18C773CFB53F316960D4460 /* WidgetPreviewScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPreviewScreen.swift; sourceTree = "<group>"; };
 		D21CE0D562293B54C2CE192F /* LexicalSchemaMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LexicalSchemaMigration.swift; sourceTree = "<group>"; };
 		D3D63424C68B409FB6E2B918 /* seed_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = seed_data.json; sourceTree = "<group>"; };
 		D73186651FC49A5749087842 /* learn.svg */ = {isa = PBXFileReference; lastKnownFileType = text; path = learn.svg; sourceTree = "<group>"; };
@@ -404,7 +400,6 @@
 			children = (
 				9B7D50333AC91B429DE144FC /* ReaderTextView.swift */,
 				9529AB763DC6E24DCAB1CAE5 /* ReaderView.swift */,
-				0692012B4706315B52BE02D3 /* WordCaptureSheet.swift */,
 			);
 			path = Reader;
 			sourceTree = "<group>";
@@ -451,7 +446,6 @@
 		501B1D99E0F4B78C28697C12 /* Widgets */ = {
 			isa = PBXGroup;
 			children = (
-				D18C773CFB53F316960D4460 /* WidgetPreviewScreen.swift */,
 			);
 			path = Widgets;
 			sourceTree = "<group>";
@@ -685,7 +679,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					7E549D7C493BA40613556368 = {
 						DevelopmentTeam = 6H326J7PGT;
@@ -850,8 +844,6 @@
 				2E7C65B110916939CC35E0E9 /* SettingsView.swift in Sources */,
 				15D06699EECE511D609F748B /* SingleCardPromptView.swift in Sources */,
 				FD5CBA4F7D43C52052B26130 /* StatsView.swift in Sources */,
-				E6300017F348AF6646CE5E4B /* WidgetPreviewScreen.swift in Sources */,
-				FA85AE4F928480447B1726D2 /* WordCaptureSheet.swift in Sources */,
 				62C9CA67F5572D71D918E780 /* WordDetailSheet.swift in Sources */,
 				B45623513BE8A57DE973C3C4 /* ActivityGridMonth.swift in Sources */,
 			);
@@ -877,6 +869,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -884,6 +877,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lexical.LexicalCore;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -901,6 +895,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6H326J7PGT;
 				INFOPLIST_FILE = Lexical/Info.plist;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -917,6 +912,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -950,6 +946,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -963,6 +960,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -978,6 +976,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -985,6 +984,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lexical.LexicalCore;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -997,6 +997,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1030,6 +1031,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1050,6 +1052,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -1065,6 +1068,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6H326J7PGT;
 				INFOPLIST_FILE = Lexical/Info.plist;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

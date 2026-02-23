@@ -1,0 +1,52 @@
+* Inspecting project...
+* Building Lexical...
+* Indexing...
+* Analyzing...
+
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Common/CustomTabBar.swift:113:32: warning: Parameter 'colorScheme' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Common/CustomTabBar.swift:117:34: warning: Parameter 'colorScheme' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Dashboard/ActivityGridWeek.swift:107:18: warning: Function 'isToday(_:)' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Dashboard/StatsView.swift:9:49: warning: Property 'dynamicTypeSize' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Explore/ExploreView.swift:402:9: warning: Property 'rootNodeStyleKey' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Explore/ExploreView.swift:403:9: warning: Property 'leafNodeStyleKey' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/ArticlesViewModel.swift:6:14: warning: Class 'ArticlesViewModel' is declared public, but not used outside of Lexical
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/ArticlesViewModel.swift:7:27: warning: Property 'articles' is declared public, but not used outside of Lexical
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/ArticlesViewModel.swift:8:27: warning: Property 'isGenerating' is declared public, but not used outside of Lexical
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/ArticlesViewModel.swift:13:12: warning: Initializer 'init()' is declared public, but not used outside of Lexical
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/ArticlesViewModel.swift:19:17: warning: Function 'loadArticles()' is declared public, but not used outside of Lexical
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/ArticlesViewModel.swift:27:17: warning: Function 'generateNewArticle(profile:targetWords:reinforcementWords:stretchWords:adaptiveContext:userId:articleStylePreference:)' is declared public, but not used outside of Lexical
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/Models.swift:4:8: warning: Struct 'Article' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/Models.swift:37:9: warning: Property 'word' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/Models.swift:38:9: warning: Property 'definition' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Home/Models.swift:42:11: warning: Extension 'Article' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Matrix/DailyRootResolver.swift:10:13: warning: Property 'isFallback' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Matrix/DailyRootResolver.swift:15:13: warning: Property 'rootLabel' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Reader/ReaderView.swift:13:41: warning: Property 'dismiss' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Reader/ReaderView.swift:34:13: warning: Property 'word' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Reader/ReaderView.swift:35:13: warning: Property 'lemma' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Reader/ReaderView.swift:36:13: warning: Property 'definition' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Reader/ReaderView.swift:38:13: warning: Property 'range' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Reader/ReaderView.swift:421:8: warning: Struct 'WordCaptureSheetWrapper' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Reader/WordCaptureSheet.swift:3:8: warning: Struct 'WordCaptureSheet' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/FlashcardView.swift:86:18: warning: Function 'generateCloze(sentence:target:)' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/ReviewCard.swift:7:9: warning: Property 'originalWord' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/ReviewCard.swift:13:9: warning: Property 'retrievability' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/ReviewCard.swift:14:9: warning: Property 'nextReviewDate' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/ReviewCard.swift:16:9: warning: Property 'reviewCount' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/ReviewCard.swift:18:9: warning: Property 'status' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/ReviewSessionRouting.swift:7:9: warning: Parameter 'selectedTab' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/ReviewSessionRouting.swift:14:9: warning: Parameter 'selectedTab' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Review/WordDetailSheet.swift:9:9: warning: Property 'ipa' is assigned, but never used
+/Users/tuluyhan/projects/Lexical/Lexical/Features/Widgets/WidgetPreviewScreen.swift:5:8: warning: Struct 'WidgetPreviewScreen' is unused
+/Users/tuluyhan/projects/Lexical/Lexical/Services/E2ETestLaunchConfigurator.swift:336:9: warning: Parameter 'title' is unused
+
+* Seeing false positives?
+ - Periphery only analyzes files that are members of the targets you specify.
+   References to declarations identified as unused may reside in files that are members of other targets, e.g test targets.
+ - Periphery is a very precise tool, false positives often turn out to be correct after further investigation.
+ - If it really is a false positive, please report it - https://github.com/peripheryapp/periphery/issues.
+
+* Update Available
+Version 3.6.0 is now available, you are using version 2.21.2.
+Release notes: https://github.com/peripheryapp/periphery/releases/tag/3.6.0
+To disable update checks pass the --disable-update-check option to the scan command.

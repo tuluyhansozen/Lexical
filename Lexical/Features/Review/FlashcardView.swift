@@ -11,6 +11,61 @@ struct FlashcardView: View {
     
     @Binding var isFlipped: Bool
     
+    @ViewBuilder
+    private func cardTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11 * scale, weight: .semibold, design: .rounded))
+            .foregroundStyle(Color(white: colorScheme == .dark ? 0.7 : 0.4))
+            .tracking(0.8 * scale)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    @ViewBuilder
+    private var backContentView: some View {
+        VStack(alignment: .center, spacing: 12 * scale) {
+            cardTitle("ANSWER")
+            Spacer(minLength: 8 * scale)
+            VStack(alignment: .center, spacing: 16 * scale) {
+                Text(displayWord(item.lemma))
+                    .font(.system(size: spec.headerTitleFontSize * scale, weight: .medium, design: .default))
+                    .foregroundStyle(spec.titleColor(for: colorScheme))
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                
+                Divider()
+                    .overlay(Color.primary.opacity(0.1))
+                
+                let answerSentence = generateAnswerSentence(sentence: item.contextSentence, targetResult: item.lemma)
+                Text(answerSentence)
+                    .font(.system(size: spec.supportingFontSize * scale, weight: .regular))
+                    .foregroundStyle(spec.titleColor(for: colorScheme))
+                    .lineSpacing(4 * scale)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            Spacer(minLength: 8 * scale)
+        }
+    }
+    
+    @ViewBuilder
+    private var frontContentView: some View {
+        VStack(alignment: .center, spacing: 12 * scale) {
+            cardTitle("COMPLETE THE SENTENCE")
+            Spacer(minLength: 8 * scale)
+            VStack(alignment: .center, spacing: 12 * scale) {
+                Text(maskedSentence(item.contextSentence, lemma: item.lemma))
+                    .font(.system(size: spec.sentenceFontSize * scale, weight: .regular, design: .default))
+                    .foregroundStyle(spec.titleColor(for: colorScheme))
+                    .lineSpacing(4 * scale)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            Spacer(minLength: 8 * scale)
+        }
+    }
+
     var body: some View {
         ZStack {
             // BACK (Answer)
@@ -18,28 +73,11 @@ struct FlashcardView: View {
                 spec: spec,
                 colorScheme: colorScheme,
                 scale: scale,
-                title: "Answer",
                 content: {
-                    VStack(alignment: .center, spacing: 16 * scale) {
-                        Text(displayWord(item.lemma))
-                            .font(.system(size: spec.headerTitleFontSize * scale, weight: .medium, design: .default))
-                            .foregroundStyle(spec.titleColor(for: colorScheme))
-                            .minimumScaleFactor(0.7)
-                            .lineLimit(1)
-                        
-                        Divider()
-                            .overlay(Color.primary.opacity(0.1))
-                        
-                        // Modified sentence with highlight
-                        let answerSentence = generateAnswerSentence(sentence: item.contextSentence, targetResult: item.lemma)
-                        Text(answerSentence)
-                            .font(.system(size: spec.supportingFontSize * scale, weight: .regular))
-                            .foregroundStyle(spec.titleColor(for: colorScheme))
-                            .lineSpacing(4 * scale)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
+                    ZStack {
+                        frontContentView.hidden()
+                        backContentView
                     }
-                    .frame(maxWidth: .infinity, alignment: .center)
                 }
             )
             .rotation3DEffect(
@@ -53,17 +91,11 @@ struct FlashcardView: View {
                 spec: spec,
                 colorScheme: colorScheme,
                 scale: scale,
-                title: "Complete the Sentence",
                 content: {
-                    VStack(alignment: .center, spacing: 12 * scale) {
-                        Text(maskedSentence(item.contextSentence, lemma: item.lemma))
-                            .font(.system(size: spec.sentenceFontSize * scale, weight: .regular, design: .default))
-                            .foregroundStyle(spec.titleColor(for: colorScheme))
-                            .lineSpacing(4 * scale)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
+                    ZStack {
+                        backContentView.hidden()
+                        frontContentView
                     }
-                    .frame(maxWidth: .infinity, alignment: .center)
                 }
             )
             .rotation3DEffect(
@@ -129,33 +161,21 @@ struct CardFace<Content: View>: View {
     let spec: RecallFigmaSpec
     let colorScheme: ColorScheme
     let scale: CGFloat
-    let title: String
     let content: Content
     
-    init(spec: RecallFigmaSpec, colorScheme: ColorScheme, scale: CGFloat, title: String, @ViewBuilder content: () -> Content) {
+    init(spec: RecallFigmaSpec, colorScheme: ColorScheme, scale: CGFloat, @ViewBuilder content: () -> Content) {
         self.spec = spec
         self.colorScheme = colorScheme
         self.scale = scale
-        self.title = title
         self.content = content()
     }
     
     var body: some View {
         GlassEffectContainer(material: colorScheme == .dark ? .ultraThin : .regular) {
-            VStack(alignment: .center, spacing: 12 * scale) {
-                Text(title.uppercased())
-                    .font(.system(size: 12 * scale, weight: .regular))
-                    .foregroundStyle(Color(hex: "525252"))
-                    .tracking(0.2 * scale)
-                    .accessibilityAddTraits(.isHeader)
-
-                content
-                
-                Spacer()
-            }
+            content
             .padding(.horizontal, 24 * scale)
-            .padding(.vertical, 24 * scale)
-            .frame(maxWidth: .infinity, minHeight: spec.cardMinHeight * scale, alignment: .top)
+            .padding(.vertical, 32 * scale)
+            .frame(maxWidth: .infinity, minHeight: spec.cardMinHeight * scale, alignment: .center)
         }
         .clipShape(RoundedRectangle(cornerRadius: spec.cardCornerRadius * scale, style: .continuous))
         .background(Color(white: colorScheme == .dark ? 0.1 : 1.0, opacity: spec.figmaCardBackgroundOpacity))

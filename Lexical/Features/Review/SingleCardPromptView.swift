@@ -72,24 +72,10 @@ struct SingleCardPromptView: View {
 
                         Spacer(minLength: 16 * scale)
 
-                        if revealAnswer {
-                            answerActions(card: card, scale: scale)
-                            Spacer(minLength: 8 * scale)
-                        } else {
-                            RecallPrimaryActionButton(
-                                spec: spec,
-                                colorScheme: colorScheme,
-                                scale: scale,
-                                title: "Reveal Answer"
-                            ) {
-                                withAnimation(.easeInOut(duration: spec.revealDuration)) {
-                                    revealAnswer = true
-                                }
-                            }
-                            .accessibilityIdentifier("prompt.revealButton")
-                            .padding(.horizontal, spec.horizontalPadding * scale)
-                            Spacer(minLength: 12 * scale)
-                        }
+                        answerActions(card: card, scale: scale)
+                            .opacity(revealAnswer ? 1 : 0)
+                            .disabled(!revealAnswer)
+                        Spacer(minLength: 8 * scale)
                     }
                 } else {
                     VStack(spacing: 12) {
@@ -289,7 +275,7 @@ struct SingleCardPromptView: View {
                 if let refreshed = fetchCardSnapshot(for: card.lemma) {
                     self.card = refreshed
                 }
-                completionText = "Saved '\(card.lemma)'"
+                dismiss()
             } catch {
                 print("SingleCardPromptView: failed to submit grade: \(error)")
             }
@@ -316,7 +302,7 @@ struct SingleCardPromptView: View {
 
         do {
             try modelContext.save()
-            completionText = "'\(card.lemma)' removed from deck"
+            dismiss()
         } catch {
             print("SingleCardPromptView: failed to ignore card: \(error)")
         }
@@ -376,9 +362,21 @@ struct SingleCardPromptView: View {
     let userProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
     container.mainContext.insert(userProfile)
 
+    // Mock UI Data for Canvas
+    let lemma = "ephemeral"
+    let lexeme = LexemeDefinition(lemma: lemma)
+    lexeme.basicMeaning = "lasting for a very short time"
+    lexeme.sampleSentence = "The autumn colors were beautiful but so ephemeral."
+    container.mainContext.insert(lexeme)
+    
+    let state = UserWordState(userId: userProfile.userId, lemma: lemma)
+    state.status = .learning
+    state.nextReviewDate = Date().addingTimeInterval(-86400) // Due yesterday
+    container.mainContext.insert(state)
+
     return SingleCardPromptView(
-        lemma: "ephemeral",
-        presetDefinition: "Lasting for a very short time."
+        lemma: lemma,
+        presetDefinition: "lasting for a very short time"
     )
     .modelContainer(container)
 }

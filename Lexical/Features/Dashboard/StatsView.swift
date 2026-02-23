@@ -6,7 +6,6 @@ import LexicalCore
 struct StatsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var selectedPeriod: StatsPeriod = .week
     @State private var availablePeriods: [StatsPeriod] = [.week]

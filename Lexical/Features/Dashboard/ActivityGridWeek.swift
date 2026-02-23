@@ -103,8 +103,4 @@ struct ActivityGridWeek: View {
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
     }
-    
-    private func isToday(_ date: Date) -> Bool {
-        Calendar.current.isDateInToday(date)
-    }
 }
