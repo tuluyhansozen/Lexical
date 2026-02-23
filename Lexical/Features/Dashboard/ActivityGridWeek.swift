@@ -76,7 +76,7 @@ struct ActivityGridWeek: View {
     private func textColor(for level: Int) -> Color {
         switch level {
         case 3, 4: return .white
-        case 1, 2: return Color.sonMidnight
+        case 1, 2: return Color.adaptiveText
         default: return .clear
         }
     }

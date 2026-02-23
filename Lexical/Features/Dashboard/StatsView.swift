@@ -114,9 +114,8 @@ struct StatsView: View {
 
                 Button {
                     if isUnlocked {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedPeriod = period
-                        }
+                        // Removed animation to match basic switch style request
+                        selectedPeriod = period
                     } else {
                         showingPremiumOffer = true
                     }
@@ -127,32 +126,27 @@ struct StatsView: View {
                                 .font(.system(size: 10, weight: .bold))
                         }
                         Text(period.label)
-                            .font(.system(size: 15, weight: isSelected ? .medium : .light, design: .default))
+                            .font(.system(size: 14, weight: isSelected ? .semibold : .regular, design: .default))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(
                         isSelected
-                            ? Color.gray.opacity(0.15)
+                            ? Color.adaptiveText.opacity(0.12)
                             : Color.clear
                     )
-                    .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.7))
+                    .foregroundStyle(isSelected ? Color.adaptiveText : Color.adaptiveTextSecondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .accessibilityLabel(period.label)
                 .accessibilityValue(isSelected ? "Selected" : "Not selected")
                 .accessibilityHint(isUnlocked ? "Shows statistics for \(period.label)." : "Premium required.")
                 .accessibilityIdentifier(period.accessibilityIdentifier)
-
-                if index < periods.count - 1 {
-                    Rectangle()
-                        .fill(Color.sonPrimary.opacity(0.2))
-                        .frame(width: 0.7, height: 36)
-                }
             }
         }
-        .frame(height: 36)
-        .background(Color.adaptiveSurfaceElevated)
+        .padding(4)
+        .frame(height: 48)
+        .background(Color.adaptiveSurfaceElevated) // Match Figma unselected container background
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 1)
     }
 
     // MARK: - Retention Curve Card
@@ -227,12 +221,7 @@ struct StatsView: View {
         }
         .padding(20)
         .background(Color.adaptiveSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.adaptiveBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 1)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Activity Heatmap Card
@@ -253,7 +242,7 @@ struct StatsView: View {
                 case .week:
                     ActivityGridWeek(points: heatmapPoints, differentiateWithoutColor: differentiateWithoutColor)
                 case .month:
-                    HeatmapGrid(points: heatmapPoints, differentiateWithoutColor: differentiateWithoutColor)
+                    ActivityGridMonth(points: heatmapPoints, differentiateWithoutColor: differentiateWithoutColor)
                 case .year:
                     ActivityGridYear(points: heatmapPoints, differentiateWithoutColor: differentiateWithoutColor)
                 }
@@ -266,31 +255,20 @@ struct StatsView: View {
             HStack(spacing: 6) {
                 Text("Less")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.adaptiveTextSecondary)
+                    .foregroundStyle(Color.gray)
                 
-                if #available(iOS 26, macOS 16.0, *) {
-                    GlassEffectContainer(spacing: 6) {
-                        legendSquares
-                    }
-                } else {
-                    HStack(spacing: 6) {
-                        legendSquares
-                    }
+                HStack(spacing: 6) {
+                    legendSquares
                 }
 
                 Text("More")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.adaptiveTextSecondary)
+                    .foregroundStyle(Color.gray)
             }
         }
         .padding(20)
         .background(Color.adaptiveSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.adaptiveBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 1)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Helpers
@@ -378,17 +356,11 @@ struct StatsView: View {
 
     @ViewBuilder
     private var legendSquares: some View {
-        ForEach(0..<5) { level in
+        ForEach(0..<5, id: \.self) { level in
             let color = heatmapLegendColor(level: level)
-            if #available(iOS 26, macOS 16.0, *) {
-                Color.clear
-                    .frame(width: 12, height: 12)
-                    .glassEffect(.regular.tint(color), in: .rect(cornerRadius: 2))
-            } else {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(color)
-                    .frame(width: 12, height: 12)
-            }
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color)
+                .frame(width: 12, height: 12)
         }
     }
 
@@ -429,12 +401,7 @@ private struct AcquiredStatCard: View {
         .padding(.vertical, 20)
         .padding(.horizontal, 8)
         .background(Color.adaptiveSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.adaptiveBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.cardShadow.opacity(0.3), radius: 4, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Acquired \(value)")
     }
@@ -463,12 +430,7 @@ private struct RetentionStatCard: View {
         .padding(.vertical, 20)
         .padding(.horizontal, 8)
         .background(Color.adaptiveSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.adaptiveBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.cardShadow.opacity(0.3), radius: 4, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Retention \(value)")
     }
@@ -500,12 +462,7 @@ private struct StreakStatCard: View {
         .padding(.vertical, 20)
         .padding(.horizontal, 8)
         .background(Color.adaptiveSurfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.adaptiveBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.cardShadow.opacity(0.3), radius: 4, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Streak \(value) days")
     }
@@ -526,82 +483,59 @@ private extension StatsPeriod {
     }
 }
 
-// MARK: - Heatmap Grid
 
-struct HeatmapGrid: View {
-    let points: [HeatmapPoint]
-    let differentiateWithoutColor: Bool
-
-    var body: some View {
-        ScrollView(.horizontal) {
-            if #available(iOS 26, macOS 16.0, *) {
-                GlassEffectContainer(spacing: 4) {
-                    heatmapHStack
-                }
-            } else {
-                heatmapHStack
-            }
-        }
-        .scrollIndicators(.hidden)
-    }
-
-    private let rows = Array(repeating: GridItem(.fixed(14), spacing: 4), count: 7)
-
-    private var heatmapHStack: some View {
-        LazyHGrid(rows: rows, spacing: 4) {
-            ForEach(points) { point in
-                heatmapCell(for: point)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func heatmapCell(for point: HeatmapPoint) -> some View {
-        let colorLevel = color(for: point.count)
-        
-        if #available(iOS 26, macOS 16.0, *) {
-            Color.clear
-                .frame(width: 14, height: 14)
-                .glassEffect(.regular.tint(colorLevel), in: .rect(cornerRadius: 3))
-                .overlay {
-                    if differentiateWithoutColor, point.count > 0 {
-                        RoundedRectangle(cornerRadius: 3)
-                            .stroke(Color.sonMidnight.opacity(0.65), lineWidth: 0.6)
-                    }
-                }
-        } else {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(colorLevel)
-                .frame(width: 14, height: 14)
-                .overlay {
-                    if differentiateWithoutColor, point.count > 0 {
-                        RoundedRectangle(cornerRadius: 3)
-                            .stroke(Color.sonMidnight.opacity(0.65), lineWidth: 0.6)
-                    }
-                }
+@MainActor
+private func statsPreviewContainer() -> ModelContainer {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: UserProfile.self, 
+             UserWordState.self, 
+             ReviewEvent.self, 
+             UsageLedger.self, 
+             LexemeDefinition.self,
+             InterestProfile.self,
+        configurations: config
+    )
+    
+    let profile = UserProfile(userId: UserProfile.fallbackLocalUserID, subscriptionTier: .premium)
+    container.mainContext.insert(profile)
+    
+    let calendar = Calendar.current
+    let today = Date()
+    
+    for i in 0..<30 {
+        let date = calendar.date(byAdding: .day, value: -i, to: today)!
+        let count = (i % 3) + 1
+        for j in 0..<count {
+            let state = UserWordState(
+                userId: profile.userId,
+                lemma: "word\(i)_\(j)",
+                status: .known,
+                stability: 0.8,
+                difficulty: 0.3,
+                retrievability: 0.9,
+                lastReviewDate: date
+            )
+            state.createdAt = date
+            container.mainContext.insert(state)
+            
+            let event = ReviewEvent(
+                userId: profile.userId,
+                lemma: "word\(i)_\(j)",
+                grade: 3,
+                reviewDate: date,
+                durationMs: 1500,
+                scheduledDays: 1,
+                reviewState: "good"
+            )
+            container.mainContext.insert(event)
         }
     }
-
-    private func color(for count: Int) -> Color {
-        let maxCount = max(points.map(\.count).max() ?? 1, 1)
-        let normalized = Double(count) / Double(maxCount)
-        switch normalized {
-        case ..<0.01:
-            return Color.gray.opacity(0.10)
-        case ..<0.25:
-            return Color.sonPrimary.opacity(0.25)
-        case ..<0.5:
-            return Color.sonPrimary.opacity(0.45)
-        case ..<0.75:
-            return Color.sonPrimary.opacity(0.70)
-        default:
-            return Color.sonPrimary
-        }
-    }
+    
+    return container
 }
 
-struct StatsView_Previews: PreviewProvider {
-    static var previews: some View {
-        StatsView()
-    }
+#Preview("StatsView - Canvas") {
+    StatsView()
+        .modelContainer(statsPreviewContainer())
 }

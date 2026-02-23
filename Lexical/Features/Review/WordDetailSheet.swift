@@ -467,3 +467,20 @@ private struct WordInfoCardStyle: ViewModifier {
             .shadow(color: Color.cardShadow, radius: 2.5, x: 0, y: 1)
     }
 }
+
+#Preview("WordDetailSheet - Canvas") {
+    WordDetailSheet(
+        data: WordDetailData(
+            lemma: "spectator",
+            partOfSpeech: "noun",
+            ipa: "/ˈspektātər/",
+            definition: "A person who watches at a show, game, or other event.",
+            synonyms: ["onlooker", "viewer", "observer", "watcher"],
+            sentences: [
+                "The spectators cheered as the home team scored the winning goal.",
+                "The event attracted thousands of spectators from around the world."
+            ]
+        ),
+        onAddToDeck: {}
+    )
+}

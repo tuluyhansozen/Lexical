@@ -48,6 +48,7 @@
 		56526E076B02577B205C3914 /* LemmaResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F7483F9E8A55C54E6815AA /* LemmaResolver.swift */; };
 		57E971C2943BDFD011E8A091 /* learn.svg in Resources */ = {isa = PBXBuildFile; fileRef = D73186651FC49A5749087842 /* learn.svg */; };
 		59357C4CD4CCED36F629C9B4 /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A339CE0A9A6A259FCC589092 /* AuthenticationService.swift */; };
+		598AF36E1854C612F67C2D74 /* View+IfAvailable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786BEFB0D01DC409679C3831 /* View+IfAvailable.swift */; };
 		59C8F2F8C4BD59E51D0F3AD6 /* seed_data.backup_20260218_233439.json in Resources */ = {isa = PBXBuildFile; fileRef = 96C7F888C67D4596C26072AA /* seed_data.backup_20260218_233439.json */; };
 		5A640C02546828B943105FD4 /* ReviewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C1734DC4501F14D368320A /* ReviewSessionView.swift */; };
 		5AB95FE8F5F4388A35DDB911 /* LexemeDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B73DAE448F4BDDEB0D6E6F7 /* LexemeDefinition.swift */; };
@@ -91,6 +92,7 @@
 		AEA36A3C15609B778DA4C972 /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009090C765D95EA6F4C4767D /* WidgetViews.swift */; };
 		B1BB10169D9B79D29BA3341C /* FSRSV4Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6419E52FD620E03EFD67F /* FSRSV4Engine.swift */; };
 		B2A394F6EE56058CB085810C /* ArticleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 733D1CFA63877D2C75E4F14B /* ArticleStore.swift */; };
+		B45623513BE8A57DE973C3C4 /* ActivityGridMonth.swift in Sources */ = {isa = PBXBuildFile; fileRef = A621DD8A0A9A6A3CBD8BA88C /* ActivityGridMonth.swift */; };
 		BCBB38B600A86C94E573A9FF /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F523AB7BA1F0B6A417B09905 /* Persistence.swift */; };
 		BDCE02A0A402F5968B65A8E9 /* ArticleGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4DDEB1B66DB29FE43A73CF /* ArticleGenerator.swift */; };
 		BECF7DD80B23E355F46F913F /* BanditScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C1E5AADE8FD4C2B9AF8029 /* BanditScheduler.swift */; };
@@ -205,6 +207,7 @@
 		6E6960FCBA9CF79B2BC15AD9 /* stochastic_checkpoint_max14.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = stochastic_checkpoint_max14.jsonl; sourceTree = "<group>"; };
 		7062CB182C01BF4A22C9A4D8 /* rerun_v5_full.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = rerun_v5_full.log; sourceTree = "<group>"; };
 		733D1CFA63877D2C75E4F14B /* ArticleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleStore.swift; sourceTree = "<group>"; };
+		786BEFB0D01DC409679C3831 /* View+IfAvailable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "View+IfAvailable.swift"; path = "Extensions/View+IfAvailable.swift"; sourceTree = "<group>"; };
 		7A640870A0C1C789B4C4EC9C /* stochastic_checkpoint.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = stochastic_checkpoint.jsonl; sourceTree = "<group>"; };
 		7A84D86208EC70E4D2272FFA /* DiscoveredLexeme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredLexeme.swift; sourceTree = "<group>"; };
 		7C5CBAC0D97368731A4DEA58 /* checkpoint_rerun_v3.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = checkpoint_rerun_v3.jsonl; sourceTree = "<group>"; };
@@ -234,6 +237,7 @@
 		A1C24E355315DD1548C3BDDF /* SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
 		A339CE0A9A6A259FCC589092 /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		A42921BE0DEB77E85EDB5FE6 /* FSRSPersonalizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSPersonalizationService.swift; sourceTree = "<group>"; };
+		A621DD8A0A9A6A3CBD8BA88C /* ActivityGridMonth.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityGridMonth.swift; sourceTree = "<group>"; };
 		A648C1DB0FCE8AAADDEE7997 /* ReviewLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewLog.swift; sourceTree = "<group>"; };
 		AB4217F51BF5A6DD7427357C /* SubscriptionEntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionEntitlementService.swift; sourceTree = "<group>"; };
 		AD0D0CEA8041577C5CB2440E /* OnboardingRankAssessmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRankAssessmentService.swift; sourceTree = "<group>"; };
@@ -605,6 +609,14 @@
 			path = Home;
 			sourceTree = "<group>";
 		};
+		E666CEB50C0F06A3069F1BA3 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				786BEFB0D01DC409679C3831 /* View+IfAvailable.swift */,
+			);
+			name = Extensions;
+			sourceTree = "<group>";
+		};
 		ED4F7C56E1700DA7F922F9F4 /* Dashboard */ = {
 			isa = PBXGroup;
 			children = (
@@ -612,6 +624,7 @@
 				551B0D0EA199F5859965416A /* ActivityGridYear.swift */,
 				0AA08179C90945772F75FD89 /* certificate.p12 */,
 				BFC1DD44A481AF8F6B86E256 /* StatsView.swift */,
+				A621DD8A0A9A6A3CBD8BA88C /* ActivityGridMonth.swift */,
 			);
 			path = Dashboard;
 			sourceTree = "<group>";
@@ -623,6 +636,7 @@
 				D5B35A0670F1A4EBC4B08577 /* Intents */,
 				87A0EAE364F607EBBB061309 /* Models */,
 				2BE3F14E1EF8AEE6AA439420 /* Services */,
+				E666CEB50C0F06A3069F1BA3 /* Extensions */,
 			);
 			path = LexicalCore;
 			sourceTree = "<group>";
@@ -641,8 +655,6 @@
 			dependencies = (
 			);
 			name = LexicalCore;
-			packageProductDependencies = (
-			);
 			productName = LexicalCore;
 			productReference = 560ACD50D9B656B2DEDF1BAE /* LexicalCore.framework */;
 			productType = "com.apple.product-type.framework";
@@ -662,8 +674,6 @@
 				5B42CBC6B4E94946612B3C2C /* PBXTargetDependency */,
 			);
 			name = Lexical;
-			packageProductDependencies = (
-			);
 			productName = Lexical;
 			productReference = AE3A578EA3C31368013CDC08 /* Lexical.app */;
 			productType = "com.apple.product-type.application";
@@ -693,6 +703,7 @@
 			);
 			mainGroup = 5936158A33EE5736F6577B16;
 			minimizedProjectReferenceProxies = 1;
+			productRefGroup = 5C468D8A31B103A0075B9E64 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -800,6 +811,7 @@
 				6D440D4C2BEEC714D5FD5880 /* VocabularySeeder.swift in Sources */,
 				5F1F821DB30B513922C6F059 /* VocabularyState.swift in Sources */,
 				AEA36A3C15609B778DA4C972 /* WidgetViews.swift in Sources */,
+				598AF36E1854C612F67C2D74 /* View+IfAvailable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -841,6 +853,7 @@
 				E6300017F348AF6646CE5E4B /* WidgetPreviewScreen.swift in Sources */,
 				FA85AE4F928480447B1726D2 /* WordCaptureSheet.swift in Sources */,
 				62C9CA67F5572D71D918E780 /* WordDetailSheet.swift in Sources */,
+				B45623513BE8A57DE973C3C4 /* ActivityGridMonth.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

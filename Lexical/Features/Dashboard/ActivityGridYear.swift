@@ -71,12 +71,12 @@ struct ActivityGridYear: View {
     
     private func color(for level: Int) -> Color {
         switch level {
-        case 0: return Color(white: 0.95) // Very light gray (similar to bg-[#f0f1f4])
+        case 0: return Color.gray.opacity(0.10)
         case 1: return Color.sonPrimary.opacity(0.15)
         case 2: return Color.sonPrimary.opacity(0.32)
         case 3: return Color.sonPrimary.opacity(0.58)
         case 4: return Color.sonPrimary
-        default: return Color(white: 0.95)
+        default: return Color.gray.opacity(0.10)
         }
     }
     
@@ -86,10 +86,10 @@ struct ActivityGridYear: View {
             return isTitle ? Color.white.opacity(0.92) : Color.white.opacity(0.8)
         } else if level >= 1 {
             // Medium background gets tinted dark text
-            return isTitle ? Color.sonMidnight.opacity(0.8) : Color.sonMidnight.opacity(0.6)
+            return isTitle ? Color.adaptiveText.opacity(0.8) : Color.adaptiveText.opacity(0.6)
         } else {
             // Lightest background gets gray text
-            return isTitle ? Color.black.opacity(0.5) : Color.black.opacity(0.4)
+            return isTitle ? Color.adaptiveTextSecondary.opacity(0.8) : Color.adaptiveTextSecondary.opacity(0.6)
         }
     }
     
