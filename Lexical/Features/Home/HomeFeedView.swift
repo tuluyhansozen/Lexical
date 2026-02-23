@@ -365,3 +365,29 @@ struct HomeFeedView: View {
         return "Free plan limit reached: 1 article per 7 days."
     }
 }
+
+#Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: UserProfile.self, 
+             UserWordState.self, 
+             ReviewEvent.self, 
+             UsageLedger.self, 
+             LexemeDefinition.self,
+             InterestProfile.self,
+             GeneratedContent.self,
+             MorphologicalRoot.self,
+             DiscoveredLexeme.self,
+        configurations: config
+    )
+
+    let profile = InterestProfile()
+    container.mainContext.insert(profile)
+    
+    let userProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
+    container.mainContext.insert(userProfile)
+
+    return HomeFeedView()
+        .modelContainer(container)
+}
+

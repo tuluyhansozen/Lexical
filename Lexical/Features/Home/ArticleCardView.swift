@@ -190,3 +190,36 @@ struct ArticleCardView: View {
         }
     }
 }
+
+#Preview {
+    let mockArticle = GeneratedArticle(
+        id: UUID(),
+        title: "The Symphony of Silence",
+        content: "In the heart of the bustling city, there exists a unique phenomenon known as the \"Symphony of Silence.\" This phrase encapsulates the rare moments of profound quiet that blanket the urban landscape.",
+        targetWords: ["cacophony", "serendipity", "melancholy", "ephemeral"],
+        category: "culture",
+        generatedDate: Date(),
+        difficultyScore: 0.65,
+        targetRank: 500,
+        isSaved: false
+    )
+
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: UserProfile.self, 
+             UserWordState.self, 
+             ReviewEvent.self, 
+             UsageLedger.self, 
+             LexemeDefinition.self,
+             InterestProfile.self,
+             GeneratedContent.self,
+             MorphologicalRoot.self,
+             DiscoveredLexeme.self,
+        configurations: config
+    )
+
+    return ArticleCardView(article: mockArticle)
+        .padding()
+        .modelContainer(container)
+}
+
