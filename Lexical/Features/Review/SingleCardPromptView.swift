@@ -55,28 +55,27 @@ struct SingleCardPromptView: View {
 
                         Spacer(minLength: 8 * scale)
 
-                        if revealAnswer {
-                            RecallAnswerCardView(
-                                spec: spec,
-                                colorScheme: colorScheme,
-                                scale: scale,
-                                card: card
+                        FlashcardView(
+                            spec: spec,
+                            colorScheme: colorScheme,
+                            scale: scale,
+                            item: card,
+                            onFlip: {
+                                revealAnswer = true
+                            },
+                            isFlipped: Binding(
+                                get: { revealAnswer },
+                                set: { if $0 { revealAnswer = true } }
                             )
-                            .padding(.horizontal, spec.horizontalPadding * scale)
+                        )
+                        .padding(.horizontal, spec.horizontalPadding * scale)
 
-                            Spacer(minLength: 16 * scale)
+                        Spacer(minLength: 16 * scale)
+
+                        if revealAnswer {
                             answerActions(card: card, scale: scale)
                             Spacer(minLength: 8 * scale)
                         } else {
-                            RecallQuestionCardView(
-                                spec: spec,
-                                colorScheme: colorScheme,
-                                scale: scale,
-                                card: card
-                            )
-                            .padding(.horizontal, spec.horizontalPadding * scale)
-
-                            Spacer(minLength: 22 * scale)
                             RecallPrimaryActionButton(
                                 spec: spec,
                                 colorScheme: colorScheme,
@@ -139,33 +138,38 @@ struct SingleCardPromptView: View {
     }
 
     private func answerActions(card: ReviewCard, scale: CGFloat) -> some View {
-        VStack(spacing: 12 * scale) {
+        VStack(spacing: 24 * scale) {
+            // Contextual Actions
             HStack(spacing: 12 * scale) {
-                RecallNeutralActionButton(
-                    spec: spec,
-                    colorScheme: colorScheme,
-                    scale: scale,
-                    title: "Info"
-                ) {
+                Button {
                     infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+                } label: {
+                    Text("Info")
+                        .font(.system(size: 13 * scale, weight: .medium))
+                        .foregroundStyle(spec.titleColor(for: colorScheme))
+                        .frame(maxWidth: .infinity, minHeight: spec.figmaActionButtonHeight * scale)
+                        .background(spec.figmaInfoButtonBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: spec.figmaActionButtonRadius * scale, style: .continuous))
                 }
                 .accessibilityIdentifier("prompt.infoButton")
                 .accessibilityLabel("Word info")
-                .accessibilityHint("Shows full details for this word.")
-
-                RecallNeutralActionButton(
-                    spec: spec,
-                    colorScheme: colorScheme,
-                    scale: scale,
-                    title: "Remove From Deck"
-                ) {
+                
+                Button {
                     removeFromDeck(card)
+                } label: {
+                    Text("Remove")
+                        .font(.system(size: 13 * scale, weight: .medium))
+                        .foregroundStyle(spec.figmaRemoveButtonText)
+                        .frame(maxWidth: .infinity, minHeight: spec.figmaActionButtonHeight * scale)
+                        .background(spec.figmaRemoveButtonBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: spec.figmaActionButtonRadius * scale, style: .continuous))
                 }
                 .accessibilityIdentifier("prompt.removeButton")
-                .accessibilityHint("Removes this word from your learning deck.")
             }
+            .buttonStyle(.plain)
 
-            HStack(spacing: 10 * scale) {
+            // Grading Toolbar
+            HStack(spacing: 16 * scale) {
                 RecallGradeActionButton(
                     spec: spec,
                     colorScheme: colorScheme,
@@ -202,6 +206,7 @@ struct SingleCardPromptView: View {
                 ) { submit(4) }
                 .accessibilityIdentifier("prompt.gradeEasy")
             }
+            .padding(.horizontal, 8 * scale)
         }
         .padding(.horizontal, spec.horizontalPadding * scale)
     }
@@ -349,3 +354,32 @@ struct SingleCardPromptView: View {
         )
     }
 }
+
+#Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: UserProfile.self, 
+             UserWordState.self, 
+             ReviewEvent.self, 
+             UsageLedger.self, 
+             LexemeDefinition.self,
+             InterestProfile.self,
+             GeneratedContent.self,
+             MorphologicalRoot.self,
+             DiscoveredLexeme.self,
+        configurations: config
+    )
+
+    let profile = InterestProfile()
+    container.mainContext.insert(profile)
+    
+    let userProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
+    container.mainContext.insert(userProfile)
+
+    return SingleCardPromptView(
+        lemma: "ephemeral",
+        presetDefinition: "Lasting for a very short time."
+    )
+    .modelContainer(container)
+}
+
