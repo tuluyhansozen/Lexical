@@ -6,7 +6,6 @@ import LexicalCore
 struct WordDetailData: Identifiable, Equatable {
     let lemma: String
     let partOfSpeech: String?
-    let ipa: String?
     let definition: String?
     let synonyms: [String]
     let sentences: [String]
@@ -53,7 +52,6 @@ enum WordDetailDataBuilder {
         return WordDetailData(
             lemma: normalizedLemma,
             partOfSpeech: normalizedPartOfSpeech(firstNonEmpty(lexeme?.partOfSpeech, discovered?.partOfSpeech)),
-            ipa: firstNonEmpty(lexeme?.ipa, discovered?.ipa, seed?.ipa),
             definition: definition,
             synonyms: synonyms,
             sentences: sentences
@@ -466,4 +464,20 @@ private struct WordInfoCardStyle: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .shadow(color: Color.cardShadow, radius: 2.5, x: 0, y: 1)
     }
+}
+
+#Preview("WordDetailSheet - Canvas") {
+    WordDetailSheet(
+        data: WordDetailData(
+            lemma: "spectator",
+            partOfSpeech: "noun",
+            definition: "A person who watches at a show, game, or other event.",
+            synonyms: ["onlooker", "viewer", "observer", "watcher"],
+            sentences: [
+                "The spectators cheered as the home team scored the winning goal.",
+                "The event attracted thousands of spectators from around the world."
+            ]
+        ),
+        onAddToDeck: {}
+    )
 }

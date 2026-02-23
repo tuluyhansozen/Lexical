@@ -76,7 +76,7 @@ struct ActivityGridWeek: View {
     private func textColor(for level: Int) -> Color {
         switch level {
         case 3, 4: return .white
-        case 1, 2: return Color.sonMidnight
+        case 1, 2: return Color.adaptiveText
         default: return .clear
         }
     }
@@ -102,9 +102,5 @@ struct ActivityGridWeek: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
-    }
-    
-    private func isToday(_ date: Date) -> Bool {
-        Calendar.current.isDateInToday(date)
     }
 }

@@ -57,6 +57,30 @@ struct RecallFigmaSpec {
     let gradeButtonSize = CGSize(width: 60, height: 60)
     let gradeButtonCornerRadius: CGFloat = 20
 
+    // MARK: - New Figma Token Specs
+    // Card Style
+    let figmaCardBackgroundOpacity: Double = 0.6
+    let figmaCardBorderOpacity: Double = 0.5
+    let cardDropShadowColor = Color.black
+    let cardDropShadowRadius: CGFloat = 3
+    let cardDropShadowY: CGFloat = 1
+
+    // Grading Buttons
+    let figmaGradeAgainColor = Color(red: 255/255, green: 41/255, blue: 41/255, opacity: 0.64)
+    let figmaGradeHardColor = Color(red: 239/255, green: 135/255, blue: 0/255, opacity: 0.64)
+    let figmaGradeGoodColor = Color(red: 41/255, green: 135/255, blue: 207/255, opacity: 0.64)
+    let figmaGradeEasyColor = Color(red: 56/255, green: 118/255, blue: 51/255, opacity: 0.64)
+    let figmaGradeButtonSize: CGFloat = 64
+    let figmaGradeButtonCornerRadius: CGFloat = 20
+    let figmaGradeButtonBorderWidth: CGFloat = 0.68
+
+    // Action Buttons (Info/Remove)
+    let figmaInfoButtonBackground = Color(red: 211/255, green: 211/255, blue: 211/255, opacity: 0.7)
+    let figmaRemoveButtonBackground = Color(red: 255/255, green: 59/255, blue: 48/255, opacity: 0.15)
+    let figmaRemoveButtonText = Color(red: 211/255, green: 47/255, blue: 47/255)
+    let figmaActionButtonHeight: CGFloat = 40
+    let figmaActionButtonRadius: CGFloat = 16
+
     let primaryActionHex = "507760"
     let primaryActionTextHex = "FFFFFF"
     let primaryActionCornerRadius: CGFloat = 18
@@ -130,13 +154,12 @@ struct RecallFigmaSpec {
     }
 
     func gradeFill(for grade: Int, colorScheme: ColorScheme) -> Color {
-        let hex: String = switch grade {
-        case 1: gradeAgainHex
-        case 2: gradeHardHex
-        case 3: gradeGoodHex
-        default: gradeEasyHex
+        switch grade {
+        case 1: return figmaGradeAgainColor
+        case 2: return figmaGradeHardColor
+        case 3: return figmaGradeGoodColor
+        default: return figmaGradeEasyColor
         }
-        return Color(hex: hex).opacity(colorScheme == .dark ? 0.8 : 1.0)
     }
 
     func gradeTextColor(for colorScheme: ColorScheme) -> Color {

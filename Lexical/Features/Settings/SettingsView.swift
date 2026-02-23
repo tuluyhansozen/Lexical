@@ -6,9 +6,6 @@ import LexicalCore
 /// Per design spec: Sync Status, Notification Settings, Voice Settings, etc.
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var lexemeDefinitions: [LexemeDefinition]
-    @Query private var userStates: [UserWordState]
-    @Query private var reviewEvents: [ReviewEvent]
     @Query private var userProfiles: [UserProfile]
     @Query private var interestProfiles: [InterestProfile]
     
@@ -29,12 +26,11 @@ struct SettingsView: View {
         userProfiles.first?.userId ?? UserProfile.fallbackLocalUserID
     }
 
-    // Calculated stats
-    private var totalWords: Int { lexemeDefinitions.count }
-    private var masteredWords: Int {
-        userStates.filter { $0.userId == activeUserId && $0.status == .known }.count
-    }
-    private var currentStreak: Int { calculateStreak() }
+    // Cached stats for performance
+    @State private var totalWords: Int = 0
+    @State private var masteredWords: Int = 0
+    @State private var totalReviews: Int = 0
+    @State private var currentStreak: Int = 0
     
     // Safe accessor for InterestProfile (singleton pattern)
     private var profile: InterestProfile? {
@@ -47,20 +43,29 @@ struct SettingsView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
-                    screenHeader
-
-                    // Profile Section
-                    profileSection
-                    
-                    // Stats Summary
-                    statsSection
-                    
-                    // Settings Groups
-                    learningSettingsSection
-                    personalizationSection
-                    notificationSettingsSection
-                    dataSettingsSection
-                    aboutSection
+                    Group {
+                        if #available(iOS 26, *) {
+                            GlassEffectContainer(spacing: 24) {
+                                screenHeader
+                                profileSection
+                                statsSection
+                                learningSettingsSection
+                                personalizationSection
+                                notificationSettingsSection
+                                dataSettingsSection
+                                aboutSection
+                            }
+                        } else {
+                            screenHeader
+                            profileSection
+                            statsSection
+                            learningSettingsSection
+                            personalizationSection
+                            notificationSettingsSection
+                            dataSettingsSection
+                            aboutSection
+                        }
+                    }
                     
                     Color.clear.frame(height: 100)
                 }
@@ -68,8 +73,9 @@ struct SettingsView: View {
                 .padding(.top, 16)
             }
         }
-        .onAppear {
+        .task {
             ensureInterestProfileExists()
+            updateAllStats()
         }
         .onChange(of: notificationsEnabled) { _, isEnabled in
             Task { @MainActor in
@@ -173,14 +179,7 @@ struct SettingsView: View {
             .clipShape(Capsule())
         }
         .frame(maxWidth: .infinity)
-        .padding(20)
-        .background(Color.adaptiveSurfaceElevated)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.adaptiveBorder, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: Color.cardShadow.opacity(0.45), radius: 5, x: 0, y: 2)
+        .modifier(LiquidGlassCardModifier(cornerRadius: 20))
     }
     
     // MARK: - Stats Section
@@ -191,7 +190,7 @@ struct SettingsView: View {
             StatBox(title: "Mastered", value: "\(masteredWords)", color: .green)
             StatBox(
                 title: "Reviews",
-                value: "\(reviewEvents.filter { $0.userId == activeUserId }.count)",
+                value: "\(totalReviews)",
                 color: .purple
             )
         }
@@ -234,9 +233,7 @@ struct SettingsView: View {
     private var personalizationSection: some View {
         SettingsGroup(title: "Personalization") {
             if let profile = profile {
-                NavigationLink {
-                    ManageInterestsView(profile: profile)
-                } label: {
+                NavigationLink(value: profile) {
                     HStack {
                         Label("Interests", systemImage: "heart.fill")
                             .foregroundStyle(Color.adaptiveText)
@@ -246,6 +243,9 @@ struct SettingsView: View {
                         Image(systemName: "chevron.right")
                             .foregroundStyle(.tertiary)
                     }
+                }
+                .navigationDestination(for: InterestProfile.self) { profile in
+                    ManageInterestsView(profile: profile)
                 }
                 .accessibilityHint("Opens the interest selection screen.")
             } else {
@@ -396,26 +396,41 @@ struct SettingsView: View {
     
     // MARK: - Helpers
     
-    private func calculateStreak() -> Int {
-        // Calculate consecutive days of reviews
-        let calendar = Calendar.current
-        var streak = 0
-        var checkDate = calendar.startOfDay(for: Date())
+    @MainActor
+    private func updateAllStats() {
+        let userId = activeUserId
         
-        // Get unique review dates
-        let reviewDates = Set(
-            reviewEvents
-                .filter { $0.userId == activeUserId }
-                .map { calendar.startOfDay(for: $0.reviewDate) }
-        )
-        
-        while reviewDates.contains(checkDate) {
-            streak += 1
-            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
-            checkDate = previousDay
+        // 1. Total Words
+        do {
+            totalWords = try modelContext.fetchCount(FetchDescriptor<LexemeDefinition>())
+        } catch {
+            totalWords = 0
         }
         
-        return streak
+        // 2. Mastered Words
+        do {
+            let descriptor = FetchDescriptor<UserWordState>(
+                predicate: #Predicate { $0.userId == userId }
+            )
+            let allStates = try modelContext.fetch(descriptor)
+            masteredWords = allStates.filter { $0.status == .known }.count
+        } catch {
+            masteredWords = 0
+        }
+        
+        // 3. Total Reviews
+        do {
+            let descriptor = FetchDescriptor<ReviewEvent>(
+                predicate: #Predicate { $0.userId == userId }
+            )
+            totalReviews = try modelContext.fetchCount(descriptor)
+        } catch {
+            totalReviews = 0
+        }
+        
+        // 4. Current Streak - Since we removed the reviewEvents array, we use the StatsService (or re-fetch)
+        let statsService = StatsService(modelContext: modelContext)
+        currentStreak = statsService.calculateStreak()
     }
     
     private func resetAllProgress() {
@@ -424,6 +439,7 @@ struct SettingsView: View {
             try modelContext.delete(model: UserWordState.self)
             try modelContext.delete(model: DiscoveredLexeme.self)
             try modelContext.save()
+            updateAllStats()
         } catch {
             print("Error resetting progress: \(error)")
         }
@@ -508,13 +524,7 @@ struct StatBox: View {
                 .foregroundStyle(Color.adaptiveTextSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Color.adaptiveSurfaceElevated)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.adaptiveBorder, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .modifier(LiquidGlassCardModifier(cornerRadius: 12))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) \(value)")
     }
@@ -535,13 +545,43 @@ struct SettingsGroup<Content: View>: View {
                 content
             }
             .padding(16)
-            .background(Color.adaptiveSurfaceElevated)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.adaptiveBorder, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: Color.cardShadow.opacity(0.32), radius: 4, x: 0, y: 2)
+            .modifier(LiquidGlassCardModifier(cornerRadius: 16))
+        }
+    }
+}
+
+struct LiquidGlassCardModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    let withShadow: Bool
+    
+    init(cornerRadius: CGFloat = 16, withShadow: Bool = true) {
+        self.cornerRadius = cornerRadius
+        self.withShadow = withShadow
+    }
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
+        } else {
+            if withShadow {
+                content
+                    .background(Color.adaptiveSurfaceElevated)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(Color.adaptiveBorder, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    .shadow(color: Color.cardShadow.opacity(0.32), radius: 4, x: 0, y: 2)
+            } else {
+                content
+                    .background(Color.adaptiveSurfaceElevated)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(Color.adaptiveBorder, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            }
         }
     }
 }

@@ -10,7 +10,6 @@ struct ReaderView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
-    @Environment(\.dismiss) private var dismiss
 
     @State private var tokenHighlights: [TokenHighlight] = []
     @State private var lemmaStates: [String: VocabularyState] = [:]
@@ -31,11 +30,7 @@ struct ReaderView: View {
     
     struct SelectedWord: Identifiable {
         let id = UUID()
-        let word: String
-        let lemma: String
-        let definition: String?
         let sentence: String
-        let range: Range<String.Index>
     }
     
     var body: some View {
@@ -181,14 +176,7 @@ struct ReaderView: View {
             let lemma = tokens.first?.lemma ?? word.lowercased()
 
             selectedWord = SelectedWord(
-                word: word,
-                lemma: lemma,
-                definition: fetchDefinition(
-                    for: lemma,
-                    userId: UserProfile.resolveActiveProfile(modelContext: modelContext).userId
-                ),
-                sentence: sentence,
-                range: range
+                sentence: sentence
             )
 
             guard isHighlightedTap(lemma: lemma, range: range) else {
@@ -417,101 +405,6 @@ struct StatBadge: View {
     }
 }
 
-/// Wrapper to integrate existing WordCaptureSheet with capture callback
-struct WordCaptureSheetWrapper: View {
-    let word: String
-    let lemma: String
-    let definition: String?
-    let sentence: String
-    let onCapture: () -> Void
-    
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Drag Handle
-            Capsule()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 36, height: 5)
-                .padding(.top, 12)
-                .padding(.bottom, 16)
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // Header
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("NEW WORD")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.secondary)
-                        
-                        Text(word.capitalized)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        Text(lemma)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Divider()
-
-                    if let definition,
-                       !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("DEFINITION", systemImage: "text.book.closed")
-                                .font(.caption)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.secondary)
-
-                            Text(definition)
-                                .font(.body)
-                        }
-                        .padding()
-                        .background(Color.adaptiveBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    
-                    // Context
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("CONTEXT", systemImage: "quote.opening")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.secondary)
-                        
-                        Text(sentence)
-                            .font(.body)
-                            .italic()
-                    }
-                    .padding()
-                    .background(Color.adaptiveBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .padding(.horizontal, 24)
-            }
-            
-            // Capture Button
-            Button(action: {
-                onCapture()
-                dismiss()
-            }) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Add to Learning Queue")
-                }
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(Color.sonPrimary)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
-            .padding(24)
-        }
-        .background(Color.adaptiveSurface.ignoresSafeArea())
-    }
-}
 
 #Preview {
     NavigationStack {

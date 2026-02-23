@@ -52,75 +52,6 @@ struct RecallProgressTrackView: View {
     }
 }
 
-struct RecallQuestionCardView: View {
-    let spec: RecallFigmaSpec
-    let colorScheme: ColorScheme
-    let scale: CGFloat
-    let card: ReviewCard
-
-    var body: some View {
-        RecallCardSurface(spec: spec, colorScheme: colorScheme, scale: scale) {
-            VStack(alignment: .leading, spacing: 16 * scale) {
-                Text("COMPLETE THE SENTENCE")
-                    .font(.system(size: spec.sectionLabelFontSize * scale, weight: .semibold))
-                    .foregroundStyle(spec.subtitleColor(for: colorScheme))
-                    .tracking(0.8 * scale)
-
-                Text(maskedSentence(card.contextSentence, lemma: card.lemma))
-                    .font(.system(size: spec.sentenceFontSize * scale, weight: .semibold, design: .rounded))
-                    .foregroundStyle(spec.titleColor(for: colorScheme))
-                    .lineSpacing(3 * scale)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let definition = normalizedDefinition(card.definition) {
-                    Text(definition)
-                        .font(.system(size: spec.supportingFontSize * scale, weight: .regular))
-                        .foregroundStyle(spec.subtitleColor(for: colorScheme))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-}
-
-struct RecallAnswerCardView: View {
-    let spec: RecallFigmaSpec
-    let colorScheme: ColorScheme
-    let scale: CGFloat
-    let card: ReviewCard
-
-    var body: some View {
-        RecallCardSurface(spec: spec, colorScheme: colorScheme, scale: scale) {
-            VStack(alignment: .leading, spacing: 16 * scale) {
-                Text("ANSWER")
-                    .font(.system(size: spec.sectionLabelFontSize * scale, weight: .semibold))
-                    .foregroundStyle(spec.subtitleColor(for: colorScheme))
-                    .tracking(0.8 * scale)
-
-                Text(displayWord(card.lemma))
-                    .font(.system(size: spec.answerWordFontSize * scale, weight: .semibold, design: .rounded))
-                    .foregroundStyle(spec.titleColor(for: colorScheme))
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-
-                Text(card.contextSentence)
-                    .font(.system(size: spec.supportingFontSize * scale, weight: .medium))
-                    .foregroundStyle(spec.subtitleColor(for: colorScheme))
-                    .lineSpacing(2 * scale)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let definition = normalizedDefinition(card.definition) {
-                    Text(definition)
-                        .font(.system(size: spec.supportingFontSize * scale, weight: .regular))
-                        .foregroundStyle(spec.subtitleColor(for: colorScheme))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-}
 
 struct RecallCardSurface<Content: View>: View {
     let spec: RecallFigmaSpec
@@ -210,18 +141,19 @@ struct RecallGradeActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 14 * scale, weight: .semibold))
-                .foregroundStyle(spec.gradeTextColor(for: colorScheme))
+            Text(title.uppercased())
+                .font(.system(size: 11 * scale, weight: .medium))
+                .tracking(1.16 * scale)
+                .foregroundStyle(Color.white)
                 .frame(
-                    width: spec.gradeButtonSize.width * scale,
-                    height: spec.gradeButtonSize.height * scale
+                    width: spec.figmaGradeButtonSize * scale,
+                    height: spec.figmaGradeButtonSize * scale
                 )
                 .background(spec.gradeFill(for: grade, colorScheme: colorScheme))
-                .clipShape(RoundedRectangle(cornerRadius: spec.gradeButtonCornerRadius * scale, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: spec.figmaGradeButtonCornerRadius * scale, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: spec.gradeButtonCornerRadius * scale, style: .continuous)
-                        .stroke(Color.white.opacity(colorScheme == .dark ? 0.32 : 0.42), lineWidth: max(1, 1.0 * scale))
+                    RoundedRectangle(cornerRadius: spec.figmaGradeButtonCornerRadius * scale, style: .continuous)
+                        .stroke(Color.white.opacity(0.6), lineWidth: max(1, spec.figmaGradeButtonBorderWidth * scale))
                 )
         }
         .buttonStyle(.plain)
@@ -257,6 +189,6 @@ func maskedSentence(_ sentence: String, lemma: String) -> String {
     }
 
     var result = sentence
-    result.replaceSubrange(swiftRange, with: "____")
+    result.replaceSubrange(swiftRange, with: "[_____]")
     return result
 }

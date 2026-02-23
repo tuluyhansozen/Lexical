@@ -61,8 +61,6 @@ struct CustomTabBar: View {
 
     @ViewBuilder
     private func tabIcon(_ tab: TabIconItem) -> some View {
-        let useBundledIcons = false
-
         #if canImport(UIKit)
         let iconBundle: Bundle? = {
             #if SWIFT_PACKAGE
@@ -72,7 +70,7 @@ struct CustomTabBar: View {
             #endif
         }()
 
-        if useBundledIcons, let iconBundle, UIImage(named: tab.iconAsset, in: iconBundle, with: nil) != nil {
+        if let iconBundle = iconBundle, UIImage(named: tab.iconAsset, in: iconBundle, with: nil) != nil {
             Image(tab.iconAsset, bundle: iconBundle)
                 .renderingMode(.template)
                 .resizable()

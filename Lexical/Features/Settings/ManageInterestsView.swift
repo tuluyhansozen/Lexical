@@ -17,7 +17,7 @@ struct ManageInterestsView: View {
                         Text(tag)
                     }
                     .onDelete { indexSet in
-                        profile.selectedTags.remove(atOffsets: indexSet)
+                        profile.removeTags(at: indexSet)
                     }
                 }
             }
@@ -26,12 +26,8 @@ struct ManageInterestsView: View {
                 HStack {
                     TextField("New Interest", text: $newTag)
                     Button("Add") {
-                        let normalized = newTag.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !normalized.isEmpty && !profile.selectedTags.contains(normalized) {
-                            profile.selectedTags.append(normalized)
-                            profile.selectedTags.sort()
-                            newTag = ""
-                        }
+                        profile.addTag(newTag)
+                        newTag = ""
                     }
                     .disabled(newTag.isEmpty)
                 }
@@ -49,8 +45,7 @@ struct ManageInterestsView: View {
                                 ForEach(group.options) { option in
                                     if !profile.selectedTags.contains(option.title) {
                                         Button {
-                                            profile.selectedTags.append(option.title)
-                                            profile.selectedTags.sort()
+                                            profile.addTag(option.title)
                                         } label: {
                                             Text(option.chipLabel)
                                                 .padding(.horizontal, 12)

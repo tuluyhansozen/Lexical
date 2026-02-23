@@ -399,8 +399,6 @@ struct ExploreFigmaSpec {
     let connectorOpacityLight: Double = 0.57
     let connectorOpacityDark: Double = 0.32
     let connectorLineWidth: CGFloat = 1
-    let rootNodeStyleKey = "rootCoralGlass"
-    let leafNodeStyleKey = "leafGreenGlass"
 
     let matrixHorizontalInset: CGFloat = 12
     let matrixTopInset: CGFloat = 16
@@ -458,14 +456,37 @@ private extension Comparable {
     }
 }
 
+@MainActor
+private func explorePreviewContainer() -> ModelContainer {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: MorphologicalRoot.self,
+        LexemeDefinition.self,
+        UserWordState.self,
+        UserProfile.self,
+        configurations: config
+    )
+    
+    let root = MorphologicalRoot(
+        rootId: 1,
+        root: "spec",
+        basicMeaning: "A morphological root tied to seeing, looking, and observation."
+    )
+    container.mainContext.insert(root)
+    
+    let lexemes = [
+        LexemeDefinition(lemma: "spectator", basicMeaning: "A person who watches at a show, game, or other event."),
+        LexemeDefinition(lemma: "retrospect", basicMeaning: "A survey or review of a past course of events or period of time."),
+        LexemeDefinition(lemma: "spectacle", basicMeaning: "A visually striking performance or display.")
+    ]
+    for l in lexemes { container.mainContext.insert(l) }
+    
+    container.mainContext.insert(UserProfile(userId: UserProfile.fallbackLocalUserID, lexicalRank: 100))
+    
+    return container
+}
+
 #Preview {
     ExploreView()
-        .modelContainer(
-            for: [
-                MorphologicalRoot.self,
-                LexemeDefinition.self,
-                UserWordState.self,
-                UserProfile.self
-            ]
-        )
+        .modelContainer(explorePreviewContainer())
 }
