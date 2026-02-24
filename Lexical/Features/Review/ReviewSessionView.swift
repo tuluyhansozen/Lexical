@@ -104,8 +104,8 @@ struct SessionContent: View {
         }
         .onChange(of: manager.currentCard?.lemma) { _, newLemma in
             guard newLemma != activeCardLemma else { return }
-            activeCardLemma = newLemma
-            withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                activeCardLemma = newLemma
                 revealAnswer = false
             }
         }
@@ -133,46 +133,32 @@ struct SessionContent: View {
             ProgressView()
             Spacer()
 
-        case .question:
+        case .question, .answer:
             if let card = manager.currentCard {
                 Spacer(minLength: 8 * scale)
-                RecallQuestionCardView(
+                
+                FlashcardView(
                     spec: spec,
                     colorScheme: colorScheme,
                     scale: scale,
-                    card: card
-                )
-                .padding(.horizontal, spec.horizontalPadding * scale)
-
-                Spacer(minLength: 22 * scale)
-                RecallPrimaryActionButton(
-                    spec: spec,
-                    colorScheme: colorScheme,
-                    scale: scale,
-                    title: "Reveal Answer"
-                ) {
-                    withAnimation(.easeInOut(duration: spec.revealDuration)) {
+                    item: card,
+                    onFlip: {
                         revealAnswer = true
-                    }
-                }
-                .accessibilityIdentifier("review.revealButton")
-                .padding(.horizontal, spec.horizontalPadding * scale)
-                Spacer(minLength: 12 * scale)
-            }
-
-        case .answer:
-            if let card = manager.currentCard {
-                Spacer(minLength: 8 * scale)
-                RecallAnswerCardView(
-                    spec: spec,
-                    colorScheme: colorScheme,
-                    scale: scale,
-                    card: card
+                    },
+                    isFlipped: Binding(
+                        get: { revealAnswer },
+                        set: { if $0 { revealAnswer = true } } 
+                    )
                 )
                 .padding(.horizontal, spec.horizontalPadding * scale)
+                .id(card.lemma)
+                .transition(.liquidGlassSwap)
 
                 Spacer(minLength: 16 * scale)
+                
                 answerActions(card: card, scale: scale)
+                    .opacity(revealAnswer ? 1 : 0)
+                    .disabled(!revealAnswer)
                 Spacer(minLength: 8 * scale)
             }
 
@@ -194,37 +180,42 @@ struct SessionContent: View {
     }
 
     private func answerActions(card: ReviewCard, scale: CGFloat) -> some View {
-        VStack(spacing: 12 * scale) {
+        VStack(spacing: 24 * scale) {
+            // Contextual Actions
             HStack(spacing: 12 * scale) {
-                RecallNeutralActionButton(
-                    spec: spec,
-                    colorScheme: colorScheme,
-                    scale: scale,
-                    title: "Info"
-                ) {
+                Button {
                     infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+                } label: {
+                    Text("Info")
+                        .font(.system(size: 13 * scale, weight: .medium))
+                        .foregroundStyle(spec.titleColor(for: colorScheme))
+                        .frame(maxWidth: .infinity, minHeight: spec.figmaActionButtonHeight * scale)
+                        .background(spec.figmaInfoButtonBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: spec.figmaActionButtonRadius * scale, style: .continuous))
                 }
                 .accessibilityIdentifier("review.infoButton")
                 .accessibilityLabel("Word info")
-                .accessibilityHint("Shows definition, synonyms, and examples.")
-
-                RecallNeutralActionButton(
-                    spec: spec,
-                    colorScheme: colorScheme,
-                    scale: scale,
-                    title: "Remove From Deck"
-                ) {
-                    withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+                
+                Button {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                         manager.removeCurrentCardFromDeck()
                         revealAnswer = false
                     }
+                } label: {
+                    Text("Remove")
+                        .font(.system(size: 13 * scale, weight: .medium))
+                        .foregroundStyle(spec.figmaRemoveButtonText)
+                        .frame(maxWidth: .infinity, minHeight: spec.figmaActionButtonHeight * scale)
+                        .background(spec.figmaRemoveButtonBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: spec.figmaActionButtonRadius * scale, style: .continuous))
                 }
                 .accessibilityIdentifier("review.removeButton")
                 .disabled(manager.isSubmittingGrade)
-                .accessibilityHint("Removes this word from your learning deck.")
             }
+            .buttonStyle(.plain)
 
-            HStack(spacing: 10 * scale) {
+            // Grading Toolbar
+            HStack(spacing: 16 * scale) {
                 RecallGradeActionButton(
                     spec: spec,
                     colorScheme: colorScheme,
@@ -262,6 +253,7 @@ struct SessionContent: View {
                 .accessibilityIdentifier("review.gradeEasy")
             }
             .disabled(manager.isSubmittingGrade)
+            .padding(.horizontal, 8 * scale)
         }
         .padding(.horizontal, spec.horizontalPadding * scale)
     }
@@ -374,18 +366,18 @@ struct SessionContent: View {
     }
 
     private func submit(_ grade: Int) {
-        withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             manager.submitGrade(grade)
             revealAnswer = false
         }
     }
 
     private func startDueSession() {
-        withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             revealAnswer = false
+            manager.startSession(mode: .dueOnly)
+            activeCardLemma = manager.currentCard?.lemma
         }
-        manager.startSession(mode: .dueOnly)
-        activeCardLemma = manager.currentCard?.lemma
     }
 
     private func completionTitle(for state: RecallCompletionState) -> String {
@@ -414,3 +406,73 @@ struct SessionContent: View {
         }
     }
 }
+
+struct LiquidGlassSwapModifier: ViewModifier {
+    let isActive: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isActive ? 0.92 : 1.0)
+            .blur(radius: isActive ? 12 : 0)
+            .opacity(isActive ? 0 : 1)
+            .overlay(
+                Color.white
+                    .opacity(isActive ? 0.4 : 0.0)
+                    .blendMode(.plusLighter) // Light refraction simulation
+            )
+    }
+}
+
+extension AnyTransition {
+    static var liquidGlassSwap: AnyTransition {
+        .modifier(
+            active: LiquidGlassSwapModifier(isActive: true),
+            identity: LiquidGlassSwapModifier(isActive: false)
+        )
+    }
+}
+
+#Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: UserProfile.self, 
+             UserWordState.self, 
+             ReviewEvent.self, 
+             UsageLedger.self, 
+             LexemeDefinition.self,
+             InterestProfile.self,
+             GeneratedContent.self,
+             MorphologicalRoot.self,
+             DiscoveredLexeme.self,
+        configurations: config
+    )
+
+    let profile = InterestProfile()
+    container.mainContext.insert(profile)
+    
+    let userProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
+    container.mainContext.insert(userProfile)
+
+    // Mock UI Data for Canvas
+    let words = [
+        ("serendipity", "occurrence and development of events by chance in a happy or beneficial way", "The discovery of the new star was a moment of serendipity."),
+        ("ephemeral", "lasting for a very short time", "The autumn colors were beautiful but so ephemeral."),
+        ("ubiquitous", "present, appearing, or found everywhere", "The smartphones have become ubiquitous in modern society.")
+    ]
+    
+    for (word, definition, sentence) in words {
+        let lexeme = LexemeDefinition(lemma: word)
+        lexeme.basicMeaning = definition
+        lexeme.sampleSentence = sentence
+        container.mainContext.insert(lexeme)
+        
+        let state = UserWordState(userId: userProfile.userId, lemma: word)
+        state.status = .learning
+        state.nextReviewDate = Date().addingTimeInterval(-86400) // Due yesterday
+        container.mainContext.insert(state)
+    }
+
+    return ReviewSessionView(startSignal: 0, onNavigateToReading: {})
+        .modelContainer(container)
+}
+

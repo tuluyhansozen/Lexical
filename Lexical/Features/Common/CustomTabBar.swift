@@ -61,11 +61,17 @@ struct CustomTabBar: View {
 
     @ViewBuilder
     private func tabIcon(_ tab: TabIconItem) -> some View {
-        let useBundledIcons = false
-
         #if canImport(UIKit)
-        if useBundledIcons, UIImage(named: tab.iconAsset, in: .module, with: nil) != nil {
-            Image(tab.iconAsset, bundle: .module)
+        let iconBundle: Bundle? = {
+            #if SWIFT_PACKAGE
+            return .module
+            #else
+            return .main
+            #endif
+        }()
+
+        if let iconBundle = iconBundle, UIImage(named: tab.iconAsset, in: iconBundle, with: nil) != nil {
+            Image(tab.iconAsset, bundle: iconBundle)
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()

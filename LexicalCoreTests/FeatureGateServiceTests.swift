@@ -82,7 +82,7 @@ final class FeatureGateServiceTests: XCTestCase {
         XCTAssertFalse(try service.canCreateAdditionalWidgetProfile(modelContext: context))
     }
 
-    func testFreeTierStatsDepthIsLastThirtyDaysOnly() throws {
+    func testFreeTierStatsDepthIsWeekOnly() throws {
         let container = try makeInMemoryContainer()
         let context = ModelContext(container)
         let userId = uniqueUserID(prefix: "gate.free.stats")
@@ -93,13 +93,13 @@ final class FeatureGateServiceTests: XCTestCase {
         let service = FeatureGateService()
         let available = service.availableStatsPeriods(modelContext: context)
 
-        XCTAssertEqual(available, [.last30])
-        XCTAssertTrue(service.canAccessStatsPeriod(.last30, modelContext: context))
-        XCTAssertFalse(service.canAccessStatsPeriod(.last90, modelContext: context))
-        XCTAssertFalse(service.canAccessStatsPeriod(.year, modelContext: context))
+        XCTAssertEqual(available, [.week, .month, .year])
+        XCTAssertTrue(service.canAccessStatsPeriod(.week, modelContext: context))
+        XCTAssertTrue(service.canAccessStatsPeriod(.month, modelContext: context))
+        XCTAssertTrue(service.canAccessStatsPeriod(.year, modelContext: context))
     }
 
-    func testPremiumTierStatsDepthIncludesNinetyDaysAndYear() throws {
+    func testPremiumTierStatsDepthIncludesAllPeriods() throws {
         let container = try makeInMemoryContainer()
         let context = ModelContext(container)
         let userId = uniqueUserID(prefix: "gate.premium.stats")
@@ -113,8 +113,8 @@ final class FeatureGateServiceTests: XCTestCase {
         let available = service.availableStatsPeriods(modelContext: context)
 
         XCTAssertEqual(available, StatsPeriod.allCases)
-        XCTAssertTrue(service.canAccessStatsPeriod(.last30, modelContext: context))
-        XCTAssertTrue(service.canAccessStatsPeriod(.last90, modelContext: context))
+        XCTAssertTrue(service.canAccessStatsPeriod(.week, modelContext: context))
+        XCTAssertTrue(service.canAccessStatsPeriod(.month, modelContext: context))
         XCTAssertTrue(service.canAccessStatsPeriod(.year, modelContext: context))
     }
 

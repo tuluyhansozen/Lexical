@@ -15,6 +15,13 @@ public class ArticlesViewModel: ObservableObject {
         self.generator = ArticleGenerator(store: articleStore, llmProvider: provider)
         loadArticles()
     }
+
+    /// Preview-only init with pre-loaded articles (bypasses ArticleStore)
+    public init(previewArticles: [GeneratedArticle]) {
+        let provider = ArticleLLMProviderFactory.makeDefaultProvider()
+        self.generator = ArticleGenerator(store: articleStore, llmProvider: provider)
+        self.articles = previewArticles
+    }
     
     public func loadArticles() {
         Task {

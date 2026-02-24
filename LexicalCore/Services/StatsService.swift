@@ -2,30 +2,30 @@ import Foundation
 import SwiftData
 
 public enum StatsPeriod: Int, CaseIterable {
-    case last30
-    case last90
+    case week
+    case month
     case year
 
     public var days: Int {
         switch self {
-        case .last30: return 30
-        case .last90: return 90
+        case .week: return 7
+        case .month: return 35
         case .year: return 365
         }
     }
 
     public var label: String {
         switch self {
-        case .last30: return "Last 30 Days"
-        case .last90: return "Last 90 Days"
-        case .year: return "This Year"
+        case .week: return "Week"
+        case .month: return "Month"
+        case .year: return "Year"
         }
     }
 
     public var shortLabel: String {
         switch self {
-        case .last30: return "30d"
-        case .last90: return "90d"
+        case .week: return "7d"
+        case .month: return "30d"
         case .year: return "1y"
         }
     }
@@ -47,19 +47,34 @@ public struct HeatmapPoint: Identifiable {
 
 public struct StatsSnapshot {
     public let acquiredCount: Int
+    public let todayAcquired: Int
+    public let periodAcquired: Int
     public let retentionRate: Double
     public let streak: Int
     public let curvePoints: [(Double, Double)]
     public let heatmap: [HeatmapPoint]
 
+    public var retentionLabel: String {
+        switch retentionRate {
+        case 0.8...: return "Stable"
+        case 0.5..<0.8: return "Rising"
+        case 0.0..<0.1: return "New"
+        default: return "Declining"
+        }
+    }
+
     public init(
         acquiredCount: Int,
+        todayAcquired: Int = 0,
+        periodAcquired: Int = 0,
         retentionRate: Double,
         streak: Int,
         curvePoints: [(Double, Double)],
         heatmap: [HeatmapPoint]
     ) {
         self.acquiredCount = acquiredCount
+        self.todayAcquired = todayAcquired
+        self.periodAcquired = periodAcquired
         self.retentionRate = retentionRate
         self.streak = streak
         self.curvePoints = curvePoints
@@ -78,12 +93,37 @@ public class StatsService {
 
     public func loadSnapshot(period: StatsPeriod) -> StatsSnapshot {
         StatsSnapshot(
-            acquiredCount: fetchAcquired(period: period),
+            acquiredCount: fetchTotalAcquired(),
+            todayAcquired: fetchTodayAcquired(),
+            periodAcquired: fetchAcquired(period: period),
             retentionRate: calculateRetentionRate(period: period),
             streak: calculateStreak(),
-            curvePoints: projectedForgettingCurve(),
+            curvePoints: historicalRetentionCurve(period: period),
             heatmap: activityHeatmap(period: period)
         )
+    }
+
+    /// Returns words acquired today only.
+    public func fetchTodayAcquired() -> Int {
+        let cutoff = Calendar.current.startOfDay(for: Date())
+        let userId = activeUserID()
+
+        do {
+            let events = try fetchUserEvents(userId: userId)
+                .sorted { $0.reviewDate < $1.reviewDate }
+
+            var firstSuccessfulAcquisitionByLemma: [String: Date] = [:]
+
+            for event in events where isDurableAcquisitionSignal(event) {
+                if firstSuccessfulAcquisitionByLemma[event.lemma] == nil {
+                    firstSuccessfulAcquisitionByLemma[event.lemma] = event.reviewDate
+                }
+            }
+
+            return firstSuccessfulAcquisitionByLemma.values.filter { $0 >= cutoff }.count
+        } catch {
+            return 0
+        }
     }
 
     /// Returns total number of words with state other than `.new`.
@@ -167,32 +207,63 @@ public class StatsService {
         }
     }
 
-    /// Returns projected forgetting-curve points as `(day, retention%)`.
-    public func projectedForgettingCurve() -> [(Double, Double)] {
-        let avgStability: Double
+    /// Returns historical retention curve points for the period as `(dayIndex, retention%)`.
+    public func historicalRetentionCurve(period: StatsPeriod) -> [(Double, Double)] {
         let userId = activeUserID()
-
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = period.days
+        
+        // To calculate trailing retention for up to `days` ago, we need events from `2 * days` ago.
+        let fetchCutoff = calendar.date(byAdding: .day, value: -(days * 2), to: today) ?? today
+        
         do {
-            let descriptor = FetchDescriptor<UserWordState>(
-                predicate: #Predicate { state in
-                    state.userId == userId
+            let interactiveEvents = try fetchUserEvents(userId: userId, cutoff: fetchCutoff)
+                .filter(isInteractivePerformanceSignal)
+                // Sorting not strictly required but good for correctness
+                .sorted { $0.reviewDate < $1.reviewDate }
+                
+            var points: [(Double, Double)] = []
+            let periodSteps = period == .year ? 12 : days
+            let stepSize = period == .year ? 30 : 1
+            
+            for stepIndex in (0..<periodSteps).reversed() { // from oldest to newest
+                let offsetDays = stepIndex * stepSize
+                guard let evaluationDate = calendar.date(byAdding: .day, value: -offsetDays, to: today) else { continue }
+                
+                guard let windowStart = calendar.date(byAdding: .day, value: -days, to: evaluationDate) else { continue }
+                let windowEnd = calendar.date(byAdding: .day, value: 1, to: evaluationDate)! // Include evaluation day
+                let windowCutoff = windowStart
+                
+                let windowEvents = interactiveEvents.filter { $0.reviewDate >= windowCutoff && $0.reviewDate < windowEnd }
+                
+                var firstAttemptByLemmaDay: [String: ReviewEvent] = [:]
+                for event in windowEvents {
+                    let day = calendar.startOfDay(for: event.reviewDate).timeIntervalSince1970
+                    let key = "\(event.lemma)|\(Int(day))"
+                    if firstAttemptByLemmaDay[key] == nil {
+                        firstAttemptByLemmaDay[key] = event
+                    }
                 }
-            )
-            let states = try modelContext.fetch(descriptor)
-            let reviewedStates = states.filter { $0.reviewCount > 0 && $0.status != .ignored }
-            if reviewedStates.isEmpty { return defaultCurve() }
-            avgStability = reviewedStates.reduce(0.0) { $0 + max($1.stability, 0.1) } / Double(reviewedStates.count)
-        } catch {
-            return defaultCurve()
-        }
+                
+                let attempts = Array(firstAttemptByLemmaDay.values)
+                let retention: Double
+                if attempts.isEmpty {
+                    retention = points.last?.1 ?? 0.0 // Carry over previous retention or 0
+                } else {
+                    let successful = attempts.filter { $0.grade > 2 }.count
+                    retention = (Double(successful) / Double(attempts.count)) * 100.0
+                }
+                
+                let xPosition = Double(periodSteps - 1 - stepIndex)
+                points.append((xPosition, retention))
+            }
+            
+            return points
 
-        var points: [(Double, Double)] = []
-        for i in 0...9 {
-            let t = Double(i)
-            let retention = 100.0 * fsrsForgettingCurve(daysElapsed: t, stability: avgStability)
-            points.append((t, retention))
+        } catch {
+            return defaultHistoricalCurve(steps: period == .year ? 12 : days)
         }
-        return points
     }
 
     public func activityHeatmap(period: StatsPeriod) -> [HeatmapPoint] {
@@ -202,23 +273,61 @@ public class StatsService {
         let today = calendar.startOfDay(for: Date())
         let days = period.days
 
-        var dailyCounts: [Date: Int] = [:]
+        var points: [HeatmapPoint] = []
+        
+        if period == .year {
+            points.reserveCapacity(12)
+            let currentMonth = calendar.component(.month, from: today)
+            let currentYear = calendar.component(.year, from: today)
+            
+            // Start from 11 months ago to include current month
+            guard let startMonthDate = calendar.date(byAdding: .month, value: -11, to: calendar.date(from: DateComponents(year: currentYear, month: currentMonth))!) else {
+                return []
+            }
+            
+            let fetchCutoff = min(cutoff, startMonthDate)
+            var yearDailyCounts: [Date: Int] = [:]
+            
+            if let events = try? fetchUserEvents(userId: userId, cutoff: fetchCutoff) {
+                let filteredEvents = events.filter(isInteractivePerformanceSignal)
+                for event in filteredEvents {
+                    let day = calendar.startOfDay(for: event.reviewDate)
+                    yearDailyCounts[day, default: 0] += 1
+                }
+            }
+            
+            var iterMonthStart = startMonthDate
+            for _ in 0..<12 {
+                let nextMonthStart = calendar.date(byAdding: .month, value: 1, to: iterMonthStart)!
+                var monthlyCount = 0
+                
+                var iterDay = iterMonthStart
+                while iterDay < nextMonthStart {
+                    monthlyCount += yearDailyCounts[iterDay, default: 0]
+                    iterDay = calendar.date(byAdding: .day, value: 1, to: iterDay)!
+                }
+                
+                points.append(HeatmapPoint(date: iterMonthStart, count: monthlyCount))
+                iterMonthStart = nextMonthStart
+            }
+        } else {
+            var dailyCounts: [Date: Int] = [:]
+            if let events = try? fetchUserEvents(userId: userId, cutoff: cutoff) {
+                let filteredEvents = events.filter(isInteractivePerformanceSignal)
+                for event in filteredEvents {
+                    let day = calendar.startOfDay(for: event.reviewDate)
+                    dailyCounts[day, default: 0] += 1
+                }
+            }
 
-        if let events = try? fetchUserEvents(userId: userId, cutoff: cutoff) {
-            let filteredEvents = events.filter(isInteractivePerformanceSignal)
-            for event in filteredEvents {
-                let day = calendar.startOfDay(for: event.reviewDate)
-                dailyCounts[day, default: 0] += 1
+            // For week (7) or month (35)
+            points.reserveCapacity(days)
+            for offset in stride(from: days - 1, through: 0, by: -1) {
+                guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { continue }
+                points.append(HeatmapPoint(date: day, count: dailyCounts[day, default: 0]))
             }
         }
-
-        var points: [HeatmapPoint] = []
-        points.reserveCapacity(days)
-
-        for offset in stride(from: days - 1, through: 0, by: -1) {
-            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { continue }
-            points.append(HeatmapPoint(date: day, count: dailyCounts[day, default: 0]))
-        }
+        
         return points
     }
 
@@ -283,10 +392,10 @@ public class StatsService {
         return streak
     }
 
-    private func defaultCurve() -> [(Double, Double)] {
-        (0...9).map { day in
-            let t = Double(day)
-            return (t, 100.0 * fsrsForgettingCurve(daysElapsed: t, stability: 5.0))
+    private func defaultHistoricalCurve(steps: Int) -> [(Double, Double)] {
+        (0..<steps).map { step in
+            let t = Double(step)
+            return (t, 50.0 + (Double(step) * 2.0)) // Shows a slight upward trend by default
         }
     }
 }

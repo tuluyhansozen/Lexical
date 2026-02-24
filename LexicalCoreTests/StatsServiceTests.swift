@@ -85,7 +85,7 @@ final class StatsServiceTests: XCTestCase {
         try context.save()
 
         let service = StatsService(modelContext: context)
-        let retention = service.calculateRetentionRate(period: .last30)
+        let retention = service.calculateRetentionRate(period: .week)
         XCTAssertEqual(retention, 1.0 / 3.0, accuracy: 0.0001)
     }
 
@@ -147,7 +147,7 @@ final class StatsServiceTests: XCTestCase {
         try context.save()
 
         let service = StatsService(modelContext: context)
-        XCTAssertEqual(service.fetchAcquired(period: .last30), 1)
+        XCTAssertEqual(service.fetchAcquired(period: .month), 1)
     }
 
     func testStreakIgnoresImplicitOnlyToday() throws {
@@ -201,7 +201,7 @@ final class StatsServiceTests: XCTestCase {
         XCTAssertEqual(service.calculateStreak(), 2)
     }
 
-    func testProjectedForgettingCurveUsesFSRSShape() throws {
+    func testHistoricalRetentionCurveReturnsValidPoints() throws {
         let container = try makeInMemoryContainer()
         let context = ModelContext(container)
         let userId = uniqueUserID(prefix: "stats.curve")
@@ -221,14 +221,9 @@ final class StatsServiceTests: XCTestCase {
         try context.save()
 
         let service = StatsService(modelContext: context)
-        let curve = service.projectedForgettingCurve()
+        let curve = service.historicalRetentionCurve(period: .week)
 
-        XCTAssertEqual(curve.count, 10)
-        XCTAssertEqual(curve[0].1, 100.0, accuracy: 0.0001)
-
-        let expectedDay1 = 100.0 * pow(1 + 19 * 1.0 / 10.0, -1)
-        XCTAssertEqual(curve[1].1, expectedDay1, accuracy: 0.0001)
-        XCTAssertGreaterThan(curve[1].1, curve[2].1)
+        XCTAssertEqual(curve.count, 7)
     }
 
     func testScenarioDailyRoutineThirtyDaysSnapshot() throws {
@@ -308,7 +303,7 @@ final class StatsServiceTests: XCTestCase {
         try context.save()
 
         let service = StatsService(modelContext: context)
-        let snapshot = service.loadSnapshot(period: .last30)
+        let snapshot = service.loadSnapshot(period: .month)
 
         // 30 days * 3 durable explicit successes/day
         XCTAssertEqual(snapshot.acquiredCount, 90)

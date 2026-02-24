@@ -154,12 +154,14 @@ class SessionManager: ObservableObject {
             print("SessionManager: failed to remove '\(normalizedLemma)' from deck: \(error)")
         }
 
-        if currentIndex < queue.count {
-            queue.remove(at: currentIndex)
+        Task { @MainActor in
+            if currentIndex < queue.count {
+                queue.remove(at: currentIndex)
+            }
+            sessionStreaks.removeValue(forKey: normalizedLemma)
+            currentIndex = 0
+            isSessionComplete = queue.isEmpty
         }
-        sessionStreaks.removeValue(forKey: normalizedLemma)
-        currentIndex = 0
-        isSessionComplete = queue.isEmpty
     }
 
     func submitGrade(_ grade: Int) {

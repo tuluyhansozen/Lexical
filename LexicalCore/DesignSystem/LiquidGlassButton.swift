@@ -279,3 +279,32 @@ public struct LiquidGlassButton<Content: View>: View {
             .mask(Circle())
     }
 }
+
+#Preview("Liquid Glass Button - Canvas") {
+    ZStack {
+        Color(hex: "121417").ignoresSafeArea()
+        VStack(spacing: 40) {
+            LiquidGlassButton(style: .root) {
+                print("Root tapped")
+            } label: {
+                VStack(spacing: 4) {
+                    Text("spec")
+                        .font(.system(size: 16, weight: .bold))
+                    Text("root")
+                        .font(.system(size: 10, weight: .regular))
+                }
+                .foregroundColor(.white)
+            }
+            .frame(width: 100, height: 100)
+
+            LiquidGlassButton(style: .leaf) {
+                print("Leaf tapped")
+            } label: {
+                Text("Spectator")
+                    .font(.system(size: 10, weight: .regular))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 80, height: 80)
+        }
+    }
+}

@@ -27,4 +27,18 @@ public final class InterestProfile {
             lastUpdated = Date()
         }
     }
+    
+    public func addTag(_ tag: String) {
+        let normalized = tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !normalized.isEmpty && !selectedTags.contains(normalized) {
+            selectedTags.append(normalized)
+            selectedTags.sort()
+            lastUpdated = Date()
+        }
+    }
+    
+    public func removeTags(at offsets: IndexSet) {
+        selectedTags.remove(atOffsets: offsets)
+        lastUpdated = Date()
+    }
 }

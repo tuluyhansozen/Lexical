@@ -7,12 +7,10 @@ struct DailyRootResolver {
     struct Satellite {
         let lemma: String
         let status: UserWordStatus?
-        let isFallback: Bool
     }
 
     struct Resolution {
         let centerLemma: String
-        let rootLabel: String
         let rootMeaning: String
         let satellites: [Satellite]
     }
@@ -97,11 +95,10 @@ struct DailyRootResolver {
             return lhsScore.lemma < rhsScore.lemma
         }
 
-        var satellites: [Satellite] = sortedDirect.prefix(6).map { lexeme in
+    var satellites: [Satellite] = sortedDirect.prefix(6).map { lexeme in
             Satellite(
                 lemma: lexeme.lemma,
-                status: statusByLemma[lexeme.lemma],
-                isFallback: false
+                status: statusByLemma[lexeme.lemma]
             )
         }
 
@@ -128,8 +125,7 @@ struct DailyRootResolver {
                 satellites.append(
                     Satellite(
                         lemma: lexeme.lemma,
-                        status: statusByLemma[lexeme.lemma],
-                        isFallback: true
+                        status: statusByLemma[lexeme.lemma]
                     )
                 )
             }
@@ -137,7 +133,6 @@ struct DailyRootResolver {
 
         return Resolution(
             centerLemma: centerLemma,
-            rootLabel: selectedRoot.root.uppercased(),
             rootMeaning: selectedRoot.basicMeaning,
             satellites: Array(satellites.prefix(6))
         )

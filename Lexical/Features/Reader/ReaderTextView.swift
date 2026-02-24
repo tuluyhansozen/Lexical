@@ -72,13 +72,9 @@ struct ReaderTextView: UIViewRepresentable {
             let nsRange = NSRange(highlight.range, in: text)
             let backgroundColor = colorForState(highlight.state)
             
-            if highlight.state != .known {
-                attributedString.addAttributes([
-                    .backgroundColor: backgroundColor,
-                    .underlineStyle: NSUnderlineStyle.single.rawValue,
-                    .underlineColor: backgroundColor.withAlphaComponent(0.5)
-                ], range: nsRange)
-            }
+            attributedString.addAttributes([
+                .backgroundColor: backgroundColor
+            ], range: nsRange)
         }
         
         return attributedString
@@ -87,11 +83,14 @@ struct ReaderTextView: UIViewRepresentable {
     private func colorForState(_ state: VocabularyState) -> UIColor {
         switch state {
         case .new:
-            return UIColor(red: 0.91, green: 0.95, blue: 1.0, alpha: 1.0)
+            // Red — Figma rgba(255,134,134,0.64)
+            return UIColor(red: 1.0, green: 134/255, blue: 134/255, alpha: 0.64)
         case .learning:
-            return UIColor(red: 1.0, green: 0.95, blue: 0.82, alpha: 1.0)
+            // Orange — Figma rgba(255,179,98,0.64)
+            return UIColor(red: 1.0, green: 179/255, blue: 98/255, alpha: 0.64)
         case .known:
-            return .clear
+            // Green — Figma rgba(182,255,148,0.76)
+            return UIColor(red: 182/255, green: 1.0, blue: 148/255, alpha: 0.76)
         case .unknown:
             return UIColor.systemGray6
         }
