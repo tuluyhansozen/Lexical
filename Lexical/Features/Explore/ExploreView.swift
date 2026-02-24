@@ -30,7 +30,7 @@ struct ExploreView: View {
         GeometryReader { geometry in
             let layoutWidth = geometry.size.width
             ZStack {
-                backgroundColor.ignoresSafeArea()
+                matrixBackground(in: geometry.size).ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     headerView(layoutWidth: layoutWidth)
@@ -103,55 +103,62 @@ struct ExploreView: View {
         }
     }
 
+    @ViewBuilder
     private func nodeButton(for node: ExploreMatrixNode, figmaScale: CGFloat, size: CGSize) -> some View {
-        LiquidGlassButton(
-            style: node.role == .root ? figmaSpec.rootLiquidGlassStyle : figmaSpec.leafLiquidGlassStyle,
-            action: {
-                let card = reviewCard(for: node)
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
-                    selectedNodeID = node.id
-                }
-                infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+        let glassRole = glassNodeRole(for: node)
+
+        Button {
+            let card = reviewCard(for: node)
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                selectedNodeID = node.id
             }
-        ) {
-            if node.role == .root {
-                VStack(spacing: 2 * figmaScale) {
-                    Text(node.label.lowercased())
-                        .font(.system(size: figmaSpec.rootPrimaryFontSize * figmaScale, weight: .bold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                    Text("root")
-                        .font(.system(size: figmaSpec.rootSecondaryFontSize * figmaScale, weight: .regular))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                .foregroundStyle(.white)
-            } else {
-                VStack(spacing: 2) {
-                    Text(node.label)
-                        .font(.system(size: figmaSpec.leafFontSize * figmaScale, weight: .regular))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.7)
-                        .padding(.horizontal, 4)
-                }
-                .overlay(
-                    Group {
-                        if let status = nodeStatusByID[node.id], status.isLearned {
-                            Circle()
-                                .stroke(Color(hex: "8ADD95").opacity(0.64), lineWidth: 2)
-                                .frame(width: node.diameter * figmaScale + 6, height: node.diameter * figmaScale + 6)
-                        }
+            infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+        } label: {
+            Group {
+                if node.role == .root {
+                    VStack(spacing: 2 * figmaScale) {
+                        Text(node.label.lowercased())
+                            .font(.system(size: figmaSpec.rootPrimaryFontSize * figmaScale, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                        Text("ROOT")
+                            .font(.system(size: figmaSpec.rootSecondaryFontSize * figmaScale, weight: .medium))
+                            .tracking(2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
-                )
+                } else {
+                    VStack(spacing: 2) {
+                        Text(node.label)
+                            .font(.system(size: figmaSpec.leafFontSize * figmaScale, weight: .medium))
+                            .tracking(0.3)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.7)
+                            .padding(.horizontal, 4)
+                    }
+                }
             }
+            .frame(width: node.diameter * figmaScale, height: node.diameter * figmaScale)
+            .glassNodeStyle(glassRole)
         }
-        .frame(width: node.diameter * figmaScale, height: node.diameter * figmaScale)
+        .buttonStyle(.plain)
         .scaleEffect(selectedNodeID == node.id ? 1.04 : 1)
         .position(position(for: node, in: size))
         .accessibilityLabel(node.label)
         .accessibilityHint(node.role == .root ? (rootMeaning) : "Double tap for details")
+    }
+
+    /// Maps a matrix node to its Neo-Glass role based on word status.
+    private func glassNodeRole(for node: ExploreMatrixNode) -> GlassNodeRole {
+        guard node.role != .root else { return .root }
+        guard let status = nodeStatusByID[node.id] else { return .new }
+        switch status {
+        case .known:    return .known
+        case .learning: return .learning
+        case .new:      return .new
+        case .ignored:  return .unknown
+        }
     }
 
 
@@ -166,12 +173,14 @@ struct ExploreView: View {
                 path.move(to: rootPos)
                 path.addLine(to: leafPos)
 
-                let lineOpacity = colorScheme == .dark
-                    ? figmaSpec.connectorOpacityDark
-                    : figmaSpec.connectorOpacityLight
+                let leafRole = glassNodeRole(for: leaf)
+                let rootColor = GlassNodeRole.root.accentColor
+                let leafColor = leafRole.accentColor
+                let lineOpacity = colorScheme == .dark ? 0.35 : 0.28
+
                 let gradient = Gradient(colors: [
-                    Color(hex: figmaSpec.connectorStartHex).opacity(lineOpacity),
-                    Color(hex: figmaSpec.connectorEndHex).opacity(lineOpacity * 0.9)
+                    rootColor.opacity(lineOpacity),
+                    leafColor.opacity(lineOpacity * 0.75)
                 ])
                 context.stroke(
                     path,
@@ -180,7 +189,7 @@ struct ExploreView: View {
                         startPoint: rootPos,
                         endPoint: leafPos
                     ),
-                    style: StrokeStyle(lineWidth: figmaSpec.connectorLineWidth, lineCap: .round, lineJoin: .round)
+                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
                 )
             }
         }
@@ -207,6 +216,28 @@ struct ExploreView: View {
     private func matrixScale(for size: CGSize) -> CGFloat {
         let scale = size.width / 393.0
         return scale.clamped(to: 0.86...1.2)
+    }
+
+    /// Radial gradient background that emanates from the matrix center.
+    @ViewBuilder
+    private func matrixBackground(in size: CGSize) -> some View {
+        let base = colorScheme == .dark
+            ? Color(hex: figmaSpec.darkBackgroundHex)
+            : Color(hex: figmaSpec.lightBackgroundHex)
+        let glow = GlassNodeRole.root.accentColor
+
+        ZStack {
+            base
+            RadialGradient(
+                colors: [
+                    glow.opacity(colorScheme == .dark ? 0.08 : 0.06),
+                    Color.clear
+                ],
+                center: .center,
+                startRadius: 20,
+                endRadius: min(size.width, size.height) * 0.65
+            )
+        }
     }
 
     private var backgroundColor: Color {

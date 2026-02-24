@@ -120,6 +120,16 @@ extension Color {
     public static var cardShadow: Color {
         Color.black.opacity(0.12)
     }
+
+    // MARK: - Neo-Glass Semantic Palette
+    /// Mint Breeze — Known / mastered words
+    public static let statusKnown = Color(hex: "34C759")
+    /// Solar Tangerine — Words in active learning
+    public static let statusLearning = Color(hex: "FF9500")
+    /// Soft Berry — New / unseen words
+    public static let statusNew = Color(hex: "FF2D55")
+    /// Deep Indigo — Root node visual anchor
+    public static let rootNode = Color(hex: "5E5CE6")
 }
 
 extension Color {
