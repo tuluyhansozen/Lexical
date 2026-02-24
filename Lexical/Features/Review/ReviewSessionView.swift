@@ -104,8 +104,8 @@ struct SessionContent: View {
         }
         .onChange(of: manager.currentCard?.lemma) { _, newLemma in
             guard newLemma != activeCardLemma else { return }
-            activeCardLemma = newLemma
-            withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                activeCardLemma = newLemma
                 revealAnswer = false
             }
         }
@@ -151,6 +151,8 @@ struct SessionContent: View {
                     )
                 )
                 .padding(.horizontal, spec.horizontalPadding * scale)
+                .id(card.lemma)
+                .transition(.liquidGlassSwap)
 
                 Spacer(minLength: 16 * scale)
                 
@@ -195,7 +197,7 @@ struct SessionContent: View {
                 .accessibilityLabel("Word info")
                 
                 Button {
-                    withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                         manager.removeCurrentCardFromDeck()
                         revealAnswer = false
                     }
@@ -364,18 +366,18 @@ struct SessionContent: View {
     }
 
     private func submit(_ grade: Int) {
-        withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             manager.submitGrade(grade)
             revealAnswer = false
         }
     }
 
     private func startDueSession() {
-        withAnimation(.easeInOut(duration: spec.advanceDuration)) {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             revealAnswer = false
+            manager.startSession(mode: .dueOnly)
+            activeCardLemma = manager.currentCard?.lemma
         }
-        manager.startSession(mode: .dueOnly)
-        activeCardLemma = manager.currentCard?.lemma
     }
 
     private func completionTitle(for state: RecallCompletionState) -> String {
@@ -402,6 +404,31 @@ struct SessionContent: View {
         case .fallbackUnavailable:
             return "Capture more words from Reading to unlock extra practice."
         }
+    }
+}
+
+struct LiquidGlassSwapModifier: ViewModifier {
+    let isActive: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isActive ? 0.92 : 1.0)
+            .blur(radius: isActive ? 12 : 0)
+            .opacity(isActive ? 0 : 1)
+            .overlay(
+                Color.white
+                    .opacity(isActive ? 0.4 : 0.0)
+                    .blendMode(.plusLighter) // Light refraction simulation
+            )
+    }
+}
+
+extension AnyTransition {
+    static var liquidGlassSwap: AnyTransition {
+        .modifier(
+            active: LiquidGlassSwapModifier(isActive: true),
+            identity: LiquidGlassSwapModifier(isActive: false)
+        )
     }
 }
 

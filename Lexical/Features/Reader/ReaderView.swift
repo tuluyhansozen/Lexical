@@ -161,7 +161,7 @@ struct ReaderView: View {
             if !focusSet.isEmpty, !focusSet.contains(token.lemma) {
                 return nil
             }
-            guard let state = states[token.lemma], state != .known else { return nil }
+            guard let state = states[token.lemma] else { return nil }
             return TokenHighlight(range: token.range, state: state)
         }
         
@@ -405,9 +405,43 @@ struct StatBadge: View {
     }
 }
 
-
+// NOTE: ReaderTextView uses UIViewRepresentable (UIKit),
+// so word highlighting will NOT render in Xcode Canvas preview.
+// Build and run in the Simulator to see colored highlights.
 #Preview {
-    NavigationStack {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: UserProfile.self,
+             UserWordState.self,
+             ReviewEvent.self,
+             UsageLedger.self,
+             LexemeDefinition.self,
+             InterestProfile.self,
+             GeneratedContent.self,
+             MorphologicalRoot.self,
+             DiscoveredLexeme.self,
+        configurations: config
+    )
+
+    let userProfile = UserProfile(userId: UserProfile.fallbackLocalUserID)
+    container.mainContext.insert(userProfile)
+
+    // Seed word states for 3 colors
+    let wordStates: [(String, UserWordStatus)] = [
+        ("serendipity", .known),     // Green
+        ("nuanced", .learning),      // Orange
+        ("immersion", .new)          // Red
+    ]
+    for (lemma, status) in wordStates {
+        let state = UserWordState(
+            userId: UserProfile.fallbackLocalUserID,
+            lemma: lemma,
+            status: status
+        )
+        container.mainContext.insert(state)
+    }
+
+    return NavigationStack {
         ReaderView(
             title: "The Art of Learning",
             content: """
@@ -421,4 +455,5 @@ struct StatBadge: View {
             focusLemmas: ["serendipity", "nuanced", "immersion"]
         )
     }
+    .modelContainer(container)
 }
