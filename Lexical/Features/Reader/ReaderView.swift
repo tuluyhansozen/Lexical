@@ -16,6 +16,7 @@ struct ReaderView: View {
     @State private var isLoading = true
     @State private var selectedWord: SelectedWord?
     @State private var infoData: WordDetailData?
+    @State private var infoCard: ReviewCard?
 
     private let tokenizationActor = TokenizationActor()
     private let lexemePromotionService = LexemePromotionService()
@@ -122,7 +123,9 @@ struct ReaderView: View {
             }
             #endif
         }
-        .sheet(item: $infoData) { detail in
+        .sheet(item: $infoData, onDismiss: {
+            infoCard = nil
+        }) { detail in
             WordDetailSheet(
                 data: detail,
                 onAddToDeck: {
@@ -130,9 +133,13 @@ struct ReaderView: View {
                     infoData = nil
                 }
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents(
+                WordInfoSheetPresentation.detents(for: detail, includesPrimaryAction: true)
+            )
+            .presentationContentInteraction(.scrolls)
         }
         .task {
+            SeedLexemeIndex.prewarm()
             await analyzeText()
         }
     }
@@ -171,7 +178,7 @@ struct ReaderView: View {
     // MARK: - Word Tap Handling
     
     private func handleWordTap(word: String, sentence: String, range: Range<String.Index>) {
-        Task {
+        Task { @MainActor in
             let tokens = await tokenizationActor.tokenize(word)
             let lemma = tokens.first?.lemma ?? word.lowercased()
 
@@ -183,10 +190,22 @@ struct ReaderView: View {
                 return
             }
 
+            let detailCard = makeReviewCardForDetail(lemma: lemma, originalWord: word, sentence: sentence)
+            let normalizedLemma = detailCard.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            infoCard = detailCard
             infoData = WordDetailDataBuilder.build(
-                for: makeReviewCardForDetail(lemma: lemma, originalWord: word, sentence: sentence),
+                for: detailCard,
                 modelContext: modelContext
             )
+
+            Task { @MainActor in
+                let hydrated = await WordDetailDataBuilder.buildEnsuringSeedData(
+                    for: detailCard,
+                    modelContext: modelContext
+                )
+                guard infoData?.lemma == normalizedLemma else { return }
+                infoData = hydrated
+            }
         }
     }
     

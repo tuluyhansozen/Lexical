@@ -2,10 +2,12 @@ import SwiftUI
 import SwiftData
 import LexicalCore
 
-/// Explore renders a fixed-topology daily matrix aligned to the iPhone 16-3 Figma composition.
+/// Explore renders a fixed-topology daily matrix with accessibility-aware fallbacks.
 struct ExploreView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Query private var roots: [MorphologicalRoot]
     @Query private var lexemes: [LexemeDefinition]
@@ -16,14 +18,22 @@ struct ExploreView: View {
     @State private var rootMeaning: String = ""
     @State private var nodeStatusByID: [String: UserWordStatus] = [:]
     @State private var infoData: WordDetailData?
+    @State private var infoCard: ReviewCard?
     @State private var actionMessage: ExploreActionMessage?
 
     private let dailyRootResolver = DailyRootResolver()
-    private let figmaSpec = ExploreFigmaSpec()
+    private let visualSpec = ExploreVisualSpec()
     private let triageService = NotificationTriageService()
 
     private var profile: UserProfile {
         UserProfile.resolveActiveProfile(modelContext: modelContext)
+    }
+
+    private var accessibilityMode: ExploreAccessibilityMode {
+        ExploreAccessibilityMode.resolve(
+            reduceMotion: reduceMotion,
+            dynamicTypeSize: dynamicTypeSize
+        )
     }
 
     var body: some View {
@@ -34,138 +44,258 @@ struct ExploreView: View {
 
                 VStack(spacing: 0) {
                     headerView(layoutWidth: layoutWidth)
-                    matrixView
+
+                    if accessibilityMode == .graph {
+                        graphStage(in: geometry.size)
+                    } else {
+                        fallbackListView
+                    }
                 }
             }
         }
-        .safeAreaPadding(.bottom, 92)
+        .safeAreaPadding(.bottom, 78)
         .onAppear(perform: buildMatrix)
         .onChange(of: roots.count) { buildMatrix() }
         .onChange(of: lexemes.count) { buildMatrix() }
         .onChange(of: userStatesRevisionKey) { buildMatrix() }
-        .sheet(item: $infoData) { detail in
+        .task {
+            SeedLexemeIndex.prewarm()
+        }
+        .sheet(item: $infoData, onDismiss: {
+            infoCard = nil
+        }) { detail in
             WordDetailSheet(
                 data: detail,
                 onAddToDeck: {
                     addToDeck(lemma: detail.lemma, definition: detail.definition)
                 }
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents(
+                WordInfoSheetPresentation.detents(for: detail, includesPrimaryAction: true)
+            )
+            .presentationContentInteraction(.scrolls)
         }
         .alert(item: $actionMessage) { message in
-            Alert(title: Text(message.title), message: Text(message.body), dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text(message.title),
+                message: Text(message.body),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 
     private func headerView(layoutWidth: CGFloat) -> some View {
         let scale = headerScale(for: layoutWidth)
         let titleColor = colorScheme == .dark
-            ? Color(hex: figmaSpec.titleDarkHex)
-            : Color(hex: figmaSpec.titleLightHex)
+            ? Color(hex: visualSpec.titleDarkHex)
+            : Color(hex: visualSpec.titleLightHex)
         let subtitleColor = colorScheme == .dark
-            ? Color(hex: figmaSpec.subtitleDarkHex)
-            : Color(hex: figmaSpec.subtitleLightHex)
+            ? Color(hex: visualSpec.subtitleDarkHex)
+            : Color(hex: visualSpec.subtitleLightHex)
 
         return VStack(alignment: .leading, spacing: 6 * scale) {
-            Text(figmaSpec.titleText)
-                .font(.system(size: figmaSpec.titleFontSize * scale, weight: .semibold))
-                .kerning(figmaSpec.titleKerning * scale)
+            Text(visualSpec.titleText)
+                .font(.system(size: visualSpec.titleFontSize * scale, weight: .semibold, design: .default))
+                .kerning(visualSpec.titleKerning * scale)
                 .foregroundStyle(titleColor)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.82)
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
-            Text(figmaSpec.subtitleText)
-                .font(.system(size: figmaSpec.subtitleFontSize * scale, weight: .light))
+                .accessibilityIdentifier("explore.headerTitle")
+
+            Text(visualSpec.subtitleText)
+                .font(.system(size: visualSpec.subtitleFontSize * scale, weight: .light, design: .default))
+                .kerning(visualSpec.subtitleKerning * scale)
                 .foregroundStyle(subtitleColor)
                 .minimumScaleFactor(0.85)
                 .lineLimit(1)
                 .accessibilityIdentifier("explore.subtitle")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 16 * scale)
+        .padding(.top, 17 * scale)
         .padding(.horizontal, 24 * scale)
-        .padding(.bottom, 18 * scale)
+        .padding(.bottom, 10 * scale)
     }
 
-    private var matrixView: some View {
-        GeometryReader { geometry in
-            let figmaScale = matrixScale(for: geometry.size)
-            ZStack {
-                edgeLayer(in: geometry.size)
+    private func graphStage(in _: CGSize) -> some View {
+        GeometryReader { proxy in
+            let canvasSize = fittedCanvasSize(for: proxy.size)
+            let scale = canvasSize.width / visualSpec.designCanvasSize.width
 
-                ForEach(nodes) { node in
-                    nodeButton(for: node, figmaScale: figmaScale, size: geometry.size)
-                }
-            }
-            .padding(.horizontal, 1)
-            .padding(.top, 4)
-            .padding(.bottom, 14)
+            matrixView(canvasSize: canvasSize, scale: scale)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+    }
+
+    private func matrixView(canvasSize: CGSize, scale: CGFloat) -> some View {
+        ZStack {
+            edgeLayer(in: canvasSize)
+
+            ForEach(nodes) { node in
+                nodeButton(for: node, scale: scale, size: canvasSize)
+            }
+        }
+        .frame(width: canvasSize.width, height: canvasSize.height, alignment: .topLeading)
     }
 
     @ViewBuilder
-    private func nodeButton(for node: ExploreMatrixNode, figmaScale: CGFloat, size: CGSize) -> some View {
-        let glassRole = glassNodeRole(for: node)
-
+    private func nodeButton(for node: ExploreMatrixNode, scale: CGFloat, size: CGSize) -> some View {
         Button {
-            let card = reviewCard(for: node)
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
-                selectedNodeID = node.id
-            }
-            infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+            openDetail(for: node)
         } label: {
-            Group {
-                if node.role == .root {
-                    VStack(spacing: 2 * figmaScale) {
-                        Text(node.label.lowercased())
-                            .font(.system(size: figmaSpec.rootPrimaryFontSize * figmaScale, weight: .bold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                        Text("ROOT")
-                            .font(.system(size: figmaSpec.rootSecondaryFontSize * figmaScale, weight: .medium))
-                            .tracking(2)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                } else {
-                    VStack(spacing: 2) {
-                        Text(node.label)
-                            .font(.system(size: figmaSpec.leafFontSize * figmaScale, weight: .medium))
-                            .tracking(0.3)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.7)
-                            .padding(.horizontal, 4)
-                    }
-                }
-            }
-            .frame(width: node.diameter * figmaScale, height: node.diameter * figmaScale)
-            .glassNodeStyle(glassRole)
+            nodeLabel(for: node, scale: scale)
+                .frame(width: node.diameter * scale, height: node.diameter * scale)
+                .modifier(
+                    ExploreNodeSurface(
+                        role: node.role,
+                        visualSpec: visualSpec,
+                        isSelected: selectedNodeID == node.id
+                    )
+                )
         }
         .buttonStyle(.plain)
-        .scaleEffect(selectedNodeID == node.id ? 1.04 : 1)
         .position(position(for: node, in: size))
-        .accessibilityLabel(node.label)
-        .accessibilityHint(node.role == .root ? (rootMeaning) : "Double tap for details")
+        .accessibilityIdentifier(node.accessibilityID)
+        .accessibilityLabel(ExploreNodeLabelPolicy.accessibilityLabel(for: node.label))
+        .accessibilityHint(node.role == .root ? rootMeaning : "Double tap for details")
+        .accessibilityValue(node.role == .leaf ? statusSummary(for: node) : "Root")
     }
 
-    /// Maps a matrix node to its Neo-Glass role based on word status.
-    private func glassNodeRole(for node: ExploreMatrixNode) -> GlassNodeRole {
-        guard node.role != .root else { return .root }
-        guard let status = nodeStatusByID[node.id] else { return .new }
-        switch status {
-        case .known:    return .known
-        case .learning: return .learning
-        case .new:      return .new
-        case .ignored:  return .unknown
+    @ViewBuilder
+    private func nodeLabel(for node: ExploreMatrixNode, scale: CGFloat) -> some View {
+        if node.role == .root {
+            VStack(spacing: 2 * scale) {
+                Text(node.label.lowercased())
+                    .font(.system(size: visualSpec.rootPrimaryFontSize * scale, weight: .bold, design: .default))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Text("root")
+                    .font(.system(size: visualSpec.rootSecondaryFontSize * scale, weight: .regular, design: .default))
+                    .lineLimit(1)
+            }
+        } else {
+            Text(
+                ExploreNodeLabelPolicy.renderedLabel(
+                    for: node.label,
+                    dynamicTypeSize: dynamicTypeSize
+                )
+            )
+            .font(.system(size: visualSpec.leafFontSize * scale, weight: .regular, design: .default))
+            .multilineTextAlignment(.center)
+            .lineLimit(2)
+            .minimumScaleFactor(0.65)
+            .padding(.horizontal, 6)
         }
     }
 
+    private var fallbackListView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Accessible list mode")
+                    .font(.display(.caption, weight: .semibold))
+                    .foregroundStyle(Color.adaptiveTextSecondary)
+                    .padding(.top, 4)
+
+                ForEach(nodes) { node in
+                    fallbackListRow(for: node)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
+        }
+        .scrollIndicators(.hidden)
+        .accessibilityIdentifier("explore.fallbackList")
+    }
+
+    private func fallbackListRow(for node: ExploreMatrixNode) -> some View {
+        Button {
+            openDetail(for: node)
+        } label: {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(node.role == .root ? rootListColor : leafListColor)
+                    .frame(width: 12, height: 12)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ExploreNodeLabelPolicy.accessibilityLabel(for: node.label))
+                        .font(.display(.body, weight: .semibold))
+                        .foregroundStyle(Color.adaptiveText)
+
+                    Text(node.role == .root ? rootMeaning : statusSummary(for: node))
+                        .font(.display(.caption, weight: .regular))
+                        .foregroundStyle(Color.adaptiveTextSecondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.adaptiveTextSecondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color.adaptiveSurfaceElevated.opacity(0.9))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.adaptiveBorder, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(node.accessibilityID)
+    }
+
+    private func statusSummary(for node: ExploreMatrixNode) -> String {
+        guard let status = nodeStatusByID[node.id] else { return "New" }
+        switch status {
+        case .known: return "Known"
+        case .learning: return "Learning"
+        case .new: return "New"
+        case .ignored: return "Unknown"
+        }
+    }
+
+    private func openDetail(for node: ExploreMatrixNode) {
+        let card = reviewCard(for: node)
+        let lemma = card.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        selectedNodeID = node.id
+        infoCard = card
+        infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+
+        Task { @MainActor in
+            let hydrated = await WordDetailDataBuilder.buildEnsuringSeedData(
+                for: card,
+                modelContext: modelContext
+            )
+            guard infoData?.lemma == lemma else { return }
+            infoData = hydrated
+        }
+    }
+
+    private var leafListColor: Color {
+        colorScheme == .dark
+            ? Color(hex: visualSpec.leafFillHexDark)
+            : Color(hex: visualSpec.leafFillHexLight)
+    }
+
+    private var rootListColor: Color {
+        (colorScheme == .dark
+            ? Color(hex: visualSpec.rootFillHexDark)
+            : Color(hex: visualSpec.rootFillHexLight))
+            .opacity(visualSpec.rootFillOpacity)
+    }
 
     private func edgeLayer(in size: CGSize) -> some View {
         Canvas { context, _ in
             guard let root = nodes.first(where: { $0.role == .root }) else { return }
             let rootPos = position(for: root, in: size)
+            let lineColor = colorScheme == .dark
+                ? Color(hex: visualSpec.connectorHexDark)
+                : Color(hex: visualSpec.connectorHexLight)
+            let lineOpacity = colorScheme == .dark
+                ? visualSpec.connectorOpacityDark
+                : visualSpec.connectorOpacityLight
 
             for leaf in nodes where leaf.role == .leaf {
                 let leafPos = position(for: leaf, in: size)
@@ -173,78 +303,48 @@ struct ExploreView: View {
                 path.move(to: rootPos)
                 path.addLine(to: leafPos)
 
-                let leafRole = glassNodeRole(for: leaf)
-                let rootColor = GlassNodeRole.root.accentColor
-                let leafColor = leafRole.accentColor
-                let lineOpacity = colorScheme == .dark ? 0.35 : 0.28
-
-                let gradient = Gradient(colors: [
-                    rootColor.opacity(lineOpacity),
-                    leafColor.opacity(lineOpacity * 0.75)
-                ])
                 context.stroke(
                     path,
-                    with: .linearGradient(
-                        gradient,
-                        startPoint: rootPos,
-                        endPoint: leafPos
-                    ),
-                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+                    with: .color(lineColor.opacity(lineOpacity)),
+                    style: StrokeStyle(
+                        lineWidth: visualSpec.connectorLineWidth,
+                        lineCap: .round,
+                        lineJoin: .round
+                    )
                 )
             }
         }
+        .accessibilityHidden(true)
     }
 
     private func position(for node: ExploreMatrixNode, in size: CGSize) -> CGPoint {
-        let horizontalInset = figmaSpec.matrixHorizontalInset
-        let topInset = figmaSpec.matrixTopInset
-        let bottomInset = figmaSpec.matrixBottomInset
-        let width = max(1, size.width - (horizontalInset * 2))
-        let height = max(1, size.height - topInset - bottomInset)
-
         return CGPoint(
-            x: horizontalInset + (node.position.x * width),
-            y: topInset + (node.position.y * height)
+            x: node.position.x * max(1, size.width),
+            y: node.position.y * max(1, size.height)
         )
     }
 
     private func headerScale(for layoutWidth: CGFloat) -> CGFloat {
         let scale = layoutWidth / 393.0
-        return scale.clamped(to: 0.88...1.2)
+        return scale.clamped(to: 0.88...1.22)
     }
 
-    private func matrixScale(for size: CGSize) -> CGFloat {
-        let scale = size.width / 393.0
-        return scale.clamped(to: 0.86...1.2)
+    private func fittedCanvasSize(for availableSize: CGSize) -> CGSize {
+        let designSize = visualSpec.designCanvasSize
+        let widthScale = max(0.001, availableSize.width / designSize.width)
+        let heightScale = max(0.001, availableSize.height / designSize.height)
+        let scale = min(widthScale, heightScale).clamped(to: 0.74...1.28)
+
+        return CGSize(
+            width: designSize.width * scale,
+            height: designSize.height * scale
+        )
     }
 
-    /// Radial gradient background that emanates from the matrix center.
-    @ViewBuilder
-    private func matrixBackground(in size: CGSize) -> some View {
-        let base = colorScheme == .dark
-            ? Color(hex: figmaSpec.darkBackgroundHex)
-            : Color(hex: figmaSpec.lightBackgroundHex)
-        let glow = GlassNodeRole.root.accentColor
-
-        ZStack {
-            base
-            RadialGradient(
-                colors: [
-                    glow.opacity(colorScheme == .dark ? 0.08 : 0.06),
-                    Color.clear
-                ],
-                center: .center,
-                startRadius: 20,
-                endRadius: min(size.width, size.height) * 0.65
-            )
-        }
-    }
-
-    private var backgroundColor: Color {
-        if colorScheme == .dark {
-            return Color(hex: figmaSpec.darkBackgroundHex)
-        }
-        return Color(hex: figmaSpec.lightBackgroundHex)
+    private func matrixBackground(in _: CGSize) -> some View {
+        colorScheme == .dark
+            ? Color(hex: visualSpec.darkBackgroundHex)
+            : Color(hex: visualSpec.lightBackgroundHex)
     }
 
     private var userStatesRevisionKey: Int {
@@ -275,17 +375,18 @@ struct ExploreView: View {
         var matrixNodes: [ExploreMatrixNode] = [
             ExploreMatrixNode(
                 id: rootID,
+                accessibilityID: "explore.node.root",
                 label: resolution.centerLemma.lowercased(),
                 role: .root,
-                position: figmaSpec.rootPosition,
-                diameter: figmaSpec.rootDiameter
+                position: visualSpec.rootPosition,
+                diameter: visualSpec.rootDiameter
             )
         ]
 
         var statusMap: [String: UserWordStatus] = [:]
-        let satellites = Array(resolution.satellites.prefix(figmaSpec.leaves.count))
+        let satellites = Array(resolution.satellites.prefix(visualSpec.leafSlots.count))
 
-        for (index, slot) in figmaSpec.leaves.enumerated() {
+        for (index, slot) in visualSpec.leafSlots.enumerated() {
             let satellite = satellites[safe: index]
             let title = satellite.map { displayLabel($0.lemma) } ?? slot.label
             let nodeID = "leaf:\(title.lowercased()):\(index)"
@@ -293,6 +394,7 @@ struct ExploreView: View {
             matrixNodes.append(
                 ExploreMatrixNode(
                     id: nodeID,
+                    accessibilityID: "explore.node.leaf.\(index)",
                     label: title,
                     role: .leaf,
                     position: slot.position,
@@ -309,26 +411,28 @@ struct ExploreView: View {
         selectedNodeID = selectedNodeID.flatMap { previous in
             matrixNodes.contains(where: { $0.id == previous }) ? previous : nil
         } ?? rootID
-        rootMeaning = resolution.rootMeaning.isEmpty ? figmaSpec.rootMeaning : resolution.rootMeaning
+        rootMeaning = resolution.rootMeaning.isEmpty ? visualSpec.rootMeaning : resolution.rootMeaning
         nodeStatusByID = statusMap
     }
 
     private func renderFallbackMatrix() {
-        let rootID = "root:\(figmaSpec.rootLabel)"
+        let rootID = "root:\(visualSpec.rootLabel)"
         var matrixNodes: [ExploreMatrixNode] = [
             ExploreMatrixNode(
                 id: rootID,
-                label: figmaSpec.rootLabel,
+                accessibilityID: "explore.node.root",
+                label: visualSpec.rootLabel,
                 role: .root,
-                position: figmaSpec.rootPosition,
-                diameter: figmaSpec.rootDiameter
+                position: visualSpec.rootPosition,
+                diameter: visualSpec.rootDiameter
             )
         ]
 
-        for (index, leaf) in figmaSpec.leaves.enumerated() {
+        for (index, leaf) in visualSpec.leafSlots.enumerated() {
             matrixNodes.append(
                 ExploreMatrixNode(
                     id: "leaf:\(leaf.label.lowercased()):\(index)",
+                    accessibilityID: "explore.node.leaf.\(index)",
                     label: leaf.label,
                     role: .leaf,
                     position: leaf.position,
@@ -339,7 +443,7 @@ struct ExploreView: View {
 
         nodes = matrixNodes
         selectedNodeID = rootID
-        rootMeaning = figmaSpec.rootMeaning
+        rootMeaning = visualSpec.rootMeaning
         nodeStatusByID = [:]
     }
 
@@ -404,55 +508,6 @@ struct ExploreView: View {
     }
 }
 
-struct ExploreFigmaSpec {
-    struct Leaf {
-        let label: String
-        let position: CGPoint
-        let diameter: CGFloat
-    }
-
-    let titleText = "Explore"
-    let subtitleText = "Daily word families for you"
-    let titleFontSize: CGFloat = 32
-    let subtitleFontSize: CGFloat = 16
-    let titleKerning: CGFloat = 0.3955
-    let rootPrimaryFontSize: CGFloat = 16
-    let rootSecondaryFontSize: CGFloat = 10
-    let leafFontSize: CGFloat = 9
-    let lightBackgroundHex = "F5F5F7"
-    let darkBackgroundHex = "121417"
-    let titleLightHex = "0A0A0A"
-    let titleDarkHex = "F5F5F7"
-    let subtitleLightHex = "4A4A4A"
-    let subtitleDarkHex = "97A1AC"
-    let connectorStartHex = "D4D7DD"
-    let connectorEndHex = "BCC3CB"
-    let connectorOpacityLight: Double = 0.57
-    let connectorOpacityDark: Double = 0.32
-    let connectorLineWidth: CGFloat = 1
-
-    let matrixHorizontalInset: CGFloat = 12
-    let matrixTopInset: CGFloat = 16
-    let matrixBottomInset: CGFloat = 30
-
-    let rootLabel = "spec"
-    let rootMeaning = "A morphological root tied to seeing, looking, and observation."
-    let rootPosition = CGPoint(x: 0.50, y: 0.4432)
-    let rootDiameter: CGFloat = 99
-
-    let leaves: [Leaf] = [
-        Leaf(label: "Spectator", position: CGPoint(x: 0.3143, y: 0.1473), diameter: 73),
-        Leaf(label: "Retrospect", position: CGPoint(x: 0.6985, y: 0.1787), diameter: 88),
-        Leaf(label: "Spectacle", position: CGPoint(x: 0.1710, y: 0.3260), diameter: 73),
-        Leaf(label: "Conspicious", position: CGPoint(x: 0.7868, y: 0.5615), diameter: 82),
-        Leaf(label: "Perspective", position: CGPoint(x: 0.2114, y: 0.6323), diameter: 89),
-        Leaf(label: "Inspect", position: CGPoint(x: 0.4908, y: 0.7367), diameter: 73)
-    ]
-
-    var rootLiquidGlassStyle: LiquidGlassStyle { .root }
-    var leafLiquidGlassStyle: LiquidGlassStyle { .leaf }
-}
-
 private struct ExploreMatrixNode: Identifiable {
     enum Role {
         case root
@@ -460,6 +515,7 @@ private struct ExploreMatrixNode: Identifiable {
     }
 
     let id: String
+    let accessibilityID: String
     let label: String
     let role: Role
     let position: CGPoint
@@ -472,7 +528,108 @@ private struct ExploreActionMessage: Identifiable {
     let body: String
 }
 
+private struct ExploreNodeSurface: ViewModifier {
+    let role: ExploreMatrixNode.Role
+    let visualSpec: ExploreVisualSpec
+    let isSelected: Bool
 
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    private var isRoot: Bool {
+        role == .root
+    }
+
+    private var fillColor: Color {
+        if isRoot {
+            return (colorScheme == .dark
+                ? Color(hex: visualSpec.rootFillHexDark)
+                : Color(hex: visualSpec.rootFillHexLight))
+                .opacity(visualSpec.rootFillOpacity)
+        }
+        return colorScheme == .dark
+            ? Color(hex: visualSpec.leafFillHexDark)
+            : Color(hex: visualSpec.leafFillHexLight)
+    }
+
+    private var strokeColor: Color {
+        colorScheme == .dark
+            ? Color(hex: visualSpec.nodeStrokeHexDark).opacity(0.24)
+            : Color(hex: visualSpec.nodeStrokeHexLight).opacity(0.34)
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(Color.white.opacity(0.92))
+            .background(surface)
+            .overlay(
+                Circle()
+                    .stroke(strokeColor, lineWidth: 0.9)
+            )
+            .clipShape(Circle())
+            .shadow(
+                color: Color.black.opacity(0.20),
+                radius: 6,
+                x: 0,
+                y: 3
+            )
+            .shadow(
+                color: Color.white.opacity(colorScheme == .dark ? 0.06 : 0.28),
+                radius: 1.4,
+                x: -0.5,
+                y: -0.5
+            )
+    }
+
+    @ViewBuilder
+    private var surface: some View {
+        if reduceTransparency {
+            Circle().fill(fillColor)
+        } else {
+            ZStack {
+                Circle()
+                    .fill(fillColor)
+
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.18),
+                                Color.clear
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottom
+                        )
+                    )
+
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.clear,
+                                Color.black.opacity(0.18)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color.white.opacity(0.28),
+                                Color.clear
+                            ],
+                            center: .topTrailing,
+                            startRadius: 0,
+                            endRadius: 45
+                        )
+                    )
+            }
+        }
+    }
+}
 
 private extension Array {
     subscript(safe index: Int) -> Element? {
@@ -497,23 +654,23 @@ private func explorePreviewContainer() -> ModelContainer {
         UserProfile.self,
         configurations: config
     )
-    
+
     let root = MorphologicalRoot(
         rootId: 1,
         root: "spec",
         basicMeaning: "A morphological root tied to seeing, looking, and observation."
     )
     container.mainContext.insert(root)
-    
+
     let lexemes = [
         LexemeDefinition(lemma: "spectator", basicMeaning: "A person who watches at a show, game, or other event."),
         LexemeDefinition(lemma: "retrospect", basicMeaning: "A survey or review of a past course of events or period of time."),
         LexemeDefinition(lemma: "spectacle", basicMeaning: "A visually striking performance or display.")
     ]
     for l in lexemes { container.mainContext.insert(l) }
-    
+
     container.mainContext.insert(UserProfile(userId: UserProfile.fallbackLocalUserID, lexicalRank: 100))
-    
+
     return container
 }
 

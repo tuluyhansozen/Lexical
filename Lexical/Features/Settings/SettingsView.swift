@@ -560,7 +560,7 @@ struct LiquidGlassCardModifier: ViewModifier {
     }
     
     func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
+        if #available(iOS 26, macOS 26, *) {
             content
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
         } else {

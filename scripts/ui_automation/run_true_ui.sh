@@ -250,17 +250,34 @@ test_premium_state() {
   terminate_app
 }
 
+test_explore_screen_and_sheet() {
+  log "Running test_explore_screen_and_sheet"
+  launch_app --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-debug-open-explore
+
+  wait_for_id explore.headerTitle
+  wait_for_id explore.subtitle
+  wait_for_id explore.node.root
+  screenshot "05_explore_screen"
+
+  tap_id explore.node.root
+  wait_for_id wordinfo.title
+  wait_for_id wordinfo.addToDeckButton
+  screenshot "06_explore_word_sheet"
+
+  terminate_app
+}
+
 test_prompt_route_open_and_close() {
   log "Running test_prompt_route_open_and_close"
   launch_app --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-e2e-pending-prompt
 
   wait_for_id prompt.title
   wait_for_id prompt.closeButton
-  screenshot "05_prompt_open"
+  screenshot "07_prompt_open"
 
   tap_id prompt.closeButton
   wait_for_id review.readyTitle
-  screenshot "06_prompt_closed_to_review"
+  screenshot "08_prompt_closed_to_review"
 
   terminate_app
 }
@@ -281,6 +298,7 @@ main() {
   test_onboarding_primary_progress
   test_free_limit_state
   test_premium_state
+  test_explore_screen_and_sheet
   test_prompt_route_open_and_close
 
   log "All true UI automation tests passed"

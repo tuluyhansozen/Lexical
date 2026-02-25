@@ -30,9 +30,6 @@ public struct DiscoveredLexemeCandidate: Sendable, Equatable {
 }
 
 public struct DiscoveredLexemeIngestionService {
-    private static let maxSynonyms = 8
-    private static let maxExamples = 3
-
     public init() {}
 
     @discardableResult
@@ -81,12 +78,12 @@ public struct DiscoveredLexemeIngestionService {
                 row.synonyms = mergeUnique(
                     base: row.synonyms,
                     incoming: candidate.synonyms,
-                    maxCount: Self.maxSynonyms
+                    maxCount: nil
                 )
                 row.exampleSentences = mergeUnique(
                     base: row.exampleSentences,
                     incoming: candidate.exampleSentences,
-                    maxCount: Self.maxExamples
+                    maxCount: nil
                 )
                 row.recordSeen(
                     sourceArticleId: normalizedSourceId,
@@ -132,8 +129,8 @@ public struct DiscoveredLexemeIngestionService {
             let definition = normalizedString(raw.definition)
             let partOfSpeech = normalizedPartOfSpeech(raw.partOfSpeech)
             let ipa = normalizedString(raw.ipa)
-            let synonyms = sanitizedTerms(raw.synonyms, excluding: lemma, maxCount: Self.maxSynonyms)
-            let examples = sanitizedSentences(raw.exampleSentences, maxCount: Self.maxExamples)
+            let synonyms = sanitizedTerms(raw.synonyms, excluding: lemma, maxCount: nil)
+            let examples = sanitizedSentences(raw.exampleSentences, maxCount: nil)
             let confidence = raw.confidence.map(clampConfidence)
 
             // Quality gate: keep only candidates that carry meaningful lexical payload.
@@ -168,8 +165,8 @@ public struct DiscoveredLexemeIngestionService {
             definition: preferredText(current: existing.definition, incoming: incoming.definition),
             partOfSpeech: existing.partOfSpeech ?? incoming.partOfSpeech,
             ipa: existing.ipa ?? incoming.ipa,
-            synonyms: mergeUnique(base: existing.synonyms, incoming: incoming.synonyms, maxCount: Self.maxSynonyms),
-            exampleSentences: mergeUnique(base: existing.exampleSentences, incoming: incoming.exampleSentences, maxCount: Self.maxExamples),
+            synonyms: mergeUnique(base: existing.synonyms, incoming: incoming.synonyms, maxCount: nil),
+            exampleSentences: mergeUnique(base: existing.exampleSentences, incoming: incoming.exampleSentences, maxCount: nil),
             confidence: max(existing.confidence ?? 0.0, incoming.confidence ?? 0.0)
         )
     }
@@ -207,11 +204,12 @@ public struct DiscoveredLexemeIngestionService {
     private func sanitizedTerms(
         _ values: [String],
         excluding lemma: String,
-        maxCount: Int
+        maxCount: Int?
     ) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
-        result.reserveCapacity(maxCount)
+        let limit = maxCount.map { max(1, $0) } ?? Int.max
+        result.reserveCapacity(maxCount ?? values.count)
 
         for value in values {
             guard let term = normalizedString(value) else { continue }
@@ -220,15 +218,16 @@ public struct DiscoveredLexemeIngestionService {
             guard key != lemma, !seen.contains(key) else { continue }
             seen.insert(key)
             result.append(term)
-            if result.count >= maxCount { break }
+            if result.count >= limit { break }
         }
         return result
     }
 
-    private func sanitizedSentences(_ values: [String], maxCount: Int) -> [String] {
+    private func sanitizedSentences(_ values: [String], maxCount: Int?) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
-        result.reserveCapacity(maxCount)
+        let limit = maxCount.map { max(1, $0) } ?? Int.max
+        result.reserveCapacity(maxCount ?? values.count)
 
         for value in values {
             guard let sentence = normalizedString(value) else { continue }
@@ -237,22 +236,24 @@ public struct DiscoveredLexemeIngestionService {
             guard !seen.contains(key) else { continue }
             seen.insert(key)
             result.append(sentence)
-            if result.count >= maxCount { break }
+            if result.count >= limit { break }
         }
         return result
     }
 
-    private func mergeUnique(base: [String], incoming: [String], maxCount: Int) -> [String] {
+    private func mergeUnique(base: [String], incoming: [String], maxCount: Int?) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
-        result.reserveCapacity(maxCount)
+        let values = base + incoming
+        let limit = maxCount.map { max(1, $0) } ?? Int.max
+        result.reserveCapacity(maxCount ?? values.count)
 
-        for value in base + incoming {
+        for value in values {
             let key = value.lowercased()
             guard !seen.contains(key) else { continue }
             seen.insert(key)
             result.append(value)
-            if result.count >= maxCount { break }
+            if result.count >= limit { break }
         }
         return result
     }

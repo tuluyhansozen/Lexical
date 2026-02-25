@@ -4,7 +4,6 @@ import XCTest
 final class ReviewSessionRoutingTests: XCTestCase {
     func testRouteToReviewSelectsRecallTabAndIncrementsStartSignal() {
         let routed = ReviewSessionRouting.routeToReview(
-            selectedTab: 0,
             reviewStartSignal: 4
         )
 
@@ -14,7 +13,6 @@ final class ReviewSessionRoutingTests: XCTestCase {
 
     func testRouteToPromptKeepsStartSignalUntouched() {
         let routed = ReviewSessionRouting.routeToPrompt(
-            selectedTab: 1,
             reviewStartSignal: 8
         )
 

@@ -16,6 +16,7 @@ struct SingleCardPromptView: View {
     @State private var isLoading = true
     @State private var completionText: String?
     @State private var infoData: WordDetailData?
+    @State private var infoCard: ReviewCard?
 
     private let spec = RecallFigmaSpec()
 
@@ -89,11 +90,15 @@ struct SingleCardPromptView: View {
             }
         }
         .task {
+            SeedLexemeIndex.prewarm()
             loadOrCreateCard()
         }
-        .sheet(item: $infoData) { detail in
+        .sheet(item: $infoData, onDismiss: {
+            infoCard = nil
+        }) { detail in
             WordDetailSheet(data: detail)
-                .presentationDetents([.medium, .large])
+                .presentationDetents(WordInfoSheetPresentation.detents(for: detail))
+                .presentationContentInteraction(.scrolls)
         }
     }
 
@@ -128,7 +133,21 @@ struct SingleCardPromptView: View {
             // Contextual Actions
             HStack(spacing: 12 * scale) {
                 Button {
-                    infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+                    infoCard = card
+                    infoData = WordDetailDataBuilder.build(
+                        for: card,
+                        modelContext: modelContext
+                    )
+                    let lemma = card.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+                    Task { @MainActor in
+                        let hydrated = await WordDetailDataBuilder.buildEnsuringSeedData(
+                            for: card,
+                            modelContext: modelContext
+                        )
+                        guard infoData?.lemma == lemma else { return }
+                        infoData = hydrated
+                    }
                 } label: {
                     Text("Info")
                         .font(.system(size: 13 * scale, weight: .medium))
@@ -380,4 +399,3 @@ struct SingleCardPromptView: View {
     )
     .modelContainer(container)
 }
-

@@ -63,12 +63,45 @@ public enum GlassNodeRole {
 public struct GlassNodeStyle: ViewModifier {
     let role: GlassNodeRole
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     public init(role: GlassNodeRole) {
         self.role = role
     }
 
     public func body(content: Content) -> some View {
+        Group {
+            if #available(iOS 26, macOS 26, *), !reduceTransparency {
+                content
+                    .foregroundStyle(colorScheme == .dark ? role.textColorDark : role.textColor)
+                    .background(
+                        Circle()
+                            .fill(role.tintColor.opacity(colorScheme == .dark ? 0.34 : 0.46))
+                    )
+                    .glassEffect(
+                        .regular.tint(role.tintColor.opacity(colorScheme == .dark ? 0.68 : 0.82)),
+                        in: Circle()
+                    )
+                    .overlay(accentStroke)
+                    .clipShape(Circle())
+                    .shadow(
+                        color: role.accentColor.opacity(role.glowOpacity),
+                        radius: role.glowRadius,
+                        x: 0, y: role == .root ? 2 : 1
+                    )
+                    .shadow(
+                        color: Color.black.opacity(colorScheme == .dark ? 0.20 : 0.06),
+                        radius: 3,
+                        x: 0, y: 2
+                    )
+            } else {
+                legacyBody(content: content)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func legacyBody(content: Content) -> some View {
         content
             .foregroundStyle(colorScheme == .dark ? role.textColorDark : role.textColor)
             .background(frostedFill)

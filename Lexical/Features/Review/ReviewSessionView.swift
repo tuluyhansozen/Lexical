@@ -52,6 +52,7 @@ struct SessionContent: View {
 
     @State private var revealAnswer = false
     @State private var infoData: WordDetailData?
+    @State private var infoCard: ReviewCard?
     @State private var showingPremiumOffer = false
     @State private var hasStartedSession = false
     @State private var activeCardLemma: String?
@@ -95,6 +96,7 @@ struct SessionContent: View {
             }
         }
         .onAppear {
+            SeedLexemeIndex.prewarm()
             guard !hasStartedSession else { return }
             hasStartedSession = true
             startDueSession()
@@ -109,9 +111,12 @@ struct SessionContent: View {
                 revealAnswer = false
             }
         }
-        .sheet(item: $infoData) { detail in
+        .sheet(item: $infoData, onDismiss: {
+            infoCard = nil
+        }) { detail in
             WordDetailSheet(data: detail)
-                .presentationDetents([.medium, .large])
+                .presentationDetents(WordInfoSheetPresentation.detents(for: detail))
+                .presentationContentInteraction(.scrolls)
         }
         .sheet(isPresented: $showingPremiumOffer, onDismiss: {
             startDueSession()
@@ -184,7 +189,21 @@ struct SessionContent: View {
             // Contextual Actions
             HStack(spacing: 12 * scale) {
                 Button {
-                    infoData = WordDetailDataBuilder.build(for: card, modelContext: modelContext)
+                    infoCard = card
+                    infoData = WordDetailDataBuilder.build(
+                        for: card,
+                        modelContext: modelContext
+                    )
+                    let lemma = card.lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+                    Task { @MainActor in
+                        let hydrated = await WordDetailDataBuilder.buildEnsuringSeedData(
+                            for: card,
+                            modelContext: modelContext
+                        )
+                        guard infoData?.lemma == lemma else { return }
+                        infoData = hydrated
+                    }
                 } label: {
                     Text("Info")
                         .font(.system(size: 13 * scale, weight: .medium))
@@ -475,4 +494,3 @@ extension AnyTransition {
     return ReviewSessionView(startSignal: 0, onNavigateToReading: {})
         .modelContainer(container)
 }
-
