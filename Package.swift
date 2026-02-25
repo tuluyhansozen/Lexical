@@ -34,7 +34,8 @@ let package = Package(
                 .process("Resources/Seeds/seed_data.json"),
                 .process("Resources/Seeds/roots.json"),
                 .process("Resources/StoreKit/Lexical.storekit"),
-                .process("Resources/Icons/Tab")
+                .process("Resources/Icons/Tab"),
+                .process("Resources/Icons/Settings")
             ],
             linkerSettings: [
                 .unsafeFlags([
