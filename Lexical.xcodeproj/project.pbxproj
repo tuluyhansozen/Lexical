@@ -21,6 +21,7 @@
 		1C04EDD245FB7EF6177FB6CE /* stochastic_checkpoint_max14.jsonl in Resources */ = {isa = PBXBuildFile; fileRef = 6E6960FCBA9CF79B2BC15AD9 /* stochastic_checkpoint_max14.jsonl */; };
 		1EAD67A41BF1E01C819827F2 /* seed_data_updated.json in Resources */ = {isa = PBXBuildFile; fileRef = 8817E3FAA78B93368DB98A6A /* seed_data_updated.json */; };
 		24217B70A88D2ABF4F953CA0 /* practice.svg in Resources */ = {isa = PBXBuildFile; fileRef = 0031B25B480A16A75E2ABE2A /* practice.svg */; };
+		26F896C18590A2E3D79EC740 /* OnboardingStepViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A4BEF62D3CC876CA0F576F /* OnboardingStepViews.swift */; };
 		2703D6D090F062F0D5C63BAA /* checkpoint_rerun_v4.jsonl in Resources */ = {isa = PBXBuildFile; fileRef = 369A54053DCEF2CADAB8CAB9 /* checkpoint_rerun_v4.jsonl */; };
 		2A72317EA91F60809D9FDB78 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B32E31DD5BE9B2315E65ABF /* Models.swift */; };
 		2B6C345446D1F017F2438E90 /* TokenizationActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0617A2F7BFE68714A45C1DB /* TokenizationActor.swift */; };
@@ -39,6 +40,7 @@
 		3E0B0AEEE7E48147CF03D631 /* ActivityGridWeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B100253B724AC042508CEB /* ActivityGridWeek.swift */; };
 		4089D1136BA6A01E9ECA3BED /* DiscoveredLexeme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A84D86208EC70E4D2272FFA /* DiscoveredLexeme.swift */; };
 		4167FFF470FE73D90C17DAA0 /* RecallFigmaSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB69A87EB390C223CB87802D /* RecallFigmaSpec.swift */; };
+		4342DF61932C2AF7272B48CC /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB0F72F4459603C85B4AE85 /* OnboardingComponents.swift */; };
 		4C06FC1B7EECB741D4A40919 /* DiscoveredLexemeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23632F04238F13236F47A20B /* DiscoveredLexemeService.swift */; };
 		4E0041884508CBF4B9CAB801 /* ManageInterestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02C04EAAB2AA7098DA998B83 /* ManageInterestsView.swift */; };
 		4E1F18B9781C64A0A2FF0A2C /* VocabularyItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F66AD7957F946B79B7890F /* VocabularyItem.swift */; };
@@ -85,6 +87,7 @@
 		93DCE31C8F8E4F711174E2F1 /* checkpoint.jsonl in Resources */ = {isa = PBXBuildFile; fileRef = 1BD8DD6B39A6B39BB385B364 /* checkpoint.jsonl */; };
 		95A6474588F3E60467E3B069 /* AdaptivePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9CFF0B9DE78073D3D6987C /* AdaptivePromptBuilder.swift */; };
 		96DD1B3965A114A2E199552A /* E2ETestLaunchConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88AF6890084237FB2C39FAA1 /* E2ETestLaunchConfigurator.swift */; };
+		98A61B434C69955E6777C222 /* OnboardingFlowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C47B1A38355D1695F006C2 /* OnboardingFlowModel.swift */; };
 		98E7C4AF1646BE63729AC81A /* FSRSPersonalizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A42921BE0DEB77E85EDB5FE6 /* FSRSPersonalizationService.swift */; };
 		9B88558E73955F31C108D6AF /* InterestProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90F296F81E336F227C97677 /* InterestProfile.swift */; };
 		A9887768D6222C0B84DDFF4B /* RecallViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81C49873BB87C26695B3F39F /* RecallViewState.swift */; };
@@ -178,6 +181,7 @@
 		22F66AD7957F946B79B7890F /* VocabularyItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyItem.swift; sourceTree = "<group>"; };
 		23632F04238F13236F47A20B /* DiscoveredLexemeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredLexemeService.swift; sourceTree = "<group>"; };
 		255C72AE995387362067FA7A /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		25C47B1A38355D1695F006C2 /* OnboardingFlowModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingFlowModel.swift; sourceTree = "<group>"; };
 		2998F1B8E185DDF43C100D38 /* ArticlePromptPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticlePromptPlanner.swift; sourceTree = "<group>"; };
 		2E212C3E11D567FF6B2CDD64 /* RemoteArticleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteArticleService.swift; sourceTree = "<group>"; };
 		2EE2BED18228D126CE941C7D /* ArticleNoveltyScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleNoveltyScorer.swift; sourceTree = "<group>"; };
@@ -207,6 +211,7 @@
 		7062CB182C01BF4A22C9A4D8 /* rerun_v5_full.log */ = {isa = PBXFileReference; lastKnownFileType = text; path = rerun_v5_full.log; sourceTree = "<group>"; };
 		733D1CFA63877D2C75E4F14B /* ArticleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleStore.swift; sourceTree = "<group>"; };
 		786BEFB0D01DC409679C3831 /* View+IfAvailable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "View+IfAvailable.swift"; path = "Extensions/View+IfAvailable.swift"; sourceTree = "<group>"; };
+		79A4BEF62D3CC876CA0F576F /* OnboardingStepViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingStepViews.swift; sourceTree = "<group>"; };
 		7A640870A0C1C789B4C4EC9C /* stochastic_checkpoint.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = stochastic_checkpoint.jsonl; sourceTree = "<group>"; };
 		7A84D86208EC70E4D2272FFA /* DiscoveredLexeme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredLexeme.swift; sourceTree = "<group>"; };
 		7C5CBAC0D97368731A4DEA58 /* checkpoint_rerun_v3.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = checkpoint_rerun_v3.jsonl; sourceTree = "<group>"; };
@@ -264,6 +269,7 @@
 		DB69A87EB390C223CB87802D /* RecallFigmaSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecallFigmaSpec.swift; sourceTree = "<group>"; };
 		DDB75A2A2679457788B65FA2 /* FeatureGateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureGateService.swift; sourceTree = "<group>"; };
 		DE951A7AB41092896C5686FF /* profile.svg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = profile.svg.png; sourceTree = "<group>"; };
+		DEB0F72F4459603C85B4AE85 /* OnboardingComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
 		DFFDAFED1CEB9C2E72024978 /* VocabularySeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularySeeder.swift; sourceTree = "<group>"; };
 		E0617A2F7BFE68714A45C1DB /* TokenizationActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenizationActor.swift; sourceTree = "<group>"; };
 		E254CE3A92335DC7FCD8D9D7 /* HomeFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeedView.swift; sourceTree = "<group>"; };
@@ -304,6 +310,9 @@
 				CDB9DBED62F7D1BFA4C1D47D /* InterestCatalog.swift */,
 				951F26D7D3EB54691A1840A1 /* OnboardingFlowView.swift */,
 				61743907BD659A43769EFD74 /* OnboardingStorage.swift */,
+				25C47B1A38355D1695F006C2 /* OnboardingFlowModel.swift */,
+				DEB0F72F4459603C85B4AE85 /* OnboardingComponents.swift */,
+				79A4BEF62D3CC876CA0F576F /* OnboardingStepViews.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -447,12 +456,20 @@
 			path = Widgets;
 			sourceTree = "<group>";
 		};
+		525FC7DE8CBEB2AE128B1A01 /* LexicalTests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = LexicalTests;
+			sourceTree = "<group>";
+		};
 		5936158A33EE5736F6577B16 = {
 			isa = PBXGroup;
 			children = (
 				A042A3FFD5A37EBA6E07039F /* Lexical */,
 				F27423306C1ACEC8033EAB4F /* LexicalCore */,
 				5C468D8A31B103A0075B9E64 /* Products */,
+				525FC7DE8CBEB2AE128B1A01 /* LexicalTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -846,6 +863,9 @@
 				62C9CA67F5572D71D918E780 /* WordDetailSheet.swift in Sources */,
 				B45623513BE8A57DE973C3C4 /* ActivityGridMonth.swift in Sources */,
 				882B3191A44118F45A591B93 /* ExploreVisualSpec.swift in Sources */,
+				98A61B434C69955E6777C222 /* OnboardingFlowModel.swift in Sources */,
+				4342DF61932C2AF7272B48CC /* OnboardingComponents.swift in Sources */,
+				26F896C18590A2E3D79EC740 /* OnboardingStepViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

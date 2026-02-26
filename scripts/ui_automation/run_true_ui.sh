@@ -52,22 +52,30 @@ build_app() {
 }
 
 package_app_bundle() {
-  local binary="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/Lexical"
-  local resource_bundle="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/Lexical_LexicalCore.bundle"
+  local built_app="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/Lexical.app"
+  local legacy_binary="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/Lexical"
+  local legacy_resource_bundle="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/Lexical_LexicalCore.bundle"
   local info_plist="$ROOT_DIR/Lexical/Info.plist"
 
-  [[ -f "$binary" ]] || fail "Missing app binary at $binary"
-  [[ -f "$info_plist" ]] || fail "Missing Info.plist at $info_plist"
-  [[ -d "$resource_bundle" ]] || fail "Missing resource bundle at $resource_bundle"
-
   rm -rf "$APP_BUNDLE_DIR"
+
+  if [[ -d "$built_app" ]]; then
+    cp -R "$built_app" "$APP_BUNDLE_DIR"
+    log "[PASS] Packaged app bundle from build output at $APP_BUNDLE_DIR"
+    return 0
+  fi
+
+  [[ -f "$legacy_binary" ]] || fail "Missing app binary at $legacy_binary"
+  [[ -f "$info_plist" ]] || fail "Missing Info.plist at $info_plist"
+  [[ -d "$legacy_resource_bundle" ]] || fail "Missing resource bundle at $legacy_resource_bundle"
+
   mkdir -p "$APP_BUNDLE_DIR"
-  cp "$binary" "$APP_BUNDLE_DIR/Lexical"
+  cp "$legacy_binary" "$APP_BUNDLE_DIR/Lexical"
   cp "$info_plist" "$APP_BUNDLE_DIR/Info.plist"
-  cp -R "$resource_bundle" "$APP_BUNDLE_DIR/Lexical_LexicalCore.bundle"
+  cp -R "$legacy_resource_bundle" "$APP_BUNDLE_DIR/Lexical_LexicalCore.bundle"
   echo "APPL????" > "$APP_BUNDLE_DIR/PkgInfo"
   codesign --force --sign - --timestamp=none "$APP_BUNDLE_DIR" >/dev/null
-  log "[PASS] Packaged app bundle at $APP_BUNDLE_DIR"
+  log "[PASS] Packaged legacy app bundle at $APP_BUNDLE_DIR"
 }
 
 install_fresh() {
@@ -195,7 +203,7 @@ test_onboarding_visible() {
   wait_for_id onboarding.title
   wait_for_id onboarding.welcomeHeadline
   wait_for_id onboarding.primaryButton
-  assert_label_for_id_contains onboarding.primaryButton "Continue"
+  assert_label_for_id_contains onboarding.primaryButton "Get Started"
   assert_id_absent onboarding.skipButton
 
   screenshot "01_onboarding_visible"
@@ -207,10 +215,13 @@ test_onboarding_primary_progress() {
   launch_app --lexical-e2e-reset-state --lexical-e2e-show-onboarding
 
   wait_for_id onboarding.primaryButton
-  assert_label_for_id_contains onboarding.primaryButton "Continue"
+  assert_label_for_id_contains onboarding.primaryButton "Get Started"
   tap_id onboarding.primaryButton
   wait_for_id onboarding.primaryButton
   assert_id_absent onboarding.welcomeHeadline
+
+  wait_for_id onboarding.fsrsGoodButton
+  tap_id onboarding.fsrsGoodButton
 
   tap_id onboarding.primaryButton
   wait_for_id onboarding.calibrationHeadline
@@ -219,6 +230,24 @@ test_onboarding_primary_progress() {
   assert_id_absent onboarding.skipButton
 
   screenshot "02_onboarding_primary_progress"
+  terminate_app
+}
+
+test_onboarding_premium_step_free_path() {
+  log "Running test_onboarding_premium_step_free_path"
+  launch_app --lexical-e2e-reset-state --lexical-e2e-onboarding-premium-step
+
+  wait_for_id onboarding.premiumHeadline
+  wait_for_id onboarding.continueFreeButton
+  assert_label_for_id_contains onboarding.continueFreeButton "Continue with Free"
+  screenshot "03_onboarding_premium_step"
+
+  tap_id onboarding.continueFreeButton
+  wait_for_id onboarding.completionHeadline
+  wait_for_id onboarding.primaryButton
+  assert_label_for_id_contains onboarding.primaryButton "Start Learning"
+  screenshot "04_onboarding_completion_after_free_path"
+
   terminate_app
 }
 
@@ -232,7 +261,7 @@ test_free_limit_state() {
   assert_label_for_id_contains reading.quotaLabel "Free: 0/1"
   assert_id_absent reading.generateButton
 
-  screenshot "03_free_limit_state"
+  screenshot "05_free_limit_state"
   terminate_app
 }
 
@@ -246,7 +275,7 @@ test_premium_state() {
   assert_label_for_id_contains reading.quotaLabel "Premium: Unlimited"
   assert_id_absent reading.upgradeButton
 
-  screenshot "04_premium_unlimited_state"
+  screenshot "06_premium_unlimited_state"
   terminate_app
 }
 
@@ -257,12 +286,12 @@ test_explore_screen_and_sheet() {
   wait_for_id explore.headerTitle
   wait_for_id explore.subtitle
   wait_for_id explore.node.root
-  screenshot "05_explore_screen"
+  screenshot "07_explore_screen"
 
   tap_id explore.node.root
   wait_for_id wordinfo.title
   wait_for_id wordinfo.addToDeckButton
-  screenshot "06_explore_word_sheet"
+  screenshot "08_explore_word_sheet"
 
   terminate_app
 }
@@ -273,11 +302,11 @@ test_prompt_route_open_and_close() {
 
   wait_for_id prompt.title
   wait_for_id prompt.closeButton
-  screenshot "07_prompt_open"
+  screenshot "09_prompt_open"
 
   tap_id prompt.closeButton
-  wait_for_id review.readyTitle
-  screenshot "08_prompt_closed_to_review"
+  wait_for_id review.headerTitle
+  screenshot "10_prompt_closed_to_review"
 
   terminate_app
 }
@@ -296,6 +325,7 @@ main() {
 
   test_onboarding_visible
   test_onboarding_primary_progress
+  test_onboarding_premium_step_free_path
   test_free_limit_state
   test_premium_state
   test_explore_screen_and_sheet

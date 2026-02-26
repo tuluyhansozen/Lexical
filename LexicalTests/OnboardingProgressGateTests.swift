@@ -3,7 +3,7 @@ import XCTest
 
 final class OnboardingProgressGateTests: XCTestCase {
     private let calibrationStep = 2
-    private let completionStep = 7
+    private let completionStep = 8
 
     func testNormalizeSelectedStepPinsToCalibrationWhenNotCompleted() {
         let normalized = OnboardingProgressGate.normalizeSelectedStep(

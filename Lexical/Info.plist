@@ -2,28 +2,32 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleExecutable</key>
-    <string>Lexical</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.lexical.Lexical</string>
-    <key>CFBundleName</key>
-    <string>Lexical</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LexicalPremiumProductIDs</key>
-    <array>
-        <string>com.lexical.premium.monthly</string>
-        <string>com.lexical.premium.yearly</string>
-    </array>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>UIRequiresFullScreen</key>
-    <true/>
-    <key>UILaunchScreen</key>
-    <dict/>
+	<key>CFBundleExecutable</key>
+	<string>Lexical</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.lexical.Lexical</string>
+	<key>CFBundleName</key>
+	<string>Lexical</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>LexicalPremiumProductIDs</key>
+	<array>
+		<string>com.lexical.premium.monthly</string>
+		<string>com.lexical.premium.yearly</string>
+	</array>
+	<key>LexicalPrivacyURL</key>
+	<string>https://lexical.app/privacy</string>
+	<key>LexicalTermsURL</key>
+	<string>https://lexical.app/terms</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 </dict>
 </plist>
