@@ -3,7 +3,7 @@ import SwiftData
 import LexicalCore
 
 struct ManageInterestsView: View {
-    @Bindable var profile: InterestProfile
+    var profile: InterestProfile
     @State private var newTag: String = ""
 
     var body: some View {
@@ -17,7 +17,10 @@ struct ManageInterestsView: View {
                         Text(tag)
                     }
                     .onDelete { indexSet in
-                        profile.removeTags(at: indexSet)
+                        profile.selectedTags = profile.selectedTags.enumerated().compactMap { pair in
+                            indexSet.contains(pair.offset) ? nil : pair.element
+                        }
+                        profile.lastUpdated = Date()
                     }
                 }
             }
@@ -26,7 +29,7 @@ struct ManageInterestsView: View {
                 HStack {
                     TextField("New Interest", text: $newTag)
                     Button("Add") {
-                        profile.addTag(newTag)
+                        appendTag(newTag)
                         newTag = ""
                     }
                     .disabled(newTag.isEmpty)
@@ -45,7 +48,7 @@ struct ManageInterestsView: View {
                                 ForEach(group.options) { option in
                                     if !profile.selectedTags.contains(option.title) {
                                         Button {
-                                            profile.addTag(option.title)
+                                            appendTag(option.title)
                                         } label: {
                                             Text(option.chipLabel)
                                                 .padding(.horizontal, 12)
@@ -64,5 +67,14 @@ struct ManageInterestsView: View {
             }
         }
         .navigationTitle("Manage Interests")
+    }
+
+    private func appendTag(_ rawTag: String) {
+        let normalized = rawTag.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return }
+        guard !profile.selectedTags.contains(normalized) else { return }
+        profile.selectedTags.append(normalized)
+        profile.selectedTags.sort()
+        profile.lastUpdated = Date()
     }
 }

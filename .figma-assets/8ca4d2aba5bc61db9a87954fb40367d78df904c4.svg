@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 82.9423 82.9423" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Glow">
+<circle id="Big" opacity="0.2" cx="41.4712" cy="41.4712" r="41.4712" fill="var(--fill-0, #D9D9D9)"/>
+<circle id="Medium" opacity="0.2" cx="41.4712" cy="41.4712" r="33.1769" fill="var(--fill-0, #D9D9D9)"/>
+<circle id="Small" opacity="0.2" cx="41.4712" cy="41.4712" r="24.8827" fill="var(--fill-0, #D9D9D9)"/>
+</g>
+</svg>

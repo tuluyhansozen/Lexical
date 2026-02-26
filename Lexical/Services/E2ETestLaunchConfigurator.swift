@@ -24,6 +24,16 @@ enum E2ETestLaunchConfigurator {
             setOnboardingCompleted(false)
         }
 
+        if arguments.contains("--lexical-e2e-onboarding-premium-step") {
+            setOnboardingCompleted(false)
+            UserDefaults.standard.set(
+                OnboardingStep.premiumOffer.rawValue,
+                forKey: OnboardingStorageKeys.currentStep
+            )
+            UserDefaults.standard.set(3_000, forKey: OnboardingStorageKeys.calibrationRank)
+            UserDefaults.standard.set(0.72, forKey: OnboardingStorageKeys.calibrationConfidence)
+        }
+
         if arguments.contains("--lexical-e2e-complete-onboarding") {
             setOnboardingCompleted(true)
         }
@@ -50,6 +60,7 @@ enum E2ETestLaunchConfigurator {
             OnboardingStorageKeys.articleStylePreference,
             OnboardingStorageKeys.calibrationRank,
             OnboardingStorageKeys.calibrationConfidence,
+            OnboardingStorageKeys.flowVersion,
             "userName",
             "lexical.pending_prompt_lemma",
             "lexical.pending_prompt_definition",
@@ -72,6 +83,10 @@ enum E2ETestLaunchConfigurator {
     private static func setOnboardingCompleted(_ completed: Bool) {
         UserDefaults.standard.set(completed, forKey: OnboardingStorageKeys.completed)
         UserDefaults.standard.set(0, forKey: OnboardingStorageKeys.currentStep)
+        UserDefaults.standard.set(
+            OnboardingFlowModel.currentFlowVersion,
+            forKey: OnboardingStorageKeys.flowVersion
+        )
     }
 
     private static func resetPersistentState() {

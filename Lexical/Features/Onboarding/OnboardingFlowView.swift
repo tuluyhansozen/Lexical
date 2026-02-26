@@ -7,20 +7,20 @@ struct OnboardingFlowView: View {
     private let calibrationQuestionCount = 12
 
     @Environment(\.modelContext) private var modelContext
-    @Query private var interestProfiles: [InterestProfile]
+    @Query private var interestProfiles: [InterestProfile] 
 
     @AppStorage(OnboardingStorageKeys.currentStep) private var persistedStep: Int = 0
     @AppStorage(OnboardingStorageKeys.completed) private var hasCompletedOnboarding = false
     @AppStorage(OnboardingStorageKeys.notificationPrompted) private var hasPromptedNotifications = false
-    @AppStorage("notificationsEnabled") private var notificationsEnabled: Bool = true
     @AppStorage(OnboardingStorageKeys.articleStylePreference) private var articleStylePreferenceRaw: String = ArticleStylePreference.balanced.rawValue
     @AppStorage(OnboardingStorageKeys.calibrationRank) private var persistedCalibrationRank: Int = 0
     @AppStorage(OnboardingStorageKeys.calibrationConfidence) private var persistedCalibrationConfidence: Double = 0.0
+    @AppStorage(OnboardingStorageKeys.flowVersion) private var onboardingFlowVersion: Int = 0
+    @AppStorage("notificationsEnabled") private var notificationsEnabled: Bool = true
     @AppStorage("userName") private var userName: String = "Learner"
 
     @State private var selectedStep: Int = 0
     @State private var selectedInterests: Set<String> = []
-    @State private var customInterest: String = ""
     @State private var calibrationQuestions: [OnboardingCalibrationQuestion] = []
     @State private var calibrationAnswers: [String: OnboardingCalibrationAnswer] = [:]
     @State private var calibrationQuestionIndex: Int = 0
@@ -29,43 +29,131 @@ struct OnboardingFlowView: View {
     @State private var isRequestingNotificationPermission = false
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
+    @State private var premiumTier: SubscriptionTier = .free
+    @State private var isRestoringPurchases = false
+    @State private var premiumAlertMessage: String?
+
     let onComplete: () -> Void
 
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7").ignoresSafeArea()
+            Color(hex: OnboardingFlowModel.backgroundHex).ignoresSafeArea()
 
             VStack(spacing: 0) {
-                topBar
+                OnboardingHeaderBar(
+                    showBack: canShowBackButton,
+                    showSkip: canShowSkipButton,
+                    onBack: { selectedStep = max(0, selectedStep - 1) },
+                    onSkip: handleSkip
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 10)
+
+                OnboardingProgressBar(
+                    currentStep: selectedStep,
+                    totalSteps: OnboardingStep.allCases.count
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
 
                 TabView(selection: $selectedStep) {
-                    welcomeStep.tag(OnboardingStep.welcome.rawValue)
-                    fsrsPrimerStep.tag(OnboardingStep.fsrsPrimer.rawValue)
-                    rankCalibrationStep.tag(OnboardingStep.rankCalibration.rawValue)
-                    interestsStep.tag(OnboardingStep.interests.rawValue)
-                    articleStyleStep.tag(OnboardingStep.articleStyle.rawValue)
-                    readingPrimerStep.tag(OnboardingStep.readingPrimer.rawValue)
-                    notificationsStep.tag(OnboardingStep.notifications.rawValue)
-                    completionStep.tag(OnboardingStep.completion.rawValue)
+                    OnboardingWelcomeStepView(userName: $userName)
+                        .tag(OnboardingStep.welcome.rawValue)
+
+                    OnboardingFSRSStepView(hasPlayedCurveDemo: $hasPlayedCurveDemo)
+                        .tag(OnboardingStep.fsrsPrimer.rawValue)
+
+                    OnboardingRankCalibrationStepView(
+                        calibrationQuestionCount: calibrationQuestionCount,
+                        calibrationQuestions: calibrationQuestions,
+                        calibrationAnswers: calibrationAnswers,
+                        calibrationQuestionIndex: $calibrationQuestionIndex,
+                        calibrationResultPreview: calibrationResultPreview,
+                        onSelectAnswer: recordCalibrationAnswer
+                    )
+                    .tag(OnboardingStep.rankCalibration.rawValue)
+
+                    OnboardingInterestsStepView(
+                        selectedInterests: $selectedInterests
+                    )
+                    .tag(OnboardingStep.interests.rawValue)
+
+                    OnboardingArticleStyleStepView(articleStylePreferenceRaw: $articleStylePreferenceRaw)
+                        .tag(OnboardingStep.articleStyle.rawValue)
+
+                    OnboardingReadingPrimerStepView()
+                        .tag(OnboardingStep.readingPrimer.rawValue)
+
+                    OnboardingNotificationsStepView(
+                        notificationStatus: notificationStatus,
+                        isRequestingNotificationPermission: isRequestingNotificationPermission,
+                        isNotificationEnabled: isNotificationEnabled(notificationStatus),
+                        requestNotificationPermission: requestNotificationPermission
+                    )
+                    .tag(OnboardingStep.notifications.rawValue)
+
+                    OnboardingPremiumOfferStepView(
+                        productIDs: premiumProductIDs,
+                        currentTier: premiumTier,
+                        isRestoringPurchases: isRestoringPurchases,
+                        termsURL: termsURL,
+                        privacyURL: privacyURL,
+                        onRestorePurchases: restorePurchases
+                    )
+                    .tag(OnboardingStep.premiumOffer.rawValue)
+
+                    OnboardingCompletionStepView(
+                        userName: userName,
+                        startRankSummary: startRankSummary,
+                        selectedInterests: selectedInterests.sorted(),
+                        selectedArticleStyleTitle: selectedArticleStyle.title
+                    )
+                    .tag(OnboardingStep.completion.rawValue)
                 }
                 .modifier(OnboardingPagerStyle())
                 .animation(.easeInOut(duration: 0.2), value: selectedStep)
 
-                bottomControls
+                VStack(spacing: 12) {
+                    OnboardingPrimaryButton(
+                        title: primaryButtonTitle,
+                        isEnabled: canAdvanceCurrentStep,
+                        accessibilityID: primaryButtonAccessibilityID,
+                        action: advanceOrComplete
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(
+                    GlassEffectContainer(material: .ultraThin) {
+                        Color.clear
+                    }
+                    .ignoresSafeArea(edges: .bottom)
+                )
             }
         }
         .interactiveDismissDisabled(true)
         .onAppear {
             ensureInterestProfileExists()
+            migrateOnboardingStateIfNeeded()
+
             selectedStep = normalizedOnboardingStep(persistedStep)
-            selectedInterests = Set(interestProfiles.first?.selectedTags ?? [])
+            selectedInterests = OnboardingFlowModel.sanitizeInterests(Set(interestProfiles.first?.selectedTags ?? []))
+
             if ArticleStylePreference(rawValue: articleStylePreferenceRaw) == nil {
                 articleStylePreferenceRaw = ArticleStylePreference.balanced.rawValue
             }
+
             normalizeUserName()
             prepareCalibrationQuestionsIfNeeded()
             selectedStep = normalizedOnboardingStep(selectedStep)
-            Task { await refreshNotificationStatus() }
+
+            Task {
+                await refreshNotificationStatus()
+                if !isRunningForPreviews {
+                    await refreshPremiumEntitlement()
+                }
+            }
         }
         .onChange(of: selectedStep) { _, newValue in
             let normalized = normalizedOnboardingStep(newValue)
@@ -81,585 +169,97 @@ struct OnboardingFlowView: View {
                 selectedStep = normalized
             }
         }
-    }
-
-    private var topBar: some View {
-        HStack {
-            Text("Lexical Onboarding")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color(hex: "4A5565"))
-                .accessibilityIdentifier("onboarding.title")
-
-            Spacer()
-
-            if canShowSkip {
-                Button("Skip") {
-                    selectedStep = OnboardingStep.completion.rawValue
-                }
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.sonPrimary)
-                .accessibilityIdentifier("onboarding.skipButton")
+        .task(id: selectedStep) {
+            guard !isRunningForPreviews else { return }
+            guard selectedStep == OnboardingStep.premiumOffer.rawValue else { return }
+            await refreshPremiumEntitlement()
+            while selectedStep == OnboardingStep.premiumOffer.rawValue,
+                  premiumTier != .premium,
+                  !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                await refreshPremiumEntitlement()
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 8)
+        .alert(
+            "Premium",
+            isPresented: Binding(
+                get: { premiumAlertMessage != nil },
+                set: { presented in
+                    if !presented { premiumAlertMessage = nil }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(premiumAlertMessage ?? "")
+        }
     }
 
-    private var bottomControls: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 6) {
-                ForEach(OnboardingStep.allCases, id: \.rawValue) { step in
-                    Capsule()
-                        .fill(step.rawValue == selectedStep ? Color.sonPrimary : Color(hex: "D5D8DE"))
-                        .frame(width: step.rawValue == selectedStep ? 24 : 8, height: 8)
-                }
-            }
+    private var currentOnboardingStep: OnboardingStep {
+        OnboardingStep(rawValue: selectedStep) ?? .welcome
+    }
 
-            HStack(spacing: 12) {
-                Button {
-                    selectedStep = max(0, selectedStep - 1)
-                } label: {
-                    Label("Back", systemImage: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(selectedStep == 0 ? Color(hex: "9EA3AD") : Color.sonPrimary)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                )
-                .disabled(selectedStep == 0)
-                .accessibilityIdentifier("onboarding.backButton")
+    private var canShowBackButton: Bool {
+        selectedStep > OnboardingStep.welcome.rawValue && selectedStep < OnboardingStep.completion.rawValue
+    }
 
-                Button {
-                    advanceOrComplete()
-                } label: {
-                    Text(selectedStep == OnboardingStep.completion.rawValue ? "Start Learning" : "Continue")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.white)
-                .background(canAdvanceCurrentStep ? Color.sonPrimary : Color(hex: "AAB7AE"))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .disabled(!canAdvanceCurrentStep)
-                .accessibilityIdentifier("onboarding.primaryButton")
-            }
+    private var isRunningForPreviews: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+
+    private var canShowSkipButton: Bool {
+        guard OnboardingFlowModel.skippableSteps.contains(currentOnboardingStep) else {
+            return false
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .background(
-            GlassEffectContainer(material: .ultraThin) {
-                Color.clear
-            }
-            .ignoresSafeArea(edges: .bottom)
+
+        return OnboardingProgressGate.canSkip(
+            selectedStep: selectedStep,
+            completionStep: OnboardingStep.completion.rawValue,
+            calibrationStep: OnboardingStep.rankCalibration.rawValue,
+            hasCompletedCalibration: hasCompletedCalibration
         )
     }
 
-    private var welcomeStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Build your reading fluency with retrieval-first learning.")
-                    .font(.display(size: 34, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-                    .accessibilityIdentifier("onboarding.welcomeHeadline")
-
-                Text("Lexical combines Reading, Review, and Word Matrix into one daily loop tuned for intermediate learners.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("What should we call you?")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color(hex: "4A5565"))
-
-                    TextField("Learner", text: $userName)
-                        .lexicalWordsAutocapitalization()
-                        .padding(.horizontal, 14)
-                        .frame(height: 44)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                        )
-                        .accessibilityIdentifier("onboarding.nameField")
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    quickBullet("Free: 1 article per week, 1 active widget profile, standard FSRS")
-                    quickBullet("Premium: unlimited articles/widgets + personalized FSRS")
-                }
-                .padding(.top, 6)
-            }
-        }
+    private var primaryButtonTitle: String {
+        OnboardingFlowModel.primaryButtonTitle(for: currentOnboardingStep)
     }
 
-    private var fsrsPrimerStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Learn at the edge of forgetting.")
-                    .font(.display(size: 31, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-
-                Text("FSRS schedules each word exactly when recall starts to decay. Use precise grades so intervals stay accurate.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                ForgettingCurvePreview(isStabilized: hasPlayedCurveDemo)
-                    .frame(height: 200)
-                    .padding(14)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                    )
-
-                Button {
-                    hasPlayedCurveDemo = true
-                } label: {
-                    Label(hasPlayedCurveDemo ? "Memory Stabilized" : "Simulate Review Boost", systemImage: "bolt.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 40)
-                        .foregroundStyle(hasPlayedCurveDemo ? Color.sonPrimary : .white)
-                        .background(hasPlayedCurveDemo ? Color(hex: "E9F2EC") : Color.sonPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .buttonStyle(.plain)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    reviewGradeRow("Again", color: .red, detail: "I forgot it. Show again soon.")
-                    reviewGradeRow("Hard", color: .orange, detail: "I recalled with effort.")
-                    reviewGradeRow("Good", color: .blue, detail: "Normal recall.")
-                    reviewGradeRow("Easy", color: .green, detail: "Instant recall; extend interval.")
-                }
-            }
-        }
+    private var primaryButtonAccessibilityID: String {
+        currentOnboardingStep == .premiumOffer
+        ? "onboarding.continueFreeButton"
+        : "onboarding.primaryButton"
     }
 
-    private var rankCalibrationStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Set your starting rank in \(calibrationQuestionCount) quick checks.")
-                    .font(.display(size: 31, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-                    .accessibilityIdentifier("onboarding.calibrationHeadline")
-
-                Text("Tap the option that matches your confidence. A couple of control words are included to keep rank estimation honest.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                if calibrationQuestions.isEmpty {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                        Text("Preparing rank check...")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color(hex: "4A5565"))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(14)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                    )
-                } else if let question = currentCalibrationQuestion {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Question \(calibrationQuestionIndex + 1) of \(calibrationQuestions.count)")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Color(hex: "4A5565"))
-                            Spacer()
-                            Text("Answered \(calibrationAnswers.count)/\(calibrationQuestions.count)")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(Color(hex: "6D7788"))
-                        }
-
-                        ProgressView(
-                            value: Double(calibrationQuestionIndex + 1),
-                            total: Double(max(calibrationQuestions.count, 1))
-                        )
-                        .tint(Color.sonPrimary)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            if question.isDistractor {
-                                Text("CONTROL ITEM")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Color(hex: "D97706"))
-                            }
-
-                            Text(question.lemma.capitalized)
-                                .font(.display(size: 30, weight: .bold))
-                                .foregroundStyle(Color(hex: "121722"))
-
-                            Text(question.promptHint)
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundStyle(Color(hex: "4A5565"))
-                                .lineSpacing(3)
-                        }
-                        .padding(14)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                        )
-
-                        VStack(spacing: 10) {
-                            ForEach(OnboardingCalibrationAnswer.allCases, id: \.rawValue) { answer in
-                                calibrationAnswerButton(answer, for: question)
-                            }
-                        }
-
-                        HStack(spacing: 10) {
-                            Button("Previous Word") {
-                                calibrationQuestionIndex = max(0, calibrationQuestionIndex - 1)
-                            }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(calibrationQuestionIndex == 0 ? Color(hex: "9EA3AD") : Color.sonPrimary)
-                            .disabled(calibrationQuestionIndex == 0)
-
-                            Spacer()
-
-                            Button(calibrationQuestionIndex + 1 >= calibrationQuestions.count ? "Finish Check" : "Next Word") {
-                                calibrationQuestionIndex = min(calibrationQuestions.count - 1, calibrationQuestionIndex + 1)
-                            }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color.sonPrimary)
-                        }
-                    }
-                }
-
-                if let result = calibrationResultPreview,
-                   calibrationAnswers.count == calibrationQuestions.count,
-                   !calibrationQuestions.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Estimated start rank: \(result.estimatedRank)")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color(hex: "1E2938"))
-                        Text("Confidence: \(formattedCalibrationConfidence(result.confidence))")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundStyle(Color(hex: "4A5565"))
-                    }
-                    .padding(12)
-                    .background(Color(hex: "EAF3ED"))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-            }
-        }
+    private var selectedArticleStyle: ArticleStylePreference {
+        ArticleStylePreference(rawValue: articleStylePreferenceRaw) ?? .balanced
     }
 
-    private var interestsStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Pick your reading interests.")
-                    .font(.display(size: 31, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-
-                Text("Select at least two. Grouped like Bumble-style tags so users can quickly express identity and taste.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                LazyVStack(alignment: .leading, spacing: 18) {
-                    ForEach(InterestCatalog.groups) { group in
-                        VStack(alignment: .leading, spacing: 10) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(group.title)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(Color(hex: "1E2938"))
-                                Text(group.subtitle)
-                                    .font(.system(size: 12, weight: .regular))
-                                    .foregroundStyle(Color(hex: "6D7788"))
-                            }
-
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: 10)], spacing: 10) {
-                                ForEach(group.options) { option in
-                                    let tag = option.title
-                                    let isSelected = selectedInterests.contains(tag)
-                                    Button {
-                                        if isSelected {
-                                            selectedInterests.remove(tag)
-                                        } else {
-                                            selectedInterests.insert(tag)
-                                        }
-                                    } label: {
-                                        Text(option.chipLabel)
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundStyle(isSelected ? .white : Color(hex: "364153"))
-                                            .frame(maxWidth: .infinity)
-                                            .frame(height: 38)
-                                            .background(isSelected ? Color.sonPrimary : Color.white)
-                                            .clipShape(Capsule())
-                                            .overlay(
-                                                Capsule()
-                                                    .stroke(isSelected ? Color.sonPrimary : Color(hex: "DDE1E8"), lineWidth: 1)
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                HStack(spacing: 10) {
-                    TextField("Add custom interest", text: $customInterest)
-                        .lexicalWordsAutocapitalization()
-                        .padding(.horizontal, 12)
-                        .frame(height: 40)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                        )
-
-                    Button("Add") {
-                        let tag = customInterest.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !tag.isEmpty else { return }
-                        selectedInterests.insert(tag)
-                        customInterest = ""
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .frame(height: 40)
-                    .background(Color.sonPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-
-                Text("Selected: \(selectedInterests.count)/\(InterestCatalog.all.count)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color(hex: "4A5565"))
-
-                Text("Select at least two interests to continue.")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(Color(hex: "6D7788"))
-            }
-        }
+    private var premiumProductIDs: [String] {
+        SubscriptionEntitlementService.configuredProductIDs().sorted()
     }
 
-    private var articleStyleStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("What kind of articles do you want?")
-                    .font(.display(size: 31, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-
-                Text("Choose your default style. We will still rotate topics and angles, but this sets the main writing flavor.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                VStack(spacing: 10) {
-                    ForEach(ArticleStylePreference.allCases, id: \.rawValue) { style in
-                        let isSelected = selectedArticleStyle == style
-                        Button {
-                            articleStylePreferenceRaw = style.rawValue
-                        } label: {
-                            HStack(alignment: .center, spacing: 12) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(style.title)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundStyle(Color(hex: "1A1A1A"))
-                                    Text(style.subtitle)
-                                        .font(.system(size: 13, weight: .regular))
-                                        .foregroundStyle(Color(hex: "4A5565"))
-                                }
-                                Spacer()
-                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(isSelected ? Color.sonPrimary : Color(hex: "A8AFBC"))
-                            }
-                            .padding(14)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(isSelected ? Color.sonPrimary : Color(hex: "E0E3E8"), lineWidth: 1.5)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("onboarding.articleStyle.\(style.rawValue)")
-                    }
-                }
-            }
-        }
+    private var termsURL: URL? {
+        infoURL(for: "LexicalTermsURL")
     }
 
-    private var readingPrimerStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Capture words from context.")
-                    .font(.display(size: 31, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-
-                Text("In Reading, tap unknown words to add them to your deck with definition, examples, and synonyms.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("A resilient learner can convert passive input into active recall.")
-                        .font(.system(size: 17, weight: .regular, design: .serif))
-                        .foregroundStyle(Color(hex: "1B2331"))
-                        .lineSpacing(4)
-
-                    HStack(spacing: 8) {
-                        Text("resilient")
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(hex: "D8E9FF"))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                        Text("Blue: tap to capture")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color(hex: "4A5565"))
-                    }
-
-                    HStack(spacing: 8) {
-                        Text("learning")
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(hex: "FFF4C7"))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                        Text("Yellow: in your active queue")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color(hex: "4A5565"))
-                    }
-                }
-                .padding(14)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                )
-            }
-        }
-    }
-
-    private var notificationsStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Enable smart nudges.")
-                    .font(.display(size: 31, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-
-                Text("Lexical sends out-of-app nudges with an inactivity-aware schedule and rank-fit word suggestions.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Label("09:00 and 14:00: rank-fit new word suggestions", systemImage: "sparkles")
-                    Label("20:00: review reminder (skipped if you already reviewed today)", systemImage: "clock.badge.checkmark")
-                    Label("Tap a suggestion to open the single-word card", systemImage: "rectangle.on.rectangle")
-                }
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color(hex: "3A4758"))
-                .padding(14)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                )
-
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(statusColor)
-                        .frame(width: 8, height: 8)
-                    Text("Notification status: \(notificationStatusDescription)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color(hex: "4A5565"))
-                }
-
-                Button {
-                    requestNotificationPermission()
-                } label: {
-                    HStack(spacing: 8) {
-                        if isRequestingNotificationPermission {
-                            ProgressView().tint(.white)
-                        } else {
-                            Image(systemName: "bell.fill")
-                        }
-                        Text("Enable Smart Nudges")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .foregroundStyle(.white)
-                    .background(Color.sonPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .disabled(isRequestingNotificationPermission || isNotificationEnabled(notificationStatus))
-            }
-        }
-    }
-
-    private var completionStep: some View {
-        stepContainer {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Your learning loop is ready.")
-                    .font(.display(size: 33, weight: .bold))
-                    .foregroundStyle(Color(hex: "0A0A0A"))
-
-                Text("You can now generate articles in Reading, capture words in context, review due cards, and track retention in Statistics.")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color(hex: "364153"))
-                    .lineSpacing(4)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Plan Snapshot")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color(hex: "4A5565"))
-
-                    summaryRow("Free", value: "\(FeatureGateService.freeArticleLimitPerWindow) article / \(FeatureGateService.freeArticleWindowDays) days")
-                    summaryRow("Widgets", value: "\(FeatureGateService.freeWidgetProfileLimit) active profile on Free")
-                    summaryRow("FSRS", value: "Standard (Free) / Personalized (Premium)")
-                    summaryRow("Start rank", value: startRankSummary)
-                    summaryRow("Article style", value: selectedArticleStyle.title)
-                }
-                .padding(14)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color(hex: "E0E3E8"), lineWidth: 1)
-                )
-            }
-        }
+    private var privacyURL: URL? {
+        infoURL(for: "LexicalPrivacyURL")
     }
 
     private var canAdvanceCurrentStep: Bool {
-        switch OnboardingStep(rawValue: selectedStep) ?? .welcome {
+        switch currentOnboardingStep {
+        case .welcome:
+            return !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .fsrsPrimer:
+            return hasPlayedCurveDemo
         case .rankCalibration:
             return calibrationQuestions.count == calibrationQuestionCount &&
             calibrationAnswers.count == calibrationQuestions.count
         case .interests:
-            return selectedInterests.count >= 2
+            return OnboardingFlowModel.sanitizeInterests(selectedInterests).count >= 2
         default:
             return true
         }
-    }
-
-    private var currentCalibrationQuestion: OnboardingCalibrationQuestion? {
-        guard !calibrationQuestions.isEmpty else { return nil }
-        let index = min(max(calibrationQuestionIndex, 0), calibrationQuestions.count - 1)
-        return calibrationQuestions[index]
     }
 
     private var startRankSummary: String {
@@ -676,131 +276,136 @@ struct OnboardingFlowView: View {
          calibrationAnswers.count == calibrationQuestions.count)
     }
 
-    private var canShowSkip: Bool {
-        OnboardingProgressGate.canSkip(
-            selectedStep: selectedStep,
+    private func migrateOnboardingStateIfNeeded() {
+        guard onboardingFlowVersion < OnboardingFlowModel.currentFlowVersion else { return }
+
+        if hasCompletedOnboarding {
+            persistedStep = 0
+            onboardingFlowVersion = OnboardingFlowModel.currentFlowVersion
+            return
+        }
+
+        persistedStep = OnboardingFlowModel.migratePersistedStep(
+            persistedStep,
+            fromFlowVersion: onboardingFlowVersion,
+            toFlowVersion: OnboardingFlowModel.currentFlowVersion
+        )
+        onboardingFlowVersion = OnboardingFlowModel.currentFlowVersion
+    }
+
+    private func handleSkip() {
+        guard canShowSkipButton else { return }
+        persistCurrentStepState()
+        selectedStep = min(selectedStep + 1, OnboardingStep.completion.rawValue)
+    }
+
+    private func infoURL(for key: String) -> URL? {
+        guard let raw = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let url = URL(string: trimmed),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "https" || scheme == "http" else {
+            return nil
+        }
+
+        return url
+    }
+
+    private func clampedStepIndex(_ raw: Int) -> Int {
+        OnboardingFlowModel.clampStep(raw)
+    }
+
+    private func normalizedOnboardingStep(_ raw: Int) -> Int {
+        let clamped = clampedStepIndex(raw)
+        return OnboardingProgressGate.normalizeSelectedStep(
+            clamped,
             completionStep: OnboardingStep.completion.rawValue,
             calibrationStep: OnboardingStep.rankCalibration.rawValue,
             hasCompletedCalibration: hasCompletedCalibration
         )
     }
 
-    private var selectedArticleStyle: ArticleStylePreference {
-        ArticleStylePreference(rawValue: articleStylePreferenceRaw) ?? .balanced
+    private func advanceOrComplete() {
+        guard canAdvanceCurrentStep else { return }
+        persistCurrentStepState()
+
+        if selectedStep >= OnboardingStep.completion.rawValue {
+            finalizeOnboarding()
+            return
+        }
+
+        selectedStep += 1
     }
 
-    private var notificationStatusDescription: String {
-        switch notificationStatus {
-        case .notDetermined: return "Not requested"
-        case .denied: return "Denied"
-        case .authorized, .provisional, .ephemeral: return "Enabled"
-        @unknown default: return "Unknown"
+    private func ensureInterestProfileExists() {
+        if interestProfiles.isEmpty {
+            let profile = InterestProfile()
+            modelContext.insert(profile)
+            try? modelContext.save()
         }
     }
 
-    private var statusColor: Color {
-        switch notificationStatus {
-        case .authorized, .provisional, .ephemeral: return .green
-        case .denied: return .red
-        case .notDetermined: return .orange
-        @unknown default: return .gray
+    private func normalizeUserName() {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            userName = "Learner"
+        } else if trimmed != userName {
+            userName = trimmed
         }
     }
 
-    private func isNotificationEnabled(_ status: UNAuthorizationStatus) -> Bool {
-        switch status {
-        case .authorized, .provisional, .ephemeral:
-            return true
-        default:
-            return false
-        }
+    private func finalizeOnboarding() {
+        persistCurrentStepState()
+        hasCompletedOnboarding = true
+        persistedStep = 0
+        onboardingFlowVersion = OnboardingFlowModel.currentFlowVersion
+        onComplete()
     }
 
-    private func stepContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                content()
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .scrollIndicators(.hidden)
+    private func persistCurrentStepState() {
+        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
+        let trimmedName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        activeProfile.displayName = trimmedName.isEmpty ? "Learner" : trimmedName
+        applyCalibrationResultIfAvailable(to: activeProfile)
+
+        let profile = interestProfiles.first ?? {
+            let created = InterestProfile()
+            modelContext.insert(created)
+            return created
+        }()
+        let sanitizedInterests = OnboardingFlowModel.sanitizeInterests(selectedInterests)
+        selectedInterests = sanitizedInterests
+        profile.selectedTags = sanitizedInterests.sorted()
+
+        try? modelContext.save()
     }
 
-    private func quickBullet(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(Color.sonPrimary)
-            Text(text)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(Color(hex: "3A4758"))
-        }
+    private func applyCalibrationResultIfAvailable(to activeProfile: UserProfile) {
+        guard calibrationQuestions.count == calibrationQuestionCount else { return }
+        let service = OnboardingRankAssessmentService()
+        guard let result = service.evaluate(
+            questions: calibrationQuestions,
+            answers: calibrationAnswers,
+            priorRank: calibrationPriorRank(from: activeProfile)
+        ) else { return }
+
+        activeProfile.lexicalRank = result.estimatedRank
+        activeProfile.stateUpdatedAt = Date()
+        persistedCalibrationRank = result.estimatedRank
+        persistedCalibrationConfidence = result.confidence
     }
 
-    private func reviewGradeRow(_ title: String, color: Color, detail: String) -> some View {
-        HStack(spacing: 10) {
-            Text(title)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(color)
-                .clipShape(Capsule())
-            Text(detail)
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color(hex: "4A5565"))
+    private func calibrationPriorRank(from activeProfile: UserProfile? = nil) -> Int? {
+        if persistedCalibrationRank > 0 {
+            return persistedCalibrationRank
         }
-    }
 
-    private func summaryRow(_ label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color(hex: "4A5565"))
-            Spacer()
-            Text(value)
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color(hex: "1E2938"))
-        }
-    }
-
-    private func calibrationAnswerButton(
-        _ answer: OnboardingCalibrationAnswer,
-        for question: OnboardingCalibrationQuestion
-    ) -> some View {
-        let isSelected = calibrationAnswers[question.id] == answer
-        return Button {
-            recordCalibrationAnswer(answer, for: question)
-        } label: {
-            Text(calibrationAnswerTitle(answer))
-                .font(.system(size: 14, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .frame(height: 40)
-                .foregroundStyle(isSelected ? .white : Color(hex: "364153"))
-                .background(isSelected ? Color.sonPrimary : Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(isSelected ? Color.sonPrimary : Color(hex: "DDE1E8"), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func calibrationAnswerTitle(_ answer: OnboardingCalibrationAnswer) -> String {
-        switch answer {
-        case .know:
-            return "I know this word"
-        case .unsure:
-            return "Not sure"
-        case .dontKnow:
-            return "I don't know this"
-        }
-    }
-
-    private func formattedCalibrationConfidence(_ confidence: Double) -> String {
-        let percent = Int((max(0, min(1, confidence)) * 100.0).rounded())
-        return "\(percent)%"
+        let profile = activeProfile ?? UserProfile.resolveActiveProfile(modelContext: modelContext)
+        return profile.lexicalRank > 2_500 ? profile.lexicalRank : nil
     }
 
     private func prepareCalibrationQuestionsIfNeeded() {
@@ -840,92 +445,9 @@ struct OnboardingFlowView: View {
         )
     }
 
-    private func ensureInterestProfileExists() {
-        if interestProfiles.isEmpty {
-            let profile = InterestProfile()
-            modelContext.insert(profile)
-            try? modelContext.save()
-        }
-    }
-
-    private func normalizeUserName() {
-        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            userName = "Learner"
-        } else if trimmed != userName {
-            userName = trimmed
-        }
-    }
-
-    private func clampedStepIndex(_ raw: Int) -> Int {
-        let maxIndex = OnboardingStep.allCases.count - 1
-        return min(max(raw, 0), maxIndex)
-    }
-
-    private func normalizedOnboardingStep(_ raw: Int) -> Int {
-        let clamped = clampedStepIndex(raw)
-        return OnboardingProgressGate.normalizeSelectedStep(
-            clamped,
-            completionStep: OnboardingStep.completion.rawValue,
-            calibrationStep: OnboardingStep.rankCalibration.rawValue,
-            hasCompletedCalibration: hasCompletedCalibration
-        )
-    }
-
-    private func advanceOrComplete() {
-        persistCurrentStepState()
-        if selectedStep >= OnboardingStep.completion.rawValue {
-            finalizeOnboarding()
-            return
-        }
-        selectedStep += 1
-    }
-
-    private func persistCurrentStepState() {
-        let activeProfile = UserProfile.resolveActiveProfile(modelContext: modelContext)
-        let trimmedName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        activeProfile.displayName = trimmedName.isEmpty ? "Learner" : trimmedName
-        applyCalibrationResultIfAvailable(to: activeProfile)
-
-        let profile = interestProfiles.first ?? {
-            let created = InterestProfile()
-            modelContext.insert(created)
-            return created
-        }()
-        profile.selectedTags = selectedInterests.sorted()
-
-        try? modelContext.save()
-    }
-
-    private func applyCalibrationResultIfAvailable(to activeProfile: UserProfile) {
-        guard calibrationQuestions.count == calibrationQuestionCount else { return }
-        let service = OnboardingRankAssessmentService()
-        guard let result = service.evaluate(
-            questions: calibrationQuestions,
-            answers: calibrationAnswers,
-            priorRank: calibrationPriorRank(from: activeProfile)
-        ) else { return }
-
-        activeProfile.lexicalRank = result.estimatedRank
-        activeProfile.stateUpdatedAt = Date()
-        persistedCalibrationRank = result.estimatedRank
-        persistedCalibrationConfidence = result.confidence
-    }
-
-    private func calibrationPriorRank(from activeProfile: UserProfile? = nil) -> Int? {
-        if persistedCalibrationRank > 0 {
-            return persistedCalibrationRank
-        }
-
-        let profile = activeProfile ?? UserProfile.resolveActiveProfile(modelContext: modelContext)
-        return profile.lexicalRank > 2_500 ? profile.lexicalRank : nil
-    }
-
-    private func finalizeOnboarding() {
-        persistCurrentStepState()
-        hasCompletedOnboarding = true
-        persistedStep = 0
-        onComplete()
+    private func formattedCalibrationConfidence(_ confidence: Double) -> String {
+        let percent = Int((max(0, min(1, confidence)) * 100.0).rounded())
+        return "\(percent)%"
     }
 
     private func requestNotificationPermission() {
@@ -949,45 +471,51 @@ struct OnboardingFlowView: View {
     private func refreshNotificationStatus() async {
         notificationStatus = await BanditScheduler.shared.notificationAuthorizationStatus()
     }
-}
 
-private enum OnboardingStep: Int, CaseIterable {
-    case welcome = 0
-    case fsrsPrimer
-    case rankCalibration
-    case interests
-    case articleStyle
-    case readingPrimer
-    case notifications
-    case completion
-}
-
-enum OnboardingProgressGate {
-    static func normalizeSelectedStep(
-        _ selectedStep: Int,
-        completionStep: Int,
-        calibrationStep: Int,
-        hasCompletedCalibration: Bool
-    ) -> Int {
-        let guardrailStep = min(max(0, calibrationStep), completionStep)
-        guard !hasCompletedCalibration, selectedStep > guardrailStep else { return selectedStep }
-        return guardrailStep
+    private func isNotificationEnabled(_ status: UNAuthorizationStatus) -> Bool {
+        switch status {
+        case .authorized, .provisional, .ephemeral:
+            return true
+        default:
+            return false
+        }
     }
 
-    static func canSkip(
-        selectedStep: Int,
-        completionStep: Int,
-        calibrationStep: Int,
-        hasCompletedCalibration: Bool
-    ) -> Bool {
-        guard hasCompletedCalibration else { return false }
-        let normalizedStep = normalizeSelectedStep(
-            selectedStep,
-            completionStep: completionStep,
-            calibrationStep: calibrationStep,
-            hasCompletedCalibration: hasCompletedCalibration
+    @MainActor
+    private func refreshPremiumEntitlement() async {
+        let snapshot = await SubscriptionEntitlementService.shared.refreshEntitlements(
+            modelContainer: Persistence.sharedModelContainer,
+            productIDs: Set(premiumProductIDs)
         )
-        return normalizedStep < completionStep
+        premiumTier = snapshot.tier
+
+        if snapshot.tier == .premium,
+           selectedStep == OnboardingStep.premiumOffer.rawValue {
+            selectedStep = OnboardingStep.completion.rawValue
+        }
+    }
+
+    private func restorePurchases() {
+        guard !isRestoringPurchases else { return }
+        isRestoringPurchases = true
+
+        Task { @MainActor in
+            defer { isRestoringPurchases = false }
+            do {
+                let snapshot = try await SubscriptionEntitlementService.shared.restorePurchases(
+                    modelContainer: Persistence.sharedModelContainer,
+                    productIDs: Set(premiumProductIDs)
+                )
+                premiumTier = snapshot.tier
+                if snapshot.tier == .premium {
+                    selectedStep = OnboardingStep.completion.rawValue
+                } else {
+                    premiumAlertMessage = "No active premium subscription was found for this Apple ID."
+                }
+            } catch {
+                premiumAlertMessage = "Restore failed: \(error.localizedDescription)"
+            }
+        }
     }
 }
 
@@ -1001,68 +529,68 @@ private struct OnboardingPagerStyle: ViewModifier {
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func lexicalWordsAutocapitalization() -> some View {
-#if os(iOS)
-        textInputAutocapitalization(.words)
-#else
-        self
-#endif
+@MainActor
+private func onboardingPreviewContainer() -> ModelContainer {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: InterestProfile.self,
+             UserProfile.self,
+             LexemeDefinition.self,
+             MorphologicalRoot.self,
+        configurations: config
+    )
+
+    let context = container.mainContext
+    context.insert(InterestProfile(selectedTags: ["Technology", "Science"]))
+
+    let profile = UserProfile(userId: UserProfile.fallbackLocalUserID)
+    profile.displayName = "Preview Learner"
+    profile.lexicalRank = 3000
+    context.insert(profile)
+
+    try? context.save()
+    return container
+}
+
+@MainActor
+private func configureOnboardingPreviewDefaults(
+    step: OnboardingStep,
+    calibrationCompleted: Bool
+) {
+    let defaults = UserDefaults.standard
+    defaults.set(false, forKey: OnboardingStorageKeys.completed)
+    defaults.set(step.rawValue, forKey: OnboardingStorageKeys.currentStep)
+    defaults.set(OnboardingFlowModel.currentFlowVersion, forKey: OnboardingStorageKeys.flowVersion)
+    defaults.set("Preview Learner", forKey: "userName")
+    defaults.set(ArticleStylePreference.balanced.rawValue, forKey: OnboardingStorageKeys.articleStylePreference)
+
+    if calibrationCompleted {
+        defaults.set(3000, forKey: OnboardingStorageKeys.calibrationRank)
+        defaults.set(0.75, forKey: OnboardingStorageKeys.calibrationConfidence)
+    } else {
+        defaults.removeObject(forKey: OnboardingStorageKeys.calibrationRank)
+        defaults.removeObject(forKey: OnboardingStorageKeys.calibrationConfidence)
     }
 }
 
-private struct ForgettingCurvePreview: View {
-    let isStabilized: Bool
+@MainActor
+private func onboardingPreview(
+    step: OnboardingStep,
+    calibrationCompleted: Bool
+) -> some View {
+    configureOnboardingPreviewDefaults(step: step, calibrationCompleted: calibrationCompleted)
+    return OnboardingFlowView(onComplete: {})
+        .modelContainer(onboardingPreviewContainer())
+}
 
-    var body: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            let height = proxy.size.height
-            let baseY = height * 0.15
-            let floorY = height * 0.88
+#Preview("Onboarding - Welcome") {
+    onboardingPreview(step: .welcome, calibrationCompleted: false)
+}
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: "F7F8F9"), Color(hex: "EFF2F5")],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+#Preview("Onboarding - Premium") {
+    onboardingPreview(step: .premiumOffer, calibrationCompleted: true)
+}
 
-                Path { path in
-                    path.move(to: CGPoint(x: 14, y: baseY))
-                    path.addCurve(
-                        to: CGPoint(x: width - 14, y: floorY),
-                        control1: CGPoint(x: width * 0.35, y: height * 0.30),
-                        control2: CGPoint(x: width * 0.72, y: height * 0.82)
-                    )
-                }
-                .stroke(Color.sonPrimary.opacity(0.9), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-
-                if isStabilized {
-                    Path { path in
-                        let pivotX = width * 0.56
-                        path.move(to: CGPoint(x: pivotX, y: height * 0.68))
-                        path.addLine(to: CGPoint(x: pivotX, y: baseY))
-                    }
-                    .stroke(Color(hex: "D97706"), style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
-
-                    Path { path in
-                        let pivotX = width * 0.56
-                        path.move(to: CGPoint(x: pivotX, y: baseY))
-                        path.addCurve(
-                            to: CGPoint(x: width - 14, y: height * 0.24),
-                            control1: CGPoint(x: width * 0.72, y: height * 0.18),
-                            control2: CGPoint(x: width * 0.88, y: height * 0.26)
-                        )
-                    }
-                    .stroke(Color(hex: "16A34A"), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-    }
+#Preview("Onboarding - Completion") {
+    onboardingPreview(step: .completion, calibrationCompleted: true)
 }

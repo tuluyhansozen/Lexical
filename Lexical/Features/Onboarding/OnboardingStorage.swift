@@ -7,4 +7,5 @@ enum OnboardingStorageKeys {
     static let articleStylePreference = "lexical.onboarding.article_style.v1"
     static let calibrationRank = "lexical.onboarding.calibration_rank.v1"
     static let calibrationConfidence = "lexical.onboarding.calibration_confidence.v1"
+    static let flowVersion = "lexical.onboarding.flow_version.v1"
 }
