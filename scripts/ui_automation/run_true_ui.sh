@@ -179,6 +179,14 @@ center_for_id() {
   '
 }
 
+center_for_label_contains() {
+  local snippet="$1"
+  ui_dump | jq -r --arg snippet "$snippet" '
+    first(.[] | select(((.AXLabel // "") | contains($snippet)))) as $e
+    | if $e == null then "" else "\((($e.frame.x + ($e.frame.width / 2))|floor)) \((($e.frame.y + ($e.frame.height / 2))|floor))" end
+  '
+}
+
 tap_id() {
   local id="$1"
   local coords
@@ -193,6 +201,23 @@ tap_id() {
 
   idb ui tap --udid "$SIM_ID" "$x" "$y" >/dev/null
   log "Tapped id=$id at ($x,$y)"
+  sleep 1
+}
+
+tap_label_contains() {
+  local snippet="$1"
+  local coords
+  local x
+  local y
+
+  wait_for_label_contains "$snippet" 12
+  coords="$(center_for_label_contains "$snippet")"
+  [[ -n "$coords" ]] || fail "Unable to resolve coordinates for label containing: $snippet"
+  x="${coords%% *}"
+  y="${coords##* }"
+
+  idb ui tap --udid "$SIM_ID" "$x" "$y" >/dev/null
+  log "Tapped label~='$snippet' at ($x,$y)"
   sleep 1
 }
 
@@ -296,17 +321,35 @@ test_explore_screen_and_sheet() {
   terminate_app
 }
 
+test_reader_open_and_close() {
+  log "Running test_reader_open_and_close"
+  launch_app --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-e2e-free-limit
+
+  wait_for_id reading.headerTitle
+  tap_label_contains "Continue reading"
+
+  wait_for_id reader.title
+  wait_for_id reader.closeButton
+  screenshot "09_reader_open"
+
+  tap_id reader.closeButton
+  wait_for_id reading.headerTitle
+  screenshot "10_reader_closed_to_reading"
+
+  terminate_app
+}
+
 test_prompt_route_open_and_close() {
   log "Running test_prompt_route_open_and_close"
   launch_app --lexical-e2e-reset-state --lexical-e2e-complete-onboarding --lexical-e2e-pending-prompt
 
   wait_for_id prompt.title
   wait_for_id prompt.closeButton
-  screenshot "09_prompt_open"
+  screenshot "11_prompt_open"
 
   tap_id prompt.closeButton
   wait_for_id review.headerTitle
-  screenshot "10_prompt_closed_to_review"
+  screenshot "12_prompt_closed_to_review"
 
   terminate_app
 }
@@ -329,6 +372,7 @@ main() {
   test_free_limit_state
   test_premium_state
   test_explore_screen_and_sheet
+  test_reader_open_and_close
   test_prompt_route_open_and_close
 
   log "All true UI automation tests passed"

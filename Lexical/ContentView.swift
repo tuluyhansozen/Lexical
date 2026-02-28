@@ -15,35 +15,32 @@ struct ContentView: View {
 #endif
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Main Content Area
-            TabView(selection: $selectedTab) {
-                HomeFeedView()
-                    .tag(0)
-                
-                ExploreView()
-                    .tag(1)
-
-                ReviewSessionView(
-                    startSignal: reviewStartSignal,
-                    onNavigateToReading: {
-                        selectedTab = 0
-                    }
-                )
-                .tag(2)
-                
-                StatsView()
-                    .tag(3)
-                
-                SettingsView()
-                    .tag(4)
-            }
-            #if os(iOS)
-            .tabViewStyle(.page(indexDisplayMode: .never)) // We build our own custom tab bar logic if needed, or use standard
-            #endif
-            .ignoresSafeArea()
+        TabView(selection: $selectedTab) {
+            HomeFeedView()
+                .tag(0)
             
-            // Custom Tab Bar Overlay (matches design: "Feed", "Search", "Practice", "Stats", "Settings")
+            ExploreView()
+                .tag(1)
+
+            ReviewSessionView(
+                startSignal: reviewStartSignal,
+                onNavigateToReading: {
+                    selectedTab = 0
+                }
+            )
+            .tag(2)
+            
+            StatsView()
+                .tag(3)
+            
+            SettingsView()
+                .tag(4)
+        }
+        #if os(iOS)
+        .tabViewStyle(.page(indexDisplayMode: .never)) // We build our own custom tab bar logic if needed, or use standard
+        #endif
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            // Use safeAreaInset to let system manage bottom insets instead of manually calculating them.
             CustomTabBar(selectedTab: $selectedTab)
         }
         .preferredColorScheme(darkModeEnabled ? .dark : .light)

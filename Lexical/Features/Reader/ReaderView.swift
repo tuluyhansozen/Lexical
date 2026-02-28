@@ -8,6 +8,7 @@ struct ReaderView: View {
     let content: String
     let focusLemmas: [String]
 
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
@@ -96,6 +97,22 @@ struct ReaderView: View {
                     }
                 }
             }
+        }
+        .overlay(alignment: .topLeading) {
+            #if os(iOS)
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundStyle(Color.adaptiveText.opacity(0.85))
+                    .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
+            }
+            .padding(.top, 14)
+            .padding(.leading, 14)
+            .accessibilityLabel("Close reader")
+            .accessibilityIdentifier("reader.closeButton")
+            #endif
         }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

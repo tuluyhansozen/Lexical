@@ -93,6 +93,7 @@ struct ArticleCardView: View {
                                 showReader = false
                             }
                             .accessibilityLabel("Close reader")
+                            .accessibilityIdentifier("reader.closeButton")
                         }
                     }
             }
@@ -111,6 +112,7 @@ struct ArticleCardView: View {
                                 showReader = false
                             }
                             .accessibilityLabel("Close reader")
+                            .accessibilityIdentifier("reader.closeButton")
                         }
                     }
             }
@@ -276,4 +278,3 @@ struct ArticleCardView: View {
     .background(Color.adaptiveBackground)
     .modelContainer(container)
 }
-

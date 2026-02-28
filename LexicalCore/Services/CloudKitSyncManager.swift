@@ -402,17 +402,74 @@ public actor CloudKitSyncManager {
             "com.apple.developer.icloud-container-identifiers" as CFString,
             nil
         ) as? [String]
+        return cloudKitEntitlementEnabled(
+            cloudKitServices: cloudKitServices,
+            containers: containers
+        )
+        #elseif os(iOS)
+        guard let entitlements = mobileProvisionEntitlements() else {
+            print("CloudKitSyncManager: embedded.mobileprovision missing or unreadable. Sync disabled.")
+            return false
+        }
 
+        return cloudKitEntitlementEnabled(
+            cloudKitServices: entitlementStringArray(
+                key: "com.apple.developer.icloud-services",
+                from: entitlements
+            ),
+            containers: entitlementStringArray(
+                key: "com.apple.developer.icloud-container-identifiers",
+                from: entitlements
+            )
+        )
+        #else
+        return false
+        #endif
+    }
+
+    static func cloudKitEntitlementEnabled(
+        cloudKitServices: [String]?,
+        containers: [String]?
+    ) -> Bool {
         let hasCloudKitService = cloudKitServices?.contains("CloudKit") ?? false
         let hasContainer = !(containers?.isEmpty ?? true)
         return hasCloudKitService && hasContainer
-        #else
-        // iOS Physical Devices: SecTaskCreateFromSelf is not available.
-        // We assume true if we successfully provision the app on target.
-        // The subsequent verification step `fetchAccountStatus()` will handle real CK availability.
-        return true
-        #endif
     }
+
+    #if os(iOS)
+    private static func mobileProvisionEntitlements() -> [String: Any]? {
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let data = try? Data(contentsOf: url),
+              let content = String(data: data, encoding: .ascii) ?? String(data: data, encoding: .utf8),
+              let plistStart = content.range(of: "<plist"),
+              let plistEnd = content.range(of: "</plist>") else {
+            return nil
+        }
+
+        let plistText = String(content[plistStart.lowerBound...plistEnd.upperBound])
+        guard let plistData = plistText.data(using: .utf8),
+              let plistObject = try? PropertyListSerialization.propertyList(from: plistData, format: nil),
+              let profile = plistObject as? [String: Any],
+              let entitlements = profile["Entitlements"] as? [String: Any] else {
+            return nil
+        }
+
+        return entitlements
+    }
+
+    private static func entitlementStringArray(
+        key: String,
+        from entitlements: [String: Any]
+    ) -> [String]? {
+        if let values = entitlements[key] as? [String] {
+            return values
+        }
+        if let values = entitlements[key] as? [Any] {
+            return values.compactMap { $0 as? String }
+        }
+        return nil
+    }
+    #endif
 
     private func fetchAccountStatus() async throws -> CKAccountStatus {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKAccountStatus, Error>) in

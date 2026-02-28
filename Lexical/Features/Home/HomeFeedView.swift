@@ -18,6 +18,7 @@ struct HomeFeedView: View {
     @State private var showingPremiumOffer = false
 
     private let featureGateService = FeatureGateService()
+    private let tabBarSpec = TabBarFigmaSpec()
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -51,7 +52,7 @@ struct HomeFeedView: View {
                             .accessibilityIdentifier("reading.quotaLabel")
                     }
 
-                    Color.clear.frame(height: 104)
+                    Color.clear.frame(height: tabBarSpec.contentHeight + 16)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -69,7 +70,7 @@ struct HomeFeedView: View {
             if canGenerateAnotherArticle || viewModel.isGenerating {
                 generateFAB
                     .padding(.trailing, 24)
-                    .padding(.bottom, 90) // Clear the 61pt CustomTabBar
+                    .padding(.bottom, 24)
             }
         }
         .onAppear {
@@ -482,7 +483,7 @@ struct HomeFeedView: View {
                         ArticleCardView(article: article)
                     }
 
-                    Color.clear.frame(height: 104)
+                    Color.clear.frame(height: 120)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -501,7 +502,7 @@ struct HomeFeedView: View {
             }
             .frame(width: 80, height: 80)
             .padding(.trailing, 24)
-            .padding(.bottom, 90)
+            .padding(.bottom, 120)
         }
         CustomTabBar(selectedTab: .constant(0))
     }
